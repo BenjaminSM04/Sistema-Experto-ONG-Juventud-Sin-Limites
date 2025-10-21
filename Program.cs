@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using MudBlazor.Services;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Components;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Account;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Data;
@@ -40,6 +41,7 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
                 .AddDefaultTokenProviders();
 
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+            builder.Services.AddMudServices();
 
             var app = builder.Build();
 
