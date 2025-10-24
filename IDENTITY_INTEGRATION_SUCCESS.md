@@ -44,26 +44,26 @@ La integración de **ASP.NET Core Identity** con el modelo de dominio personaliza
 
 ## ?? Características de Identity Implementadas
 
-### ? Autenticación
+### ?? Autenticación
 - ? Login con email y password
 - ? Hashing seguro de contraseñas (PBKDF2)
 - ? Lockout automático después de intentos fallidos
 - ? Logout
 
-### ? Gestión de Usuarios
+### ?? Gestión de Usuarios
 - ? Registro de usuarios
 - ? Confirmación de email
 - ? Cambio de contraseña
 - ? Reset de contraseña con token
 - ? Gestión de perfil
 
-### ? Seguridad Avanzada
+### ?? Seguridad Avanzada
 - ? Two-Factor Authentication (2FA) - Preparado
 - ? Authenticator apps (Google Authenticator, etc.) - Preparado
 - ? Recovery codes - Preparado
 - ? Logins externos (Google, Facebook, Microsoft) - Preparado
 
-### ? Autorización
+### ??? Autorización
 - ? Roles personalizados
 - ? Claims personalizados
 - ? Políticas de autorización
@@ -188,21 +188,21 @@ dotnet ef database update --context ApplicationDbContext
 @inject AuthenticationStateProvider AuthState
 
 @code {
-    private Usuario? currentUser;
+ private Usuario? currentUser;
     private Persona? persona;
 
-    protected override async Task OnInitializedAsync()
+  protected override async Task OnInitializedAsync()
     {
         var authState = await AuthState.GetAuthenticationStateAsync();
-    currentUser = await UserManager.GetUserAsync(authState.User);
+      currentUser = await UserManager.GetUserAsync(authState.User);
         
-    if (currentUser != null)
-      {
-       // Cargar datos de la persona
-     persona = await context.Personas
-          .FirstOrDefaultAsync(p => p.PersonaId == currentUser.PersonaId);
+        if (currentUser != null)
+  {
+            // Cargar datos de la persona
+            persona = await context.Personas
+  .FirstOrDefaultAsync(p => p.PersonaId == currentUser.PersonaId);
         }
-    }
+ }
 }
 
 <h3>Bienvenido, @persona?.Nombres @persona?.Apellidos</h3>
@@ -216,7 +216,7 @@ dotnet ef database update --context ApplicationDbContext
 
 <AuthorizeView Roles="Administrador">
     <Authorized>
-    <AdminPanel />
+        <AdminPanel />
     </Authorized>
     <NotAuthorized>
         <p>No tienes permisos para ver esto</p>
@@ -250,7 +250,7 @@ var usuario = new Usuario
     UserName = "juan.perez@ong.com",
     Email = "juan.perez@ong.com",
     EmailConfirmed = true,
-  Estado = EstadoGeneral.Activo
+    Estado = EstadoGeneral.Activo
 };
 
 // Crear con password
@@ -263,18 +263,18 @@ if (result.Succeeded)
     
     // Asignar a programa
     var programa = await Context.Programas
-     .FirstOrDefaultAsync(p => p.Clave == "EDV");
+        .FirstOrDefaultAsync(p => p.Clave == "EDV");
         
     if (programa != null)
-    {
-    var usuarioPrograma = new UsuarioPrograma
-      {
-      UsuarioId = usuario.Id,
-            ProgramaId = programa.ProgramaId,
-            Desde = DateTime.Today
-    };
+{
+        var usuarioPrograma = new UsuarioPrograma
+     {
+       UsuarioId = usuario.Id,
+     ProgramaId = programa.ProgramaId,
+  Desde = DateTime.Today
+        };
         await Context.UsuarioProgramas.AddAsync(usuarioPrograma);
-    await Context.SaveChangesAsync();
+        await Context.SaveChangesAsync();
     }
 }
 ```
@@ -338,7 +338,7 @@ Y acceder con:
 
 ---
 
-**Fecha de Implementación:** $(Get-Date -Format "yyyy-MM-dd HH:mm")  
+**Fecha de Implementación:** 2024-10-24  
 **Migración:** IdentityIntegration (20251024004607)  
 **EF Core:** 8.0.21  
 **Target Framework:** .NET 8

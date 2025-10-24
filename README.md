@@ -1,12 +1,12 @@
-# ?? Sistema Experto ONG Juventud Sin L�mites
+﻿# 🏢 Sistema Experto ONG Juventud Sin Límites
 
-## ?? Descripci�n del Proyecto
+## 📋 Descripción del Proyecto
 
-Sistema integral para la gesti�n de programas, actividades, participantes y planes operativos anuales (POA) de la ONG Juventud Sin L�mites, con motor de inferencia para detecci�n de riesgos y alertas autom�ticas.
+Sistema integral para la gestión de programas, actividades, participantes y planes operativos anuales (POA) de la ONG Juventud Sin Límites, con motor de inferencia para detección de riesgos y alertas automáticas.
 
 ---
 
-## ?? CREDENCIALES DE ACCESO
+## 🔐 CREDENCIALES DE ACCESO
 
 ### Usuario Administrador por Defecto
 
@@ -16,11 +16,11 @@ Password: Admin@123
 Rol:      Administrador
 ```
 
-?? **IMPORTANTE:** Cambiar estas credenciales en producci�n.
+⚠️ **IMPORTANTE:** Cambiar estas credenciales en producción.
 
 ---
 
-## ?? Inicio R�pido
+## 🚀 Inicio Rápido
 
 ### Prerrequisitos
 
@@ -28,7 +28,7 @@ Rol:      Administrador
 - SQL Server LocalDB (o SQL Server)
 - Visual Studio 2022 / VS Code / Rider
 
-### Instalaci�n y Configuraci�n
+### Instalación y Configuración
 
 1. **Clonar el repositorio**
    ```bash
@@ -41,8 +41,8 @@ Rol:      Administrador
    dotnet restore
    ```
 
-3. **Actualizar cadena de conexi�n** (si es necesario)
-   
+3. **Actualizar cadena de conexión** (si es necesario)
+ 
    Edita `appsettings.json`:
    ```json
    {
@@ -57,87 +57,87 @@ Rol:      Administrador
    dotnet ef database update --context ApplicationDbContext
    ```
 
-5. **Ejecutar la aplicaci�n**
+5. **Ejecutar la aplicación**
    ```bash
    dotnet run
- ```
+   ```
 
-6. **Acceder a la aplicaci�n**
+6. **Acceder a la aplicación**
    - URL: `https://localhost:5001` o `http://localhost:5000`
    - Login con: `admin@ong.com` / `Admin@123`
 
 ---
 
-## ??? Arquitectura del Proyecto
+## 🏗️ Arquitectura del Proyecto
 
 ### Estructura de Carpetas
 
 ```
 Sistema-Experto-ONG-Juventud-Sin-Limites/
-??? Components/              # Componentes Blazor
-?   ??? Account/          # Componentes de autenticaci�n
-?   ??? Layout/             # Layouts de la aplicaci�n
-???? Pages/         # P�ginas Razor
-?
-??? Domain/         # Capa de Dominio (POCOs)
-?   ??? Common/            # Clases base, interfaces y enums
-?   ??? Security/      # Identidad y acceso
-?   ??? Programas/         # Programas de la ONG
-?   ??? Operacion/         # Operaciones y actividades
-?   ??? POA/           # Plan Operativo Anual (din�mico)
-?   ??? Motor/   # Motor de inferencia
-?   ??? Config/            # Configuraci�n del motor
-? ??? BI/          # Business Intelligence
-?   ??? Audit/             # Auditor�a
-?
-??? Infrastructure/        # Infraestructura de EF Core
-?   ??? Configurations/    # Configuraciones Fluent API
-?   ??? Interceptors/    # Interceptores de EF Core
-?   ??? Extensions/        # M�todos de extensi�n
-?   ??? Seed/       # Datos iniciales
-?
-??? Data/          # DbContext y migraciones
-?   ??? Migrations/        # Migraciones de EF Core
-?
-??? wwwroot/  # Archivos est�ticos
+├── Components/      # Componentes Blazor
+│   ├── Account/    # Componentes de autenticación
+│   ├── Layout/             # Layouts de la aplicación
+│   └── Pages/              # Páginas Razor
+│
+├── Domain/   # Capa de Dominio (POCOs)
+│   ├── Common/  # Clases base, interfaces y enums
+│   ├── Security/ # Identidad y acceso
+│   ├── Programas/         # Programas de la ONG
+│ ├── Operacion/     # Operaciones y actividades
+│   ├── POA/             # Plan Operativo Anual (dinámico)
+│   ├── Motor/  # Motor de inferencia
+│   ├── Config/     # Configuración del motor
+│   ├── BI/         # Business Intelligence
+│   └── Audit/             # Auditoría
+│
+├── Infrastructure/   # Infraestructura de EF Core
+│   ├── Configurations/    # Configuraciones Fluent API
+│   ├── Interceptors/    # Interceptores de EF Core
+│   ├── Extensions/        # Métodos de extensión
+│   └── Seed/# Datos iniciales
+│
+├── Data/           # DbContext y migraciones
+│   └── Migrations/        # Migraciones de EF Core
+│
+└── wwwroot/            # Archivos estáticos
 ```
 
 ---
 
-## ?? Base de Datos
+## 📊 Base de Datos
 
-### Estad�sticas
+### Estadísticas
 
 - **Total de tablas:** 54
 - **Tablas de Identity:** 7
 - **Tablas del Dominio:** 47
-- **�ndices:** 40+
+- **Índices:** 40+
 - **Relaciones:** 50+
 
-### M�dulos de la Base de Datos
+### Módulos de la Base de Datos
 
-#### ?? Security (4 tablas + 4 de Identity)
+#### 🔐 Security (4 tablas + 4 de Identity)
 - `Persona` - Datos personales
 - `Usuario` - Usuarios del sistema (integrado con IdentityUser)
 - `Rol` - Roles del sistema (integrado con IdentityRole)
-- `UsuarioRol` - Relaci�n Usuario-Rol
+- `UsuarioRol` - Relación Usuario-Rol
 - `UsuarioClaim`, `UsuarioLogin`, `RolClaim`, `UsuarioToken` - Tablas de Identity
 
-#### ?? Programas (2 tablas)
+#### 📚 Programas (2 tablas)
 - `Programa` - Programas de la ONG (EDV, Academia, etc.)
-- `UsuarioPrograma` - Asignaci�n de usuarios a programas
+- `UsuarioPrograma` - Asignación de usuarios a programas
 
-#### ?? Operacion (5 tablas)
+#### 👥 Operacion (5 tablas)
 - `Participante` - Participantes de los programas
 - `Actividad` - Actividades de los programas
-- `ActividadParticipante` - Inscripci�n a actividades
+- `ActividadParticipante` - Inscripción a actividades
 - `Asistencia` - Control de asistencia
 - `EvidenciaActividad` - Evidencias (fotos, videos, actas)
 
-#### ?? POA - Plan Operativo Anual (9 tablas - Sistema EAV)
+#### 📋 POA - Plan Operativo Anual (9 tablas - Sistema EAV)
 - `POA_Plantilla` - Plantillas de POA por programa
 - `POA_PlantillaSeccion` - Secciones de plantillas
-- `POA_Campo` - Campos din�micos
+- `POA_Campo` - Campos dinámicos
 - `POA_CampoOpcion` - Opciones para campos tipo lista
 - `POA_CampoValidacion` - Validaciones de campos
 - `POA_Instancia` - Instancias de POA (mensual/anual)
@@ -145,33 +145,33 @@ Sistema-Experto-ONG-Juventud-Sin-Limites/
 - `POA_Archivo` - Archivos adjuntos
 - `POA_SnapshotMensual` - Snapshots para BI
 
-#### ?? Motor de Inferencia (10 tablas)
+#### 🤖 Motor de Inferencia (10 tablas)
 - `Regla` - Reglas del motor
-- `ReglaParametro` - Par�metros de reglas
+- `ReglaParametro` - Parámetros de reglas
 - `ReglaParametroOverride` - Override por programa
 - `Alerta` - Alertas generadas
 - `RiesgoParticipantePrograma` - Scoring de riesgo
-- `RiesgoDetalle` - Detalles del c�lculo de riesgo
+- `RiesgoDetalle` - Detalles del cálculo de riesgo
 - `EjecucionMotor` - Log de ejecuciones
 - `MatchRegla` - Matches de reglas
-- `DiccionarioObservaciones` - Diccionario de t�rminos
-- `DiccionarioObservacionesPrograma` - Relaci�n con programas
+- `DiccionarioObservaciones` - Diccionario de términos
+- `DiccionarioObservacionesPrograma` - Relación con programas
 
-#### ?? Configuraci�n (2 tablas)
-- `ConfiguracionMotor` - Configuraci�n global
+#### ⚙️ Configuración (2 tablas)
+- `ConfiguracionMotor` - Configuración global
 - `ConfiguracionMotorOverride` - Override por programa
 
-#### ?? BI - Business Intelligence (1 tabla)
-- `MetricasProgramaMes` - M�tricas precalculadas mensuales
+#### 📈 BI - Business Intelligence (1 tabla)
+- `MetricasProgramaMes` - Métricas precalculadas mensuales
 
-#### ?? Auditor�a (1 tabla)
-- `Logs` - Logs detallados de auditor�a
+#### 📝 Auditoría (1 tabla)
+- `Logs` - Logs detallados de auditoría
 
 ---
 
-## ?? Datos Iniciales (Seeder)
+## 🎯 Datos Iniciales (Seeder)
 
-Al ejecutar la aplicaci�n por primera vez, se cargan autom�ticamente:
+Al ejecutar la aplicación por primera vez, se cargan automáticamente:
 
 ### Roles (4)
 - **Administrador** - Acceso total al sistema
@@ -189,11 +189,11 @@ Al ejecutar la aplicaci�n por primera vez, se cargan autom�ticamente:
 - **EDV** - Escuelas de Valores
 - **ACADEMIA** - Academia de Liderazgo
 - **JUVENTUD_SEGURA** - Juventud Segura
-- **BERNABE** - Programa Bernab�
+- **BERNABE** - Programa Bernabé
 
 ### Configuraciones del Motor (6)
 - `ASISTENCIA_MIN_PORCENTAJE`: 75%
-- `DIAS_ALERTA_INASISTENCIA`: 7 d�as
+- `DIAS_ALERTA_INASISTENCIA`: 7 días
 - `UMBRAL_RIESGO_BAJO`: 30 puntos
 - `UMBRAL_RIESGO_MEDIO`: 60 puntos
 - `MOTOR_EJECUCION_AUTO`: true
@@ -204,67 +204,67 @@ Al ejecutar la aplicaci�n por primera vez, se cargan autom�ticamente:
 2. **BAJA_ASISTENCIA_GENERAL** - Alta prioridad
 3. **ACTIVIDAD_SIN_ASISTENTES** - Info
 4. **RETRASO_ACTIVIDAD** - Alta prioridad
-5. **BAJO_CUMPLIMIENTO_POA** - Cr�tica
+5. **BAJO_CUMPLIMIENTO_POA** - Crítica
 
 ---
 
-## ?? Caracter�sticas Principales
+## 🔑 Características Principales
 
-### ? Autenticaci�n y Autorizaci�n
-- ? ASP.NET Core Identity integrado
-- ? Login con email y password
-- ? Roles y pol�ticas de autorizaci�n
-- ? Recuperaci�n de contrase�a
-- ? Confirmaci�n de email
-- ? Two-Factor Authentication (preparado)
-- ? Logins externos (Google, Facebook) - preparado
-- ? Lockout autom�tico
+### ✅ Autenticación y Autorización
+- ✅ ASP.NET Core Identity integrado
+- ✅ Login con email y password
+- ✅ Roles y políticas de autorización
+- ✅ Recuperación de contraseña
+- ✅ Confirmación de email
+- ✅ Two-Factor Authentication (preparado)
+- ✅ Logins externos (Google, Facebook) - preparado
+- ✅ Lockout automático
 
-### ? Seguridad
-- ? Password hashing (PBKDF2)
-- ? Tokens seguros para reset de password
-- ? Protecci�n CSRF autom�tica
-- ? Control de concurrencia optimista (RowVersion)
+### ✅ Seguridad
+- ✅ Password hashing (PBKDF2)
+- ✅ Tokens seguros para reset de password
+- ✅ Protección CSRF automática
+- ✅ Control de concurrencia optimista (RowVersion)
 
-### ? Auditor�a Autom�tica
-- ? CreadoEn, CreadoPorUsuarioId
-- ? ActualizadoEn, ActualizadoPorUsuarioId
-- ? EliminadoEn, EliminadoPorUsuarioId
-- ? Logs detallados en tabla Logs
+### ✅ Auditoría Automática
+- ✅ CreadoEn, CreadoPorUsuarioId
+- ✅ ActualizadoEn, ActualizadoPorUsuarioId
+- ✅ EliminadoEn, EliminadoPorUsuarioId
+- ✅ Logs detallados en tabla Logs
 
-### ? Soft Delete Global
-- ? Eliminaci�n l�gica en todas las entidades
-- ? Query filters autom�ticos
-- ? �ndices �nicos filtrados por IsDeleted
+### ✅ Soft Delete Global
+- ✅ Eliminación lógica en todas las entidades
+- ✅ Query filters automáticos
+- ✅ Índices únicos filtrados por IsDeleted
 
-### ? Sistema POA Din�mico (EAV)
-- ? Plantillas personalizables por programa
-- ? Campos din�micos con validaciones
-- ? Soporta m�ltiples tipos de datos
-- ? Versiones de plantillas
-- ? Snapshots mensuales para BI
+### ✅ Sistema POA Dinámico (EAV)
+- ✅ Plantillas personalizables por programa
+- ✅ Campos dinámicos con validaciones
+- ✅ Soporta múltiples tipos de datos
+- ✅ Versiones de plantillas
+- ✅ Snapshots mensuales para BI
 
-### ? Motor de Inferencia
-- ? Reglas configurables
-- ? Par�metros personalizables por programa
-- ? Detecci�n autom�tica de riesgos
-- ? Generaci�n de alertas
-- ? Scoring de participantes
-- ? Log de ejecuciones
+### ✅ Motor de Inferencia
+- ✅ Reglas configurables
+- ✅ Parámetros personalizables por programa
+- ✅ Detección automática de riesgos
+- ✅ Generación de alertas
+- ✅ Scoring de participantes
+- ✅ Log de ejecuciones
 
-### ? Business Intelligence
-- ? M�tricas precalculadas mensuales
-- ? Snapshots hist�ricos
-- ? KPIs de cumplimiento
-- ? An�lisis de asistencia
+### ✅ Business Intelligence
+- ✅ Métricas precalculadas mensuales
+- ✅ Snapshots históricos
+- ✅ KPIs de cumplimiento
+- ✅ Análisis de asistencia
 
 ---
 
-## ??? Tecnolog�as Utilizadas
+## 🛠️ Tecnologías Utilizadas
 
 ### Backend
 - **.NET 8** - Framework principal
-- **ASP.NET Core Identity** - Autenticaci�n y autorizaci�n
+- **ASP.NET Core Identity** - Autenticación y autorización
 - **Entity Framework Core 8.0.21** - ORM
 - **SQL Server** - Base de datos
 
@@ -274,12 +274,12 @@ Al ejecutar la aplicaci�n por primera vez, se cargan autom�ticamente:
 - **Razor Components** - Componentes interactivos
 
 ### Otros
-- **Newtonsoft.Json** - Serializaci�n JSON
-- **Code First Migrations** - Gesti�n de esquema de BD
+- **Newtonsoft.Json** - Serialización JSON
+- **Code First Migrations** - Gestión de esquema de BD
 
 ---
 
-## ?? Comandos �tiles
+## 📝 Comandos Útiles
 
 ### Entity Framework
 
@@ -287,13 +287,13 @@ Al ejecutar la aplicaci�n por primera vez, se cargan autom�ticamente:
 # Ver migraciones
 dotnet ef migrations list --context ApplicationDbContext
 
-# Crear migraci�n
+# Crear migración
 dotnet ef migrations add NombreMigracion --context ApplicationDbContext
 
 # Aplicar migraciones
 dotnet ef database update --context ApplicationDbContext
 
-# Eliminar �ltima migraci�n
+# Eliminar última migración
 dotnet ef migrations remove --context ApplicationDbContext
 
 # Generar script SQL
@@ -306,7 +306,7 @@ dotnet ef dbcontext info --context ApplicationDbContext
 dotnet ef database drop --context ApplicationDbContext --force
 ```
 
-### Build y Ejecuci�n
+### Build y Ejecución
 
 ```bash
 # Restaurar paquetes
@@ -327,23 +327,23 @@ dotnet publish --configuration Release
 
 ---
 
-## ?? Documentaci�n Adicional
+## 📚 Documentación Adicional
 
-### Gu�as Detalladas
-- **DATABASE_CODE_FIRST_README.md** - Gu�a completa de Code First
-- **IDENTITY_INTEGRATION.md** - Gu�a de integraci�n de Identity
-- **IDENTITY_INTEGRATION_SUCCESS.md** - Resumen de �xito de Identity
+### Guías Detalladas
+- **DATABASE_CODE_FIRST_README.md** - Guía completa de Code First
+- **IDENTITY_INTEGRATION.md** - Guía de integración de Identity
+- **IDENTITY_INTEGRATION_SUCCESS.md** - Resumen de éxito de Identity
 - **RESUMEN_IMPLEMENTACION.md** - Resumen ejecutivo
 - **COMANDOS_UTILES.md** - Comandos frecuentes
-- **CHECKLIST_VERIFICACION.md** - Lista de verificaci�n
-- **CHECKLIST_IDENTITY_VERIFICATION.md** - Verificaci�n de Identity
+- **CHECKLIST_VERIFICACION.md** - Lista de verificación
+- **CHECKLIST_IDENTITY_VERIFICATION.md** - Verificación de Identity
 
 ### Scripts
 - **apply-identity-integration.ps1** - Script para aplicar Identity
 
 ---
 
-## ?? Flujo de Trabajo de Desarrollo
+## 🔄 Flujo de Trabajo de Desarrollo
 
 ### 1. Modificar Entidades (Domain/)
 ```csharp
@@ -355,32 +355,32 @@ public class Participante : BaseEntity
 }
 ```
 
-### 2. Actualizar Configuraci�n (Infrastructure/Configurations/)
+### 2. Actualizar Configuración (Infrastructure/Configurations/)
 ```csharp
 public class ParticipanteConfig : IEntityTypeConfiguration<Participante>
 {
     public void Configure(EntityTypeBuilder<Participante> builder)
     {
-        // ...configuraci�n existente...
-        builder.Property(p => p.NumeroDocumento)
-            .HasMaxLength(20);
+        // ...configuración existente...
+    builder.Property(p => p.NumeroDocumento)
+       .HasMaxLength(20);
     }
 }
 ```
 
-### 3. Crear Migraci�n
+### 3. Crear Migración
 ```bash
 dotnet ef migrations add AgregarNumeroDocumentoParticipante --context ApplicationDbContext
 ```
 
-### 4. Aplicar Migraci�n
+### 4. Aplicar Migración
 ```bash
 dotnet ef database update --context ApplicationDbContext
 ```
 
 ---
 
-## ?? Ejemplos de Uso
+## 🎨 Ejemplos de Uso
 
 ### Crear Usuario con Identity
 
@@ -391,8 +391,8 @@ dotnet ef database update --context ApplicationDbContext
 // Crear persona
 var persona = new Persona
 {
- Nombres = "Juan",
- Apellidos = "P�rez",
+    Nombres = "Juan",
+    Apellidos = "Pérez",
     FechaNacimiento = new DateTime(1995, 5, 15),
     Telefono = "1234-5678"
 };
@@ -406,7 +406,7 @@ var usuario = new Usuario
     UserName = "juan.perez@ong.com",
     Email = "juan.perez@ong.com",
     EmailConfirmed = true,
-    Estado = EstadoGeneral.Activo
+  Estado = EstadoGeneral.Activo
 };
 
 // Crear con password
@@ -419,7 +419,7 @@ if (result.Succeeded)
 }
 ```
 
-### Consultar con Soft Delete Autom�tico
+### Consultar con Soft Delete Automático
 
 ```csharp
 // Solo trae registros NO eliminados
@@ -429,7 +429,7 @@ var programas = await _context.Programas
 
 // Para incluir eliminados
 var todosProgramas = await _context.Programas
-    .IgnoreQueryFilters()
+  .IgnoreQueryFilters()
     .ToListAsync();
 ```
 
@@ -437,20 +437,20 @@ var todosProgramas = await _context.Programas
 
 ```razor
 <AuthorizeView Roles="Administrador">
-  <Authorized>
+    <Authorized>
         <AdminPanel />
     </Authorized>
     <NotAuthorized>
-  <p>No tienes permisos de administrador</p>
+        <p>No tienes permisos de administrador</p>
     </NotAuthorized>
 </AuthorizeView>
 ```
 
 ---
 
-## ?? Testing
+## 🧪 Testing
 
-### Verificar que la BD se cre� correctamente
+### Verificar que la BD se creó correctamente
 
 ```sql
 USE POA_JuventudSinLimites;
@@ -473,41 +473,41 @@ SELECT * FROM Regla WHERE IsDeleted = 0;
 1. Ejecuta `dotnet run`
 2. Navega a `https://localhost:5001/Account/Login`
 3. Ingresa: `admin@ong.com` / `Admin@123`
-4. Deber�as iniciar sesi�n exitosamente
+4. Deberías iniciar sesión exitosamente
 
 ---
 
-## ?? Estado del Proyecto
+## 🚧 Estado del Proyecto
 
-### ? Completado
-- [x] Conversi�n de SQL a Code First (47 tablas)
-- [x] Integraci�n de ASP.NET Core Identity (7 tablas)
-- [x] Auditor�a autom�tica
+### ✅ Completado
+- [x] Conversión de SQL a Code First (47 tablas)
+- [x] Integración de ASP.NET Core Identity (7 tablas)
+- [x] Auditoría automática
 - [x] Soft Delete global
 - [x] Seeder de datos iniciales
 - [x] Migraciones aplicadas
-- [x] Documentaci�n completa
+- [x] Documentación completa
 
-### ? En Progreso
+### ⏳ En Progreso
 - [ ] Interfaces de usuario personalizadas
-- [ ] L�gica de negocio del motor de inferencia
-- [ ] M�dulos de gesti�n de programas
-- [ ] M�dulos de gesti�n de participantes
-- [ ] M�dulos de POA
+- [ ] Lógica de negocio del motor de inferencia
+- [ ] Módulos de gestión de programas
+- [ ] Módulos de gestión de participantes
+- [ ] Módulos de POA
 
-### ?? Pendiente
+### 📋 Pendiente
 - [ ] Testing unitario
-- [ ] Testing de integraci�n
-- [ ] Implementaci�n real de env�o de emails
-- [ ] Configuraci�n de proveedores externos (Google, Facebook)
-- [ ] Implementaci�n de 2FA
-- [ ] Dashboard de m�tricas
-- [ ] Reportes y exportaci�n
-- [ ] Deploy a producci�n
+- [ ] Testing de integración
+- [ ] Implementación real de envío de emails
+- [ ] Configuración de proveedores externos (Google, Facebook)
+- [ ] Implementación de 2FA
+- [ ] Dashboard de métricas
+- [ ] Reportes y exportación
+- [ ] Deploy a producción
 
 ---
 
-## ?? Contribuci�n
+## 👥 Contribución
 
 ### Clonar y Configurar para Desarrollo
 
@@ -526,64 +526,64 @@ dotnet ef database update --context ApplicationDbContext
 dotnet run
 ```
 
-### Convenciones de C�digo
+### Convenciones de Código
 
-- Usar **PascalCase** para clases y m�todos
+- Usar **PascalCase** para clases y métodos
 - Usar **camelCase** para variables locales
 - Usar **_camelCase** para campos privados
-- Agregar comentarios XML en m�todos p�blicos
+- Agregar comentarios XML en métodos públicos
 - Seguir principios SOLID
-- Mantener separaci�n de concerns (Domain/Infrastructure)
+- Mantener separación de concerns (Domain/Infrastructure)
 
 ---
 
-## ?? Licencia
+## 📄 Licencia
 
-Este proyecto est� bajo licencia privada para uso exclusivo de la ONG Juventud Sin L�mites.
+Este proyecto está bajo licencia privada para uso exclusivo de la ONG Juventud Sin Límites.
 
 ---
 
-## ?? Contacto y Soporte
+## 📞 Contacto y Soporte
 
-Para dudas o soporte, consulta la documentaci�n en:
+Para dudas o soporte, consulta la documentación en:
 - `IDENTITY_INTEGRATION.md`
 - `DATABASE_CODE_FIRST_README.md`
 - O abre un issue en GitHub
 
 ---
 
-## ?? Notas Importantes
+## ⚠️ Notas Importantes
 
 ### Seguridad
-1. **Cambiar credenciales por defecto** antes de producci�n
-2. **Configurar SMTP real** para env�o de emails
-3. **Habilitar HTTPS** en producci�n
+1. **Cambiar credenciales por defecto** antes de producción
+2. **Configurar SMTP real** para envío de emails
+3. **Habilitar HTTPS** en producción
 4. **Configurar CORS** apropiadamente
 5. **Usar User Secrets** para datos sensibles en desarrollo
 
 ### Performance
-1. Los query filters agregan overhead m�nimo
-2. Considera �ndices adicionales seg�n uso real
+1. Los query filters agregan overhead mínimo
+2. Considera índices adicionales según uso real
 3. El sistema EAV puede ser lento con muchos valores
 4. Implementar caching para datos frecuentes
 
 ### Backup
-1. **Siempre hacer backup** antes de migraciones en producci�n
+1. **Siempre hacer backup** antes de migraciones en producción
 2. Probar migraciones en ambiente de desarrollo primero
 3. Mantener backups regulares de la base de datos
 
 ---
 
-## ?? Agradecimientos
+## 🎉 Agradecimientos
 
-Proyecto desarrollado con ?? para la ONG Juventud Sin L�mites
+Proyecto desarrollado con ❤️ para la ONG Juventud Sin Límites
 
-**Versi�n:** 1.0.0  
-**�ltima actualizaci�n:** 2024-10-24  
+**Versión:** 1.0.0  
+**Última actualización:** 2024-10-24  
 **Framework:** .NET 8  
 **Base de Datos:** SQL Server  
 **ORM:** Entity Framework Core 8.0.21
 
 ---
 
-**�Happy Coding! ??**
+**🚀 Happy Coding!**
