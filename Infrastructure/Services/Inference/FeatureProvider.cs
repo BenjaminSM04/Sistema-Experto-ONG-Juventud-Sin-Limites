@@ -1,68 +1,97 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Data;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common;
+using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.POA;
 
-namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Inference
+namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Inference;
+
+/// <summary>
+/// Proveedor de datos/características para el motor de inferencia
+/// </summary>
+public class FeatureProvider : IFeatureProvider
 {
-    public class FeatureProvider : IFeatureProvider
+    private readonly ApplicationDbContext _context;
+
+    public FeatureProvider(ApplicationDbContext context)
     {
-        private readonly ApplicationDbContext _db;
-        public FeatureProvider(ApplicationDbContext db) => _db = db;
+      _context = context;
+    }
 
-        public async Task<double> PorcAsistenciaParticipanteAsync(int participanteId, int programaId, DateOnly desde, DateOnly hasta, CancellationToken ct)
-        {
-            var q = from a in _db.Asistencias
-                    join act in _db.Actividades on a.ActividadId equals act.ActividadId
-                    where a.ParticipanteId == participanteId
-                      && act.ProgramaId == programaId
-                      && a.Fecha >= desde.ToDateTime(TimeOnly.MinValue)
-                      && a.Fecha <= hasta.ToDateTime(TimeOnly.MaxValue)
-                      && !a.IsDeleted && !act.IsDeleted
-                    select a.Estado; // 1=Presente, 2=Ausente, 3=Tarde, 4=Justificado
+    public async Task<double> PorcAsistenciaParticipanteAsync(int participanteId, int programaId, DateOnly desde, DateOnly hasta, CancellationToken ct)
+{
+   // Convertir DateOnly a DateTime para comparación
+   var desdeDateTime = desde.ToDateTime(TimeOnly.MinValue);
+  var hastaDateTime = hasta.ToDateTime(TimeOnly.MaxValue);
 
-            var list = await q.ToListAsync(ct);
-            if (list.Count == 0) return 0d;
-            var presentes = list.Count(x => x == EstadoAsistencia.Presente || x == EstadoAsistencia.Tarde); // cuenta tarde como presente si quieres
-            return (100.0 * presentes) / list.Count;
-        }
+        var asistencias = await _context.Asistencias
+   .Include(a => a.Actividad)
+            .Where(a => a.ParticipanteId == participanteId
+         && a.Actividad.ProgramaId == programaId
+ && a.Fecha >= desdeDateTime
+     && a.Fecha <= hastaDateTime
+         && !a.IsDeleted)
+       .ToListAsync(ct);
 
-        public async Task<int> ConsecutivasAusenciasAsync(int participanteId, int actividadId, DateOnly hasta, CancellationToken ct)
-        {
-            var fechas = await _db.Asistencias
-                .Where(x => x.ParticipanteId == participanteId && x.ActividadId == actividadId
-                            && x.Fecha <= hasta.ToDateTime(TimeOnly.MaxValue) && !x.IsDeleted)
-                .OrderByDescending(x => x.Fecha)
-                .Select(x => new { x.Fecha, x.Estado })
-                .ToListAsync(ct);
+  if (!asistencias.Any())
+    return 100.0; // Si no hay asistencias registradas, asumimos 100%
 
-            int streak = 0;
-            foreach (var r in fechas)
-            {
-                if (r.Estado == EstadoAsistencia.Ausente) streak++;     
-                else break;                      
+        var presentes = asistencias.Count(a => a.Estado == EstadoAsistencia.Presente);
+        var total = asistencias.Count;
+
+  return (double)presentes / total * 100.0;
+    }
+
+    public async Task<int> ConsecutivasAusenciasAsync(int participanteId, int actividadId, DateOnly hasta, CancellationToken ct)
+    {
+        // Convertir DateOnly a DateTime para comparación
+        var hastaDateTime = hasta.ToDateTime(TimeOnly.MaxValue);
+
+ var asistencias = await _context.Asistencias
+     .Where(a => a.ParticipanteId == participanteId
+     && a.ActividadId == actividadId
+        && a.Fecha <= hastaDateTime
+      && !a.IsDeleted)
+            .OrderByDescending(a => a.Fecha)
+     .ToListAsync(ct);
+
+      int consecutivas = 0;
+        foreach (var asistencia in asistencias)
+  {
+       if (asistencia.Estado == EstadoAsistencia.Ausente)
+  {
+       consecutivas++;
             }
-            return streak;
-        }
+  else
+   {
+         break; // Si encuentra una asistencia presente, termina
+  }
+    }
 
-        public async Task<decimal?> PoaDecimalAsync(int instanciaId, string campoClave, int? programaId, int? actividadId, int? participanteId, CancellationToken ct)
-        {
-            var q = from v in _db.POAValores
-                    join c in _db.POACampos on v.CampoId equals c.CampoId
-                    where v.InstanciaId == instanciaId && c.Clave == campoClave && !v.IsDeleted && !c.IsDeleted
-                    select v;
-            if (programaId.HasValue) q = q.Where(v => v.ProgramaId == programaId);
-            if (actividadId.HasValue) q = q.Where(v => v.ActividadId == actividadId);
-            if (participanteId.HasValue) q = q.Where(v => v.ParticipanteId == participanteId);
+  return consecutivas;
+    }
 
-            var val = await q.Select(x => x.ValorDecimal).FirstOrDefaultAsync(ct);
-            return val;
-        }
+    public async Task<decimal?> PoaDecimalAsync(int instanciaId, string campoClave, int? programaId, int? actividadId, int? participanteId, CancellationToken ct)
+{
+        var valor = await _context.POAValores
+          .Where(v => v.InstanciaId == instanciaId
+       && v.Campo.Clave == campoClave
+       && !v.IsDeleted)
+     .FirstOrDefaultAsync(ct);
 
-        public async Task<(int plan, int ejec)> PlanVsEjecAsync(int programaId, string anioMes, CancellationToken ct)
-        {
-            var m = await _db.MetricasProgramaMes
-                .FirstOrDefaultAsync(x => x.ProgramaId == programaId && x.AnioMes == anioMes && !x.IsDeleted, ct);
-            return m is null ? (0, 0) : (m.ActividadesPlanificadas, m.ActividadesEjecutadas);
-        }
+        return valor?.ValorNumero;
+}
+
+    public async Task<(int plan, int ejec)> PlanVsEjecAsync(int programaId, string anioMes, CancellationToken ct)
+  {
+     var metricas = await _context.MetricasProgramaMes
+            .Where(m => m.ProgramaId == programaId
+         && m.AnioMes == anioMes
+             && !m.IsDeleted)
+            .FirstOrDefaultAsync(ct);
+
+if (metricas == null)
+   return (0, 0);
+
+        return (metricas.ActividadesPlanificadas, metricas.ActividadesEjecutadas);
     }
 }

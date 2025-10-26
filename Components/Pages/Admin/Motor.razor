@@ -1,0 +1,457 @@
+﻿@page "/admin/motor"
+@rendermode InteractiveServer
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Api.Models
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Authorization
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Inference
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Microsoft.EntityFrameworkCore
+@attribute [Authorize(Roles = "Administrador,Coordinador")]
+@inject NavigationManager Navigation
+@inject IMotorInferencia MotorInferencia
+@inject ApplicationDbContext DbContext
+
+<PageTitle>Motor de Inferencia</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <!-- Título -->
+    <MudText Typo="Typo.h4" Class="mb-2">
+        <MudIcon Icon="@Icons.Material.Filled.Psychology" Class="mr-2" />
+        Motor de Inferencia
+    </MudText>
+    <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
+        Ejecuta el motor de inferencia para detectar alertas y riesgos en los programas
+    </MudText>
+
+    <!-- Panel de Ejecución -->
+    <MudCard Class="mb-4">
+        <MudCardContent>
+     <MudGrid>
+          <MudItem xs="12" md="5">
+            <MudTextField 
+   Label="Fecha de Corte" 
+             @bind-Value="_fechaCorteString" 
+                  Placeholder="dd/MM/yyyy"
+        HelperText="Fecha hasta la cual se evaluarán las reglas (default: hoy)" />
+     </MudItem>
+       <MudItem xs="12" md="4">
+   <MudNumericField 
+            Label="Programa ID (Opcional)" 
+ @bind-Value="_programaId" 
+    Min="1"
+       Clearable="true"
+ HelperText="Dejar vacío para evaluar todos los programas" />
+        </MudItem>
+            <MudItem xs="12" md="3" Class="d-flex align-end">
+         <MudButton 
+     Variant="Variant.Filled" 
+     Color="Color.Primary" 
+   StartIcon="@Icons.Material.Filled.PlayArrow" 
+    OnClick="HandleEjecutarClick"
+     Disabled="@_ejecutando"
+           FullWidth="true">
+  @if (_ejecutando)
+       {
+  <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+        <span>Ejecutando...</span>
+}
+   else
+            {
+       <span>Ejecutar Ahora</span>
+         }
+        </MudButton>
+   </MudItem>
+       </MudGrid>
+         
+         <!-- Botón de Test Visible -->
+            <MudDivider Class="my-4" />
+     <MudText Typo="Typo.caption" Class="mb-2">Debug: Contador de clicks = @_clickCount</MudText>
+            <MudButton OnClick="@TestClick" Variant="Variant.Outlined" Color="Color.Secondary">
+    Test Click (Contador: @_clickCount)
+</MudButton>
+        </MudCardContent>
+    </MudCard>
+
+    <!-- Resumen de Ejecución -->
+  @if (_resumen != null)
+    {
+        <MudAlert Severity="Severity.Success" Icon="@Icons.Material.Filled.CheckCircle" Class="mb-4">
+          <MudText Typo="Typo.body1" Class="mb-2"><strong>Ejecución Completada</strong></MudText>
+        <MudGrid>
+  <MudItem xs="12" sm="4">
+            <MudText Typo="Typo.body2">
+          <strong>Reglas Ejecutadas:</strong> @_resumen.ReglasEjecutadas
+            </MudText>
+                </MudItem>
+       <MudItem xs="12" sm="4">
+    <MudText Typo="Typo.body2">
+   <strong>Alertas Generadas:</strong> @_resumen.AlertasGeneradas
+  </MudText>
+  </MudItem>
+       <MudItem xs="12" sm="4">
+           <MudText Typo="Typo.body2">
+   <strong>Errores:</strong> @_resumen.Errores
+       </MudText>
+           </MudItem>
+</MudGrid>
+        </MudAlert>
+    }
+
+    <!-- Mensaje de Error -->
+  @if (!string.IsNullOrEmpty(_error))
+    {
+   <MudAlert Severity="Severity.Error" Icon="@Icons.Material.Filled.Error" Class="mb-4">
+            <div class="d-flex align-center justify-space-between">
+   <span>@_error</span>
+       <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="@(() => _error = null)" />
+      </div>
+        </MudAlert>
+    }
+
+    <!-- Mensaje de Éxito -->
+    @if (!string.IsNullOrEmpty(_successMessage))
+    {
+        <MudAlert Severity="Severity.Success" Icon="@Icons.Material.Filled.CheckCircle" Class="mb-4">
+          <div class="d-flex align-center justify-space-between">
+          <span>@_successMessage</span>
+                <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="@(() => _successMessage = null)" />
+ </div>
+      </MudAlert>
+    }
+
+ <!-- Tabla de Alertas -->
+    <MudCard>
+        <MudCardHeader>
+  <CardHeaderContent>
+<MudText Typo="Typo.h6">
+           <MudIcon Icon="@Icons.Material.Filled.Warning" Class="mr-2" />
+         Alertas Generadas (@_alertas.Count)
+                </MudText>
+            </CardHeaderContent>
+   </MudCardHeader>
+        <MudCardContent Class="pa-0">
+            <MudTable 
+        Items="@_alertas" 
+           Dense="true" 
+           Hover="true" 
+     Loading="@_cargando"
+                LoadingProgressColor="Color.Primary"
+    Breakpoint="Breakpoint.Sm"
+          Elevation="0">
+     <HeaderContent>
+ <MudTh>ID</MudTh>
+    <MudTh>Severidad</MudTh>
+       <MudTh>Mensaje</MudTh>
+      <MudTh>Programa</MudTh>
+ <MudTh>Actividad</MudTh>
+          <MudTh>Participante</MudTh>
+       <MudTh>Generada</MudTh>
+          <MudTh>Estado</MudTh>
+        <MudTh>Acciones</MudTh>
+    </HeaderContent>
+         <RowTemplate>
+   <MudTd DataLabel="ID">@context.AlertaId</MudTd>
+      <MudTd DataLabel="Severidad">
+<MudText Typo="Typo.body2" Color="@ObtenerColorSeveridad(context.Severidad)" Style="font-weight: 600;">
+   @ObtenerTextoSeveridad(context.Severidad)
+      </MudText>
+     </MudTd>
+        <MudTd DataLabel="Mensaje">
+              <MudText Typo="Typo.body2">@context.Mensaje</MudText>
+         </MudTd>
+       <MudTd DataLabel="Programa">@(context.ProgramaId?.ToString() ?? "-")</MudTd>
+     <MudTd DataLabel="Actividad">@(context.ActividadId?.ToString() ?? "-")</MudTd>
+            <MudTd DataLabel="Participante">@(context.ParticipanteId?.ToString() ?? "-")</MudTd>
+        <MudTd DataLabel="Generada">
+         <MudText Typo="Typo.body2">
+   @context.GeneradaEn.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+    </MudText>
+    </MudTd>
+    <MudTd DataLabel="Estado">
+    <MudText Typo="Typo.body2" Color="@ObtenerColorEstado(context.Estado)" Style="font-weight: 600;">
+  @ObtenerTextoEstado(context.Estado)
+       </MudText>
+       </MudTd>
+             <MudTd DataLabel="Acciones">
+     @if (context.Estado == (byte)EstadoAlerta.Abierta)
+       {
+        <MudButtonGroup Size="Size.Small" Variant="Variant.Outlined">
+           <MudButton 
+     StartIcon="@Icons.Material.Filled.CheckCircle" 
+        Color="Color.Success" 
+         Size="Size.Small"
+      OnClick="@(() => CambiarEstadoAlerta(context.AlertaId, EstadoAlerta.Resuelta, context.RowVersion))">
+      Resolver
+              </MudButton>
+    <MudButton 
+ StartIcon="@Icons.Material.Filled.Cancel" 
+         Color="Color.Warning" 
+   Size="Size.Small"
+           OnClick="@(() => CambiarEstadoAlerta(context.AlertaId, EstadoAlerta.Descartada, context.RowVersion))">
+ Descartar
+      </MudButton>
+           </MudButtonGroup>
+     }
+       else
+              {
+<MudText Typo="Typo.caption" Color="Color.Secondary">-</MudText>
+   }
+   </MudTd>
+   </RowTemplate>
+     <NoRecordsContent>
+        <MudText Class="pa-4">
+  <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
+       No hay alertas para mostrar. Ejecute el motor para generar alertas.
+   </MudText>
+   </NoRecordsContent>
+       <LoadingContent>
+            <MudText Class="pa-4">
+ <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+       Cargando alertas...
+       </MudText>
+    </LoadingContent>
+        </MudTable>
+ </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private string _fechaCorteString = DateTime.Now.ToString("dd/MM/yyyy");
+    private int? _programaId;
+    private bool _ejecutando = false;
+    private bool _cargando = false;
+    private ResumenEjecucion? _resumen;
+    private List<AlertaDto> _alertas = new();
+    private string? _error;
+    private string? _successMessage;
+  private int _clickCount = 0;
+
+    protected override void OnInitialized()
+{
+        Console.WriteLine("🎯 Motor.razor inicializado");
+   _alertas = new List<AlertaDto>();
+    }
+
+    // Método de test para verificar que los eventos funcionan
+    private void TestClick()
+    {
+  _clickCount++;
+    Console.WriteLine($"🖱️ Test click! Contador: {_clickCount}");
+        _successMessage = $"Test click exitoso! Contador: {_clickCount}";
+        StateHasChanged();
+    }
+
+    // Handler simplificado del botón principal
+    private void HandleEjecutarClick()
+    {
+        Console.WriteLine("🖱️ HandleEjecutarClick llamado");
+        _clickCount++;
+      _ = EjecutarMotor(); // Ejecutar async sin await (fire and forget seguro en Blazor)
+    }
+
+private DateTime? ParseFecha(string fechaString)
+    {
+        if (DateTime.TryParseExact(fechaString, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out DateTime fecha))
+        {
+     return fecha;
+        }
+        return DateTime.Now; // Default a hoy si no se puede parsear
+    }
+
+    private async Task EjecutarMotor()
+    {
+        Console.WriteLine("🚀 EjecutarMotor() llamado - Llamada directa al servicio");
+        
+        _ejecutando = true;
+   _error = null;
+        _successMessage = null;
+      _resumen = null;
+        _alertas.Clear();
+        
+        StateHasChanged();
+
+        try
+        {
+          var fechaCorte = ParseFecha(_fechaCorteString);
+          var fechaCorteOnly = DateOnly.FromDateTime(fechaCorte ?? DateTime.Now);
+
+   Console.WriteLine($"📤 Ejecutando motor: FechaCorte={fechaCorteOnly}, ProgramaId={_programaId}");
+            
+    // Llamada directa al servicio del motor (sin HTTP)
+            var resumen = await MotorInferencia.EjecutarAsync(fechaCorteOnly, _programaId, CancellationToken.None);
+
+  Console.WriteLine($"✅ Motor ejecutado:");
+    Console.WriteLine($"   - Reglas: {resumen.ReglasEjecutadas}");
+            Console.WriteLine($"   - Alertas: {resumen.AlertasGeneradas}");
+            Console.WriteLine($" - Errores: {resumen.Errores}");
+
+   // Obtener últimas 50 alertas generadas directamente de la BD
+     _alertas = await DbContext.Alertas
+           .Where(a => !a.IsDeleted)
+      .OrderByDescending(a => a.AlertaId)
+     .Take(50)
+     .Select(a => new AlertaDto(
+         a.AlertaId,
+    a.Mensaje,
+           (byte)a.Severidad,
+   (byte)a.Estado,
+              a.GeneradaEn,
+   a.ReglaId,
+        a.ProgramaId,
+        a.ActividadId,
+   a.ParticipanteId,
+  a.RowVersion
+      ))
+       .ToListAsync();
+
+          Console.WriteLine($"📋 Obtenidas {_alertas.Count} alertas de la BD");
+
+         _resumen = new ResumenEjecucion(
+       resumen.ReglasEjecutadas,
+ resumen.AlertasGeneradas,
+resumen.Errores
+        );
+
+     _successMessage = $"Motor ejecutado exitosamente. {_resumen.AlertasGeneradas} alertas generadas.";
+      }
+        catch (Exception ex)
+        {
+  _error = $"Error inesperado: {ex.Message}";
+       Console.WriteLine($"❌ Excepción capturada:");
+         Console.WriteLine($"   Tipo: {ex.GetType().Name}");
+          Console.WriteLine($"   Mensaje: {ex.Message}");
+            Console.WriteLine($"   Stack: {ex.StackTrace}");
+            if (ex.InnerException != null)
+    {
+         Console.WriteLine($"   Inner Exception: {ex.InnerException.Message}");
+    }
+        }
+        finally
+        {
+         _ejecutando = false;
+      Console.WriteLine($"🏁 Ejecución finalizada. Alertas en lista: {_alertas.Count}");
+      
+     StateHasChanged();
+        }
+    }
+
+    private async Task CambiarEstadoAlerta(int alertaId, EstadoAlerta nuevoEstado, byte[] rowVersion)
+  {
+        Console.WriteLine($"🔄 Cambiando estado de alerta {alertaId} a {nuevoEstado}");
+
+        try
+     {
+            var alerta = await DbContext.Alertas
+     .Where(a => a.AlertaId == alertaId && !a.IsDeleted)
+   .FirstOrDefaultAsync();
+
+ if (alerta == null)
+  {
+           Console.WriteLine($"❌ Alerta {alertaId} no encontrada");
+     _error = "Alerta no encontrada.";
+     _alertas.RemoveAll(a => a.AlertaId == alertaId);
+        StateHasChanged();
+         return;
+   }
+
+            // Manejo de concurrencia optimista
+        if (rowVersion != null && rowVersion.Length > 0)
+            {
+            DbContext.Entry(alerta).Property(a => a.RowVersion).OriginalValue = rowVersion;
+          }
+
+            var comentario = nuevoEstado == EstadoAlerta.Resuelta 
+       ? "Alerta resuelta desde el panel del motor" 
+     : "Alerta descartada desde el panel del motor";
+
+     // Actualizar alerta
+        alerta.Estado = nuevoEstado;
+    if (!string.IsNullOrWhiteSpace(comentario))
+   {
+       alerta.Notas = comentario;
+ }
+     alerta.ActualizadoEn = DateTime.UtcNow;
+
+     // Si se marca como resuelta, guardar fecha
+            if (nuevoEstado == EstadoAlerta.Resuelta)
+            {
+     alerta.ResueltaEn = DateTime.UtcNow;
+            }
+
+  try
+         {
+    await DbContext.SaveChangesAsync();
+
+          // Actualizar en la lista local
+    var alertaDto = _alertas.FirstOrDefault(a => a.AlertaId == alertaId);
+                if (alertaDto != null)
+     {
+         var index = _alertas.IndexOf(alertaDto);
+          _alertas[index] = alertaDto with { Estado = (byte)nuevoEstado };
+        }
+
+        var mensaje = nuevoEstado == EstadoAlerta.Resuelta ? "Alerta resuelta" : "Alerta descartada";
+      Console.WriteLine($"✅ {mensaje}");
+              _successMessage = mensaje;
+                
+      StateHasChanged();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+   var errorMsg = "La alerta fue modificada por otro usuario. Por favor, recargue la página.";
+          Console.WriteLine($"⚠️ {errorMsg}");
+          _error = errorMsg;
+            }
+        }
+      catch (Exception ex)
+        {
+        Console.WriteLine($"❌ Excepción en CambiarEstadoAlerta: {ex.Message}");
+       _error = $"Error inesperado: {ex.Message}";
+      }
+    }
+
+    private Color ObtenerColorSeveridad(byte severidad)
+    {
+        return severidad switch
+    {
+     1 => Color.Info,
+          2 => Color.Warning,
+            3 => Color.Error,
+            _ => Color.Default
+      };
+    }
+
+  private string ObtenerTextoSeveridad(byte severidad)
+    {
+      return severidad switch
+        {
+         1 => "Info",
+       2 => "Alta",
+3 => "Crítica",
+            _ => "Desconocida"
+        };
+    }
+
+    private Color ObtenerColorEstado(byte estado)
+    {
+  return estado switch
+        {
+            1 => Color.Warning,
+ 2 => Color.Success,
+            3 => Color.Secondary,
+            _ => Color.Default
+        };
+    }
+
+    private string ObtenerTextoEstado(byte estado)
+    {
+  return estado switch
+   {
+1 => "Abierta",
+            2 => "Resuelta",
+            3 => "Descartada",
+   _ => "Desconocido"
+        };
+    }
+}
