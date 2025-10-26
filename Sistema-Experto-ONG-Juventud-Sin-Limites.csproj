@@ -10,6 +10,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Infrastructure\Migrations\**" />
+    <Compile Remove="Pages\**" />
+    <Content Remove="Infrastructure\Migrations\**" />
+    <Content Remove="Pages\**" />
+    <EmbeddedResource Remove="Infrastructure\Migrations\**" />
+    <EmbeddedResource Remove="Pages\**" />
+    <None Remove="Infrastructure\Migrations\**" />
+    <None Remove="Pages\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.21" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.21" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.21" />
@@ -21,12 +32,6 @@
     </PackageReference>
     <PackageReference Include="MudBlazor" Version="8.13.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Infrastructure\Migrations\" />
-    <Folder Include="PAges\" />
-    <Folder Include="Pages\" />
   </ItemGroup>
 
 </Project>
