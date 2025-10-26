@@ -166,18 +166,134 @@ Tests/
     └── MotorApiTests.cs
 ```
 
+### ⚠️ IMPORTANTE: Los tests NO se ejecutan automáticamente
+
+Los tests están configurados para ejecutarse **SOLO cuando tú los ejecutes manualmente**. 
+No se ejecutan al iniciar la aplicación con `dotnet run` o F5 en Visual Studio.
+
 ### Ejecutar Tests
+
+#### Desde Visual Studio
+1. Abre el **Test Explorer** (Ver → Test Explorer)
+2. Haz clic derecho en el test que quieres ejecutar
+3. Selecciona "Run" o "Debug"
+
+#### Desde la terminal
 
 ```bash
 # Todos los tests
 dotnet test
 
-# Tests específicos
+# Tests de un proyecto específico
+dotnet test Tests/Sistema_Experto_ONG.Tests.csproj
+
+# Tests específicos por nombre
 dotnet test --filter "FullyQualifiedName~MotorInferenciaTests"
 
-# Con cobertura
+# Tests con cobertura
 dotnet test /p:CollectCoverage=true
+
+# Tests con output detallado
+dotnet test --logger "console;verbosity=detailed"
 ```
+
+### Crear Nuevos Tests
+
+```csharp
+namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Tests;
+
+public class MiNuevoTest
+{
+    [Fact]
+public void Test_Descripcion_Resultado()
+    {
+        // Arrange (Preparar)
+        var expected = 5;
+
+ // Act (Actuar)
+        var actual = 2 + 3;
+
+   // Assert (Verificar)
+        Assert.Equal(expected, actual);
+    }
+
+    [Theory]
+    [InlineData(1, 1, 2)]
+    [InlineData(2, 2, 4)]
+    [InlineData(3, 3, 6)]
+    public void Test_Suma_ConDatos(int a, int b, int expected)
+    {
+        // Arrange + Act
+        var actual = a + b;
+
+    // Assert
+        Assert.Equal(expected, actual);
+    }
+}
+```
+
+### Tests con Base de Datos In-Memory
+
+```csharp
+using Microsoft.EntityFrameworkCore;
+using Sistema_Experto_ONG_Juventud_Sin_Limites.Data;
+
+public class DatabaseTests
+{
+    private ApplicationDbContext CreateInMemoryContext()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+    return new ApplicationDbContext(options);
+    }
+
+    [Fact]
+    public async Task Test_Puede_Agregar_Programa()
+    {
+        // Arrange
+        await using var context = CreateInMemoryContext();
+        var programa = new Programa 
+        { 
+        Clave = "TEST", 
+            Nombre = "Test Program" 
+        };
+
+        // Act
+context.Programas.Add(programa);
+        await context.SaveChangesAsync();
+
+        // Assert
+        var resultado = await context.Programas.FirstAsync();
+   Assert.Equal("TEST", resultado.Clave);
+    }
+}
+```
+
+### Configuración del Proyecto de Tests
+
+El proyecto de tests (`Tests/Sistema_Experto_ONG.Tests.csproj`) tiene:
+
+- `<IsTestProject>true</IsTestProject>` - Marca el proyecto como de tests
+- `<IsPackable>false</IsPackable>` - No se empaqueta
+- Referencia al proyecto principal
+- Paquetes de xUnit y EntityFrameworkCore.InMemory
+
+### Excluir Tests del Proyecto Principal
+
+El proyecto principal tiene una exclusión explícita:
+
+```xml
+<ItemGroup>
+    <Compile Remove="Tests\**" />
+    <Content Remove="Tests\**" />
+    <EmbeddedResource Remove="Tests\**" />
+    <None Remove="Tests\**" />
+</ItemGroup>
+```
+
+Esto asegura que los tests **nunca** se ejecuten al correr la aplicación.
 
 ---
 

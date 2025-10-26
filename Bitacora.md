@@ -4,6 +4,47 @@
 
 ---
 
+## 2025-01-26 - Configuración de Tests y Sistema de Permisos
+
+### ✅ Configuración de Tests
+
+**Problema**: Tests se ejecutaban automáticamente al iniciar la aplicación
+
+**Solución Implementada**:
+1. **Proyecto de Tests Correctamente Configurado**
+   - Agregado `<IsTestProject>true</IsTestProject>` al archivo .csproj
+   - Agregado `<IsPackable>false</IsPackable>`
+   - Configurado `RootNamespace` correcto
+
+2. **Exclusión Explícita en Proyecto Principal**
+   ```xml
+   <ItemGroup>
+ <Compile Remove="Tests\**" />
+       <Content Remove="Tests\**" />
+  <EmbeddedResource Remove="Tests\**" />
+   <None Remove="Tests\**" />
+   </ItemGroup>
+   ```
+
+3. **Tests Solo se Ejecutan Manualmente**
+ - Con Test Explorer en Visual Studio
+   - Con `dotnet test` desde terminal
+   - Nunca al hacer `dotnet run` o F5
+
+**Comandos de Tests**:
+```bash
+# Todos los tests
+dotnet test
+
+# Tests específicos
+dotnet test --filter "FullyQualifiedName~MotorInferenciaTests"
+
+# Con cobertura
+dotnet test /p:CollectCoverage=true
+```
+
+---
+
 ## 2025-01-26 - Sistema de Roles y Permisos Granulares
 
 ### 🎯 Planificación: Sistema Multi-Rol con Control de Acceso
