@@ -1,9 +1,9 @@
+Ôªøusing Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Data;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common;
-using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas;
+using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security;
 
 namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Seed;
 
@@ -11,11 +11,11 @@ public static class DatabaseSeeder
 {
     public static async Task SeedAsync(ApplicationDbContext context, UserManager<Usuario> userManager, RoleManager<Rol> roleManager)
     {
-        // Verificar que la base de datos estÈ creada
+        // Verificar que la base de datos est√© creada
         await context.Database.EnsureCreatedAsync();
 
         // Seed de Roles usando RoleManager
- if (!await roleManager.Roles.AnyAsync())
+        if (!await roleManager.Roles.AnyAsync())
         {
             var rolesData = new[]
     {
@@ -25,76 +25,76 @@ public static class DatabaseSeeder
              new { Name = "Visualizador", Descripcion = "Solo lectura" }
             };
 
-   foreach (var roleData in rolesData)
-         {
-      var rol = new Rol
-  {
-       Name = roleData.Name,
-             Descripcion = roleData.Descripcion,
-           CreadoEn = DateTime.UtcNow
-     };
+            foreach (var roleData in rolesData)
+            {
+                var rol = new Rol
+                {
+                    Name = roleData.Name,
+                    Descripcion = roleData.Descripcion,
+                    CreadoEn = DateTime.UtcNow
+                };
 
-var result = await roleManager.CreateAsync(rol);
+                var result = await roleManager.CreateAsync(rol);
                 if (!result.Succeeded)
-{
-   Console.WriteLine($"? Error creating role {roleData.Name}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                {
+                    Console.WriteLine($"? Error creating role {roleData.Name}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                }
+            }
+
+            Console.WriteLine("? Roles creados exitosamente");
         }
-          }
 
-        Console.WriteLine("? Roles creados exitosamente");
-  }
-
-  // Crear usuario administrador por defecto
-     if (!await userManager.Users.AnyAsync())
-    {
+        // Crear usuario administrador por defecto
+        if (!await userManager.Users.AnyAsync())
+        {
             // Primero crear la persona
-      var personaAdmin = new Persona
- {
-   Nombres = "Administrador",
-     Apellidos = "Del Sistema",
- FechaNacimiento = new DateTime(1990, 1, 1),
-      Telefono = "0000-0000",
-       CreadoEn = DateTime.UtcNow
+            var personaAdmin = new Persona
+            {
+                Nombres = "Administrador",
+                Apellidos = "Del Sistema",
+                FechaNacimiento = new DateTime(1990, 1, 1),
+                Telefono = "0000-0000",
+                CreadoEn = DateTime.UtcNow
             };
 
             context.Personas.Add(personaAdmin);
-     await context.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
-      // Crear el usuario
-   var adminUser = new Usuario
-     {
- PersonaId = personaAdmin.PersonaId,
-  UserName = "admin@ong.com",
-          Email = "admin@ong.com",
-EmailConfirmed = true,
-Estado = EstadoGeneral.Activo,
-       CreadoEn = DateTime.UtcNow
-     };
-
-      // Crear usuario con password
-    var result = await userManager.CreateAsync(adminUser, "Admin@123");
-     if (result.Succeeded)
+            // Crear el usuario
+            var adminUser = new Usuario
             {
-           // Asignar rol de Administrador
-       await userManager.AddToRoleAsync(adminUser, "Administrador");
-          Console.WriteLine("? Usuario administrador creado (admin@ong.com / Admin@123)");
+                PersonaId = personaAdmin.PersonaId,
+                UserName = "admin@ong.com",
+                Email = "admin@ong.com",
+                EmailConfirmed = true,
+                Estado = EstadoGeneral.Activo,
+                CreadoEn = DateTime.UtcNow
+            };
+
+            // Crear usuario con password
+            var result = await userManager.CreateAsync(adminUser, "Admin@123");
+            if (result.Succeeded)
+            {
+                // Asignar rol de Administrador
+                await userManager.AddToRoleAsync(adminUser, "Administrador");
+                Console.WriteLine("? Usuario administrador creado (admin@ong.com / Admin@123)");
             }
-     else
-        {
-         Console.WriteLine($"? Error creating admin user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-       }
+            else
+            {
+                Console.WriteLine($"? Error creating admin user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            }
         }
 
         // Seed de Programas
-  if (!await context.Programas.AnyAsync())
-      {
- var programas = new List<Programa>
+        if (!await context.Programas.AnyAsync())
+        {
+            var programas = new List<Programa>
     {
          new Programa
          {
   Clave = "EDV",
 Nombre = "Escuelas de Valores",
-        Descripcion = "Programa de formaciÛn en valores para jÛvenes",
+        Descripcion = "Programa de formaci√≥n en valores para j√≥venes",
        Estado = EstadoGeneral.Activo,
    InferenciaActiva = true,
        CreadoEn = DateTime.UtcNow
@@ -112,7 +112,7 @@ Nombre = "Escuelas de Valores",
      {
        Clave = "JUVENTUD_SEGURA",
       Nombre = "Juventud Segura",
-     Descripcion = "Programa de prevenciÛn y seguridad",
+     Descripcion = "Programa de prevenci√≥n y seguridad",
     Estado = EstadoGeneral.Activo,
 InferenciaActiva = true,
             CreadoEn = DateTime.UtcNow
@@ -120,28 +120,28 @@ InferenciaActiva = true,
          new Programa
      {
        Clave = "BERNABE",
-       Nombre = "Programa BernabÈ",
-       Descripcion = "AcompaÒamiento integral a jÛvenes",
+       Nombre = "Programa Bernab√©",
+       Descripcion = "Acompa√±amiento integral a j√≥venes",
    Estado = EstadoGeneral.Activo,
    InferenciaActiva = true,
       CreadoEn = DateTime.UtcNow
   }
   };
 
-       await context.Programas.AddRangeAsync(programas);
-    await context.SaveChangesAsync();
-}
+            await context.Programas.AddRangeAsync(programas);
+            await context.SaveChangesAsync();
+        }
 
-   // Seed de ConfiguraciÛn del Motor
-  if (!await context.ConfiguracionesMotor.AnyAsync())
-            {
-var configuraciones = new List<Domain.Config.ConfiguracionMotor>
+        // Seed de Configuraci√≥n del Motor
+        if (!await context.ConfiguracionesMotor.AnyAsync())
+        {
+            var configuraciones = new List<Domain.Config.ConfiguracionMotor>
         {
          new Domain.Config.ConfiguracionMotor
          {
         Clave = "ASISTENCIA_MIN_PORCENTAJE",
        Valor = "75",
-   Descripcion = "Porcentaje mÌnimo de asistencia requerido",
+   Descripcion = "Porcentaje m√≠nimo de asistencia requerido",
        Version = 1,
   CreadoEn = DateTime.UtcNow
     },
@@ -149,7 +149,7 @@ var configuraciones = new List<Domain.Config.ConfiguracionMotor>
    {
  Clave = "DIAS_ALERTA_INASISTENCIA",
  Valor = "7",
-      Descripcion = "DÌas consecutivos de inasistencia para generar alerta",
+      Descripcion = "D√≠as consecutivos de inasistencia para generar alerta",
    Version = 1,
   CreadoEn = DateTime.UtcNow
   },
@@ -157,7 +157,7 @@ var configuraciones = new List<Domain.Config.ConfiguracionMotor>
   {
        Clave = "UMBRAL_RIESGO_BAJO",
   Valor = "30",
-  Descripcion = "Score m·ximo para riesgo bajo",
+  Descripcion = "Score m√°ximo para riesgo bajo",
     Version = 1,
         CreadoEn = DateTime.UtcNow
 },
@@ -165,7 +165,7 @@ var configuraciones = new List<Domain.Config.ConfiguracionMotor>
      {
  Clave = "UMBRAL_RIESGO_MEDIO",
     Valor = "60",
-     Descripcion = "Score m·ximo para riesgo medio",
+     Descripcion = "Score m√°ximo para riesgo medio",
    Version = 1,
     CreadoEn = DateTime.UtcNow
   },
@@ -173,7 +173,7 @@ var configuraciones = new List<Domain.Config.ConfiguracionMotor>
        {
     Clave = "MOTOR_EJECUCION_AUTO",
           Valor = "true",
-  Descripcion = "Ejecutar motor de inferencia autom·ticamente",
+  Descripcion = "Ejecutar motor de inferencia autom√°ticamente",
      Version = 1,
   CreadoEn = DateTime.UtcNow
         },
@@ -181,26 +181,26 @@ var configuraciones = new List<Domain.Config.ConfiguracionMotor>
  {
   Clave = "FRECUENCIA_EJECUCION_HORAS",
  Valor = "24",
-    Descripcion = "Frecuencia de ejecuciÛn del motor en horas",
+    Descripcion = "Frecuencia de ejecuci√≥n del motor en horas",
     Version = 1,
      CreadoEn = DateTime.UtcNow
        }
      };
 
- await context.ConfiguracionesMotor.AddRangeAsync(configuraciones);
-       await context.SaveChangesAsync();
-  }
+            await context.ConfiguracionesMotor.AddRangeAsync(configuraciones);
+            await context.SaveChangesAsync();
+        }
 
-        // Seed de Reglas B·sicas
+        // Seed de Reglas B√°sicas
         if (!await context.Reglas.AnyAsync())
         {
-   var reglas = new List<Domain.Motor.Regla>
+            var reglas = new List<Domain.Motor.Regla>
        {
            new Domain.Motor.Regla
       {
    Clave = "INASISTENCIA_CONSECUTIVA",
       Nombre = "Inasistencia Consecutiva",
-  Descripcion = "Detecta participantes con m˙ltiples inasistencias consecutivas",
+  Descripcion = "Detecta participantes con m√∫ltiples inasistencias consecutivas",
     Severidad = Severidad.Alta,
     Objetivo = ObjetivoRegla.Participante,
      Activa = true,
@@ -235,7 +235,7 @@ var configuraciones = new List<Domain.Config.ConfiguracionMotor>
           new Domain.Motor.Regla
   {
    Clave = "RETRASO_ACTIVIDAD",
- Nombre = "Retraso en EjecuciÛn de Actividad",
+ Nombre = "Retraso en Ejecuci√≥n de Actividad",
      Descripcion = "Detecta actividades planificadas que no se han ejecutado en la fecha prevista",
       Severidad = Severidad.Alta,
           Objetivo = ObjetivoRegla.Actividad,
@@ -258,9 +258,9 @@ Prioridad = 80,
        }
   };
 
-      await context.Reglas.AddRangeAsync(reglas);
-await context.SaveChangesAsync();
-  }
+            await context.Reglas.AddRangeAsync(reglas);
+            await context.SaveChangesAsync();
+        }
 
         Console.WriteLine("? Database seeded successfully!");
     }

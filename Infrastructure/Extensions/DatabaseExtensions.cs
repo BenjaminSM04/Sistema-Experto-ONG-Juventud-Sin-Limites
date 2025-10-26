@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Data;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security;
@@ -23,15 +23,15 @@ public static class DatabaseExtensions
   {
        logger.LogInformation("Aplicando migraciones de base de datos...");
        await context.Database.MigrateAsync();
-            logger.LogInformation("? Migraciones aplicadas exitosamente");
+            logger.LogInformation("Migraciones aplicadas exitosamente");
 
       logger.LogInformation("Ejecutando seeder de datos iniciales...");
  await DatabaseSeeder.SeedAsync(context, userManager, roleManager);
-            logger.LogInformation("? Datos iniciales cargados exitosamente");
+            logger.LogInformation("Datos iniciales cargados exitosamente");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "? Error al inicializar la base de datos");
+            logger.LogError(ex, "Error al inicializar la base de datos");
    throw;
      }
     }
@@ -49,11 +49,11 @@ public static class DatabaseExtensions
         {
       logger.LogInformation("Aplicando migraciones de base de datos...");
          await context.Database.MigrateAsync();
-            logger.LogInformation("? Migraciones aplicadas exitosamente");
+            logger.LogInformation("Migraciones aplicadas exitosamente");
         }
         catch (Exception ex)
         {
-       logger.LogError(ex, "? Error al aplicar migraciones");
+       logger.LogError(ex, "Error al aplicar migraciones");
             throw;
         }
     }
