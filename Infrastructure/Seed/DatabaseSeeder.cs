@@ -132,10 +132,14 @@ public static class DatabaseSeeder
             Email = "admin@ong.com",
             EmailConfirmed = true,
             Estado = EstadoGeneral.Activo,
+            MustChangePassword = false, // Admin no necesita cambiar password en primer login
+            CreatedBy = "Sistema",
+            CreatedAtUtc = DateTime.UtcNow,
             CreadoEn = DateTime.UtcNow
         };
 
-        var result = await userManager.CreateAsync(adminUser, "Admin@123");
+        // Nueva contraseña: 12+ caracteres, mayúsculas, minúsculas, números y caracteres especiales
+        var result = await userManager.CreateAsync(adminUser, "Administrador@2025!");
         if (result.Succeeded)
         {
             await userManager.AddToRoleAsync(adminUser, "Administrador");
@@ -154,7 +158,7 @@ public static class DatabaseSeeder
             }
             await context.SaveChangesAsync();
 
-            Console.WriteLine("✅ Usuario administrador creado (admin@ong.com / Admin@123)");
+            Console.WriteLine("✅ Usuario administrador creado (admin@ong.com / Admin@2025!)");
         }
         else
         {

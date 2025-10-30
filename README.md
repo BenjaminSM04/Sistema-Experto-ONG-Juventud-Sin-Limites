@@ -12,11 +12,26 @@ Sistema integral para la gestión de programas, actividades, participantes y pla
 
 ```
 Email:    admin@ong.com
-Password: Admin@123
+Password: Admin@2025!
 Rol:      Administrador
 ```
 
 ⚠️ **IMPORTANTE:** Cambiar estas credenciales en producción.
+
+### 📋 Requisitos de Contraseñas
+
+Todas las contraseñas en el sistema deben cumplir:
+- ✅ **Mínimo 12 caracteres**
+- ✅ **Al menos 1 letra MAYÚSCULA** (A-Z)
+- ✅ **Al menos 1 letra minúscula** (a-z)
+- ✅ **Al menos 1 número** (0-9)
+- ✅ **Al menos 1 carácter especial** (!@#$%^&*)
+- ✅ **Mínimo 4 caracteres únicos**
+
+Ejemplos de contraseñas válidas:
+- `Admin@2025!`
+- `Secure#Pass123`
+- `MyP@ssw0rd2025`
 
 ---
 
@@ -64,7 +79,7 @@ Rol:      Administrador
 
 6. **Acceder a la aplicación**
    - URL: `https://localhost:5001` o `http://localhost:5000`
-   - Login con: `admin@ong.com` / `Admin@123`
+   - Login con: `admin@ong.com` / `Admin@2025!`
 
 ---
 
@@ -181,7 +196,7 @@ Al ejecutar la aplicación por primera vez, se cargan automáticamente:
 
 ### Usuario Administrador (1)
 - **Email:** `admin@ong.com`
-- **Password:** `Admin@123`
+- **Password:** `Admin@2025!`
 - **Rol:** Administrador
 - **Persona:** Administrador Del Sistema
 
@@ -472,7 +487,7 @@ SELECT * FROM Regla WHERE IsDeleted = 0;
 ### Probar Login
 1. Ejecuta `dotnet run`
 2. Navega a `https://localhost:5001/Account/Login`
-3. Ingresa: `admin@ong.com` / `Admin@123`
+3. Ingresa: `admin@ong.com` / `Admin@2025!`
 4. Deberías iniciar sesión exitosamente
 
 ---

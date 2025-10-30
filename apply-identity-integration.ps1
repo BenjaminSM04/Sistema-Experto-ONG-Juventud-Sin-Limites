@@ -1,4 +1,4 @@
-# Script para resetear y aplicar Identity Integration
+Ôªø# Script para resetear y aplicar Identity Integration
 
 Write-Host "?? Integrando Identity con el modelo de dominio..." -ForegroundColor Cyan
 Write-Host ""
@@ -19,50 +19,57 @@ Remove-Item -Path "Data\Migrations\*" -Force -ErrorAction SilentlyContinue
 if ($?) {
     Write-Host "   ? Migraciones eliminadas" -ForegroundColor Green
 } else {
-    Write-Host "   ??  No habÌa migraciones previas" -ForegroundColor Yellow
+    Write-Host "   ??  No hab√≠a migraciones previas" -ForegroundColor Yellow
 }
 Write-Host ""
 
-# 3. Crear nueva migraciÛn con Identity
-Write-Host "3?? Creando nueva migraciÛn con Identity integrado..." -ForegroundColor Yellow
+# 3. Crear nueva migraci√≥n con Identity
+Write-Host "3?? Creando nueva migraci√≥n con Identity integrado..." -ForegroundColor Yellow
 dotnet ef migrations add IdentityIntegration --context ApplicationDbContext --output-dir Data/Migrations
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "   ? MigraciÛn creada exitosamente" -ForegroundColor Green
+    Write-Host "   ? Migraci√≥n creada exitosamente" -ForegroundColor Green
 } else {
-    Write-Host "   ? Error al crear migraciÛn" -ForegroundColor Red
+    Write-Host "   ? Error al crear migraci√≥n" -ForegroundColor Red
     exit 1
 }
 Write-Host ""
 
-# 4. Aplicar migraciÛn
-Write-Host "4?? Aplicando migraciÛn a la base de datos..." -ForegroundColor Yellow
+# 4. Aplicar migraci√≥n
+Write-Host "4?? Aplicando migraci√≥n a la base de datos..." -ForegroundColor Yellow
 dotnet ef database update --context ApplicationDbContext
 if ($LASTEXITCODE -eq 0) {
     Write-Host "   ? Base de datos actualizada exitosamente" -ForegroundColor Green
 } else {
-    Write-Host "   ? Error al aplicar migraciÛn" -ForegroundColor Red
+    Write-Host "   ? Error al aplicar migraci√≥n" -ForegroundColor Red
     exit 1
 }
 Write-Host ""
 
 # 5. Resumen
 Write-Host "???????????????????????????????????????????????????????" -ForegroundColor Cyan
-Write-Host "? INTEGRACI”N DE IDENTITY COMPLETADA EXITOSAMENTE ?" -ForegroundColor Green
+Write-Host "? INTEGRACI√ìN DE IDENTITY COMPLETADA EXITOSAMENTE ?" -ForegroundColor Green
 Write-Host "???????????????????????????????????????????????????????" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "?? Tablas creadas:" -ForegroundColor Yellow
-Write-Host "   ï Usuario (con Identity integrado)" -ForegroundColor White
-Write-Host "   ï Rol (con Identity integrado)" -ForegroundColor White
-Write-Host "   ï UsuarioRol" -ForegroundColor White
-Write-Host "   ï UsuarioClaim, UsuarioLogin, UsuarioToken, RolClaim" -ForegroundColor White
-Write-Host "   ï + todas las tablas del dominio (47 en total)" -ForegroundColor White
+Write-Host "   ‚Ä¢ Usuario (con Identity integrado)" -ForegroundColor White
+Write-Host "   ‚Ä¢ Rol (con Identity integrado)" -ForegroundColor White
+Write-Host "   ‚Ä¢ UsuarioRol" -ForegroundColor White
+Write-Host "   ‚Ä¢ UsuarioClaim, UsuarioLogin, UsuarioToken, RolClaim" -ForegroundColor White
+Write-Host "   ‚Ä¢ + todas las tablas del dominio (47 en total)" -ForegroundColor White
 Write-Host ""
 Write-Host "?? Usuario admin por defecto:" -ForegroundColor Yellow
-Write-Host "   Email:  admin@ong.com" -ForegroundColor Cyan
-Write-Host "   Password: Admin@123" -ForegroundColor Cyan
+Write-Host "   Email:    admin@ong.com" -ForegroundColor Cyan
+Write-Host "   Password: Admin@2025!" -ForegroundColor Cyan
 Write-Host "   Rol:      Administrador" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "?? Consulta IDENTITY_INTEGRATION.md para m·s informaciÛn" -ForegroundColor Magenta
+Write-Host "?? REQUISITOS DE CONTRASE√ëAS:" -ForegroundColor Magenta
+Write-Host "   ‚Ä¢ M√≠nimo 12 caracteres" -ForegroundColor White
+Write-Host "   ‚Ä¢ Al menos 1 letra may√∫scula" -ForegroundColor White
+Write-Host "   ‚Ä¢ Al menos 1 letra min√∫scula" -ForegroundColor White
+Write-Host "   ‚Ä¢ Al menos 1 n√∫mero" -ForegroundColor White
+Write-Host "   ‚Ä¢ Al menos 1 car√°cter especial (!@#$%^&*)" -ForegroundColor White
 Write-Host ""
-Write-Host "?? Ya puedes ejecutar la aplicaciÛn con: dotnet run" -ForegroundColor Green
+Write-Host "?? Consulta IDENTITY_INTEGRATION.md para m√°s informaci√≥n" -ForegroundColor Magenta
+Write-Host ""
+Write-Host "?? Ya puedes ejecutar la aplicaci√≥n con: dotnet run" -ForegroundColor Green
 Write-Host "???????????????????????????????????????????????????????" -ForegroundColor Cyan

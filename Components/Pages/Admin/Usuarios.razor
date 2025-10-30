@@ -1,0 +1,470 @@
+﻿@page "/Admin/Usuarios"
+@attribute [Authorize(Roles = "Administrador")]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using MudBlazor
+@using System.Security.Cryptography
+
+@inject UserManager<Usuario> UserManager
+@inject RoleManager<Rol> RoleManager
+@inject ApplicationDbContext Context
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject ILogger<Usuarios> Logger
+
+<PageTitle>Gestión de Usuarios</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" GutterBottom="true">
+        <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-2" /> Gestión de Usuarios
+    </MudText>
+
+  <MudPaper Class="pa-4 mt-4">
+ <MudToolBar>
+            <MudTextField @bind-Value="searchString" Placeholder="Buscar por email..." Adornment="Adornment.Start"
+           AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Immediate="true"></MudTextField>
+          <MudSpacer />
+       <MudButton Variant="Variant.Filled" 
+     Color="Color.Primary" 
+          StartIcon="@Icons.Material.Filled.Add" 
+         Href="/Admin/Usuarios/Crear">
+     Nuevo Usuario
+     </MudButton>
+  </MudToolBar>
+
+        <MudTable Items="@usuarios" Dense="true" Hover="true" Loading="@isLoading" Filter="new Func<UsuarioViewModel, bool>(FilterFunc)">
+   <HeaderContent>
+     <MudTh>Email</MudTh>
+       <MudTh>Nombre Completo</MudTh>
+        <MudTh>Rol</MudTh>
+        <MudTh>Programas</MudTh>
+       <MudTh>Estado</MudTh>
+    <MudTh>2FA</MudTh>
+         <MudTh>Debe Cambiar Pass</MudTh>
+         <MudTh>Creado</MudTh>
+ <MudTh>Acciones</MudTh>
+ </HeaderContent>
+            <RowTemplate>
+       <MudTd DataLabel="Email">
+        <MudText Typo="Typo.body2">@context.Email</MudText>
+    @if (context.EmailConfirmed)
+         {
+  <MudIcon Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Color="Color.Success" Title="Email confirmado" />
+      }
+    </MudTd>
+      <MudTd DataLabel="Nombre">@context.NombreCompleto</MudTd>
+   <MudTd DataLabel="Rol">
+    <MudChip T="string" Size="Size.Small" Color="@GetRoleColor(context.RolPrincipal)">@context.RolPrincipal</MudChip>
+    </MudTd>
+<MudTd DataLabel="Programas">
+         @if (context.Programas.Any())
+          {
+    @foreach (var programa in context.Programas.Take(2))
+    {
+     <MudChip T="string" Size="Size.Small" Color="Color.Info">@programa</MudChip>
+   }
+      @if (context.Programas.Count > 2)
+  {
+    <MudChip T="string" Size="Size.Small">+@(context.Programas.Count - 2)</MudChip>
+            }
+   }
+           else
+   {
+    <MudText Typo="Typo.caption" Color="Color.Secondary">Sin programas</MudText>
+     }
+        </MudTd>
+     <MudTd DataLabel="Estado">
+     @if (context.IsActive)
+    {
+   <MudChip T="string" Size="Size.Small" Color="Color.Success">Activo</MudChip>
+       }
+      else
+      {
+       <MudChip T="string" Size="Size.Small" Color="Color.Default">Inactivo</MudChip>
+         }
+     </MudTd>
+     <MudTd DataLabel="2FA">
+ @if (context.TwoFactorEnabled)
+  {
+          <MudIcon Icon="@Icons.Material.Filled.Security" Color="Color.Success" Title="2FA Activado" />
+   }
+         else
+  {
+       <MudIcon Icon="@Icons.Material.Filled.SecurityUpdateWarning" Color="Color.Default" Title="2FA Desactivado" />
+         }
+     </MudTd>
+    <MudTd DataLabel="Debe Cambiar Pass">
+  @if (context.MustChangePassword)
+        {
+  <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Title="Debe cambiar contraseña" />
+   }
+   else
+       {
+   <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Title="Contraseña OK" />
+          }
+     </MudTd>
+         <MudTd DataLabel="Creado">
+        <MudText Typo="Typo.caption">@context.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy")</MudText>
+      </MudTd>
+   <MudTd DataLabel="Acciones">
+ <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
+   <MudMenuItem Icon="@Icons.Material.Filled.Edit" 
+        Href="@($"/Admin/Usuarios/Editar/{context.Id}")">
+     Editar
+</MudMenuItem>
+   <MudMenuItem Icon="@Icons.Material.Filled.VpnKey" OnClick="@(() => ResetPasswordAsync(context))">
+        Resetear Contraseña
+       </MudMenuItem>
+ @if (context.IsActive)
+     {
+   <MudMenuItem Icon="@Icons.Material.Filled.Block" OnClick="@(() => ToggleUserStatusAsync(context))">
+        Desactivar
+      </MudMenuItem>
+  }
+   else
+     {
+ <MudMenuItem Icon="@Icons.Material.Filled.CheckCircle" OnClick="@(() => ToggleUserStatusAsync(context))">
+     Activar
+     </MudMenuItem>
+      }
+        </MudMenu>
+   </MudTd>
+       </RowTemplate>
+  <PagerContent>
+       <MudTablePager />
+         </PagerContent>
+   </MudTable>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<UsuarioViewModel> usuarios = new();
+    private string searchString = "";
+    private bool isLoading = true;
+
+ [CascadingParameter]
+    private Task<AuthenticationState>? authenticationState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsuariosAsync();
+    }
+
+ private async Task LoadUsuariosAsync()
+  {
+ isLoading = true;
+     try
+        {
+            usuarios = await Context.Users
+       .Include(u => u.Persona)
+       .Include(u => u.UsuarioRoles)
+          .ThenInclude(ur => ur.Rol)
+     .Include(u => u.UsuarioProgramas)
+        .ThenInclude(up => up.Programa)
+      .Where(u => !u.IsDeleted)
+       .Select(u => new UsuarioViewModel
+      {
+      Id = u.Id,
+          Email = u.Email ?? "",
+         NombreCompleto = u.Persona.Nombres + " " + u.Persona.Apellidos,
+ Nombres = u.Persona.Nombres,
+             Apellidos = u.Persona.Apellidos,
+        Telefono = u.Persona.Telefono,
+     RolPrincipal = u.UsuarioRoles.Select(ur => ur.Rol.Name ?? "").FirstOrDefault() ?? "",
+      Programas = u.UsuarioProgramas.Where(up => !up.IsDeleted).Select(up => up.Programa.Nombre).ToList(),
+   ProgramaIds = u.UsuarioProgramas.Where(up => !up.IsDeleted).Select(up => up.ProgramaId).ToList(),
+ IsActive = u.Estado == Domain.Common.EstadoGeneral.Activo,
+MustChangePassword = u.MustChangePassword,
+  EmailConfirmed = u.EmailConfirmed,
+           TwoFactorEnabled = u.TwoFactorEnabled,
+      CreatedBy = u.CreatedBy ?? "Sistema",
+      CreatedAtUtc = u.CreatedAtUtc
+         })
+    .OrderByDescending(u => u.CreatedAtUtc)
+  .ToListAsync();
+        }
+        catch (Exception ex)
+     {
+  Logger.LogError(ex, "Error al cargar usuarios");
+  Snackbar.Add("Error al cargar usuarios", Severity.Error);
+      }
+        finally
+      {
+    isLoading = false;
+   }
+}
+
+    private bool FilterFunc(UsuarioViewModel usuario)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+   return true;
+  if (usuario.Email.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+    return true;
+        if (usuario.NombreCompleto.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+      return true;
+      return false;
+    }
+
+    private Color GetRoleColor(string rol)
+  {
+        return rol switch
+        {
+    "Administrador" => Color.Error,
+  "Coordinador" => Color.Primary,
+   "Facilitador" => Color.Success,
+      "Visualizador" => Color.Info,
+            _ => Color.Default
+ };
+  }
+
+    private async Task OpenEditUserDialog(UsuarioViewModel userViewModel)
+    {
+        var roles = await RoleManager.Roles.Where(r => !r.IsDeleted).Select(r => r.Name ?? "").ToListAsync();
+      var programas = await Context.Programas
+ .Where(p => !p.IsDeleted)
+     .Select(p => new EditUserDialog.ProgramaInfo { Id = p.ProgramaId, Nombre = p.Nombre })
+   .ToListAsync();
+
+      var editModel = new EditUserDialog.EditUserModel
+{
+ UserId = userViewModel.Id,
+  Email = userViewModel.Email,
+            Nombres = userViewModel.Nombres,
+         Apellidos = userViewModel.Apellidos,
+  Telefono = userViewModel.Telefono,
+  Rol = userViewModel.RolPrincipal,
+    ProgramasAsignados = userViewModel.ProgramaIds,
+   EmailConfirmed = userViewModel.EmailConfirmed,
+      TwoFactorEnabled = userViewModel.TwoFactorEnabled
+    };
+
+        var parameters = new DialogParameters
+   {
+      ["AvailableRoles"] = roles,
+   ["AvailableProgramas"] = programas,
+   ["Model"] = editModel
+        };
+
+        var dialog = await DialogService.ShowAsync<EditUserDialog>("Editar Usuario", parameters);
+        var result = await dialog.Result;
+
+     if (!result.Canceled && result.Data is EditUserDialog.EditUserModel model)
+        {
+      await UpdateUserAsync(model);
+    }
+ }
+
+    private async Task UpdateUserAsync(EditUserDialog.EditUserModel model)
+  {
+  try
+        {
+   var user = await Context.Users
+      .Include(u => u.Persona)
+ .Include(u => u.UsuarioRoles)
+     .Include(u => u.UsuarioProgramas)
+     .FirstOrDefaultAsync(u => u.Id == model.UserId);
+
+if (user == null)
+  {
+      Snackbar.Add("Usuario no encontrado", Severity.Error);
+     return;
+    }
+
+// Actualizar persona
+ user.Persona.Nombres = model.Nombres;
+ user.Persona.Apellidos = model.Apellidos;
+    user.Persona.Telefono = model.Telefono;
+
+ // Actualizar configuración de 2FA
+   user.TwoFactorEnabled = model.TwoFactorEnabled;
+       user.EmailConfirmed = model.EmailConfirmed;
+
+     // Actualizar rol (eliminar roles actuales y agregar el nuevo)
+       var currentRoles = await UserManager.GetRolesAsync(user);
+      await UserManager.RemoveFromRolesAsync(user, currentRoles);
+        await UserManager.AddToRoleAsync(user, model.Rol);
+
+  // Actualizar programas asignados
+  // Eliminar asignaciones actuales (soft delete)
+       foreach (var up in user.UsuarioProgramas.Where(up => !up.IsDeleted))
+  {
+      up.IsDeleted = true;
+       up.EliminadoEn = DateTime.UtcNow;
+     }
+
+ // Agregar nuevas asignaciones
+      foreach (var programaId in model.ProgramasAsignados)
+  {
+      var existente = user.UsuarioProgramas.FirstOrDefault(up => up.ProgramaId == programaId);
+  if (existente != null)
+  {
+     // Reactivar si existía
+      existente.IsDeleted = false;
+    existente.EliminadoEn = null;
+ }
+   else
+       {
+     // Crear nueva asignación
+ user.UsuarioProgramas.Add(new UsuarioPrograma
+    {
+    UsuarioId = user.Id,
+   ProgramaId = programaId,
+  CreadoEn = DateTime.UtcNow
+    });
+   }
+    }
+
+  user.ActualizadoEn = DateTime.UtcNow;
+    await Context.SaveChangesAsync();
+
+     Logger.LogInformation("Usuario {Email} actualizado", user.Email);
+            Snackbar.Add("Usuario actualizado exitosamente", Severity.Success);
+            await LoadUsuariosAsync();
+  }
+        catch (Exception ex)
+ {
+    Logger.LogError(ex, "Error al actualizar usuario");
+    Snackbar.Add("Error al actualizar usuario", Severity.Error);
+     }
+    }
+
+    private async Task ResetPasswordAsync(UsuarioViewModel userViewModel)
+    {
+     var confirmed = await DialogService.ShowMessageBox(
+   "Confirmar Reset de Contraseña",
+   $"¿Está seguro de resetear la contraseña de {userViewModel.Email}?",
+   yesText: "Sí", cancelText: "Cancelar");
+
+        if (confirmed != true)
+          return;
+
+      try
+        {
+   var user = await UserManager.FindByIdAsync(userViewModel.Id.ToString());
+       if (user == null)
+   {
+       Snackbar.Add("Usuario no encontrado", Severity.Error);
+            return;
+ }
+
+   // Generar nueva contraseña temporal
+     var newTempPassword = GenerateSecurePassword();
+
+        // Remover contraseña actual y establecer nueva
+ var token = await UserManager.GeneratePasswordResetTokenAsync(user);
+   var result = await UserManager.ResetPasswordAsync(user, token, newTempPassword);
+
+ if (!result.Succeeded)
+   {
+  Snackbar.Add($"Error al resetear contraseña: {string.Join("; ", result.Errors.Select(e => e.Description))}", Severity.Error);
+     return;
+            }
+
+// Reactivar flag de cambio de contraseña
+         user.MustChangePassword = true;
+       user.ActualizadoEn = DateTime.UtcNow;
+      await UserManager.UpdateAsync(user);
+
+    Logger.LogInformation("Contraseña reseteada para usuario {Email}", user.Email);
+
+        Snackbar.Add($"Contraseña reseteada. Nueva contraseña temporal: {newTempPassword}", Severity.Success);
+       await LoadUsuariosAsync();
+   }
+        catch (Exception ex)
+    {
+  Logger.LogError(ex, "Error al resetear contraseña");
+        Snackbar.Add("Error al resetear contraseña", Severity.Error);
+        }
+    }
+
+    private async Task ToggleUserStatusAsync(UsuarioViewModel userViewModel)
+  {
+     var action = userViewModel.IsActive ? "desactivar" : "activar";
+        var confirmed = await DialogService.ShowMessageBox(
+         $"Confirmar {action}",
+            $"¿Está seguro de {action} a {userViewModel.Email}?",
+yesText: "Sí", cancelText: "Cancelar");
+
+        if (confirmed != true)
+       return;
+
+        try
+        {
+  var user = await UserManager.FindByIdAsync(userViewModel.Id.ToString());
+      if (user == null)
+    {
+  Snackbar.Add("Usuario no encontrado", Severity.Error);
+        return;
+}
+
+            user.Estado = userViewModel.IsActive ? Domain.Common.EstadoGeneral.Inactivo : Domain.Common.EstadoGeneral.Activo;
+            user.ActualizadoEn = DateTime.UtcNow;
+            await UserManager.UpdateAsync(user);
+
+     Logger.LogInformation("Usuario {Email} {Action}do", user.Email, action);
+
+ Snackbar.Add($"Usuario {action}do exitosamente", Severity.Success);
+            await LoadUsuariosAsync();
+     }
+    catch (Exception ex)
+        {
+      Logger.LogError(ex, $"Error al {action} usuario");
+ Snackbar.Add($"Error al {action} usuario", Severity.Error);
+        }
+    }
+
+  private string GenerateSecurePassword()
+ {
+        const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*";
+      var password = new char[12];
+  
+        // Asegurar al menos un carácter de cada tipo requerido
+        password[0] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[RandomNumberGenerator.GetInt32(26)];
+        password[1] = "abcdefghijklmnopqrstuvwxyz"[RandomNumberGenerator.GetInt32(26)];
+     password[2] = "1234567890"[RandomNumberGenerator.GetInt32(10)];
+        password[3] = "!@#$%^&*"[RandomNumberGenerator.GetInt32(8)];
+
+  // Llenar el resto aleatoriamente
+        for (int i = 4; i < 12; i++)
+   {
+            password[i] = validChars[RandomNumberGenerator.GetInt32(validChars.Length)];
+  }
+
+        // Mezclar
+      return new string(password.OrderBy(x => RandomNumberGenerator.GetInt32(1000)).ToArray());
+}
+
+  // DTO para crear usuarios
+    private class CreateUserDto
+{
+public string Email { get; set; } = "";
+        public string Nombres { get; set; } = "";
+    public string Apellidos { get; set; } = "";
+        public string? Telefono { get; set; }
+public string Rol { get; set; } = "";
+    }
+
+    private class UsuarioViewModel
+    {
+        public int Id { get; set; }
+     public string Email { get; set; } = "";
+      public string NombreCompleto { get; set; } = "";
+  public string Nombres { get; set; } = "";
+   public string Apellidos { get; set; } = "";
+        public string? Telefono { get; set; }
+     public string RolPrincipal { get; set; } = "";
+        public List<string> Programas { get; set; } = new();
+        public List<int> ProgramaIds { get; set; } = new();
+      public bool IsActive { get; set; }
+        public bool MustChangePassword { get; set; }
+   public bool EmailConfirmed { get; set; }
+        public bool TwoFactorEnabled { get; set; }
+ public string CreatedBy { get; set; } = "";
+        public DateTime CreatedAtUtc { get; set; }
+    }
+}

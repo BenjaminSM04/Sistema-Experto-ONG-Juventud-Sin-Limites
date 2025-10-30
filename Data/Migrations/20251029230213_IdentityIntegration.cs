@@ -30,7 +30,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -55,7 +55,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -83,7 +83,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -108,7 +108,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -134,7 +134,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -163,7 +163,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -214,7 +214,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -236,6 +236,9 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     PersonaId = table.Column<int>(type: "int", nullable: false),
                     Estado = table.Column<byte>(type: "tinyint", nullable: false),
+                    MustChangePassword = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    CreatedAtUtc = table.Column<DateTime>(type: "datetime2(0)", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     CreadoEn = table.Column<DateTime>(type: "datetime2(0)", nullable: false),
                     CreadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     ActualizadoEn = table.Column<DateTime>(type: "datetime2(0)", nullable: true),
@@ -292,7 +295,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -323,7 +326,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -356,7 +359,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -395,7 +398,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -427,7 +430,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -456,7 +459,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -487,7 +490,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -518,7 +521,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -582,7 +585,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -694,7 +697,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -789,7 +792,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -835,7 +838,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -885,7 +888,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -925,7 +928,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -960,7 +963,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1018,7 +1021,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1054,7 +1057,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1087,7 +1090,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1124,7 +1127,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1163,7 +1166,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1201,7 +1204,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1232,7 +1235,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1270,7 +1273,7 @@ namespace SistemaExpertoONGJuventudSinLimites.Data.Migrations
                     EliminadoEn = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EliminadoPorUsuarioId = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {

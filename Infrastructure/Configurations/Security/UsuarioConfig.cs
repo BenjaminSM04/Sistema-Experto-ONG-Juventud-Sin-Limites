@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+Ôªøusing Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security;
 
@@ -8,7 +8,7 @@ public class UsuarioConfig : IEntityTypeConfiguration<Usuario>
 {
     public void Configure(EntityTypeBuilder<Usuario> builder)
     {
-   // La tabla ya est· configurada en ApplicationDbContext
+   // La tabla ya est√° configurada en ApplicationDbContext
         // builder.ToTable("Usuario", "dbo"); 
 
         // Clave primaria ya configurada por Identity (Id)
@@ -20,7 +20,20 @@ public class UsuarioConfig : IEntityTypeConfiguration<Usuario>
   builder.Property(u => u.RowVersion)
     .IsRowVersion();
 
-    // Configurar campos de auditorÌa
+    // Configurar campos de gesti√≥n de contrase√±as
+ builder.Property(u => u.MustChangePassword)
+            .IsRequired()
+            .HasDefaultValue(true);
+
+        builder.Property(u => u.CreatedBy)
+            .HasMaxLength(256);
+
+    builder.Property(u => u.CreatedAtUtc)
+    .IsRequired()
+            .HasDefaultValueSql("GETUTCDATE()")
+      .HasColumnType("datetime2(0)");
+
+    // Configurar campos de auditor√≠a
   builder.Property(u => u.CreadoEn)
    .HasColumnType("datetime2(0)");
         
@@ -30,13 +43,13 @@ public class UsuarioConfig : IEntityTypeConfiguration<Usuario>
    builder.Property(u => u.EliminadoEn)
    .HasColumnType("datetime2(0)");
 
-        // Õndice ˙nico filtrado por Email y IsDeleted
+        // √çndice √∫nico filtrado por Email y IsDeleted
   builder.HasIndex(u => u.Email)
    .IsUnique()
         .HasFilter("[IsDeleted] = 0")
      .HasDatabaseName("IX_Usuario_Email_Unique");
 
-        // RelaciÛn 1:1 con Persona
+        // Relaci√≥n 1:1 con Persona
   builder.HasOne(u => u.Persona)
  .WithOne(p => p.Usuario!)
      .HasForeignKey<Usuario>(u => u.PersonaId)

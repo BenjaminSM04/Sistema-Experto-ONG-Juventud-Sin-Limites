@@ -1,65 +1,59 @@
 ﻿@page "/Account/Login"
+@layout AuthLayout
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security
 
-@inject SignInManager<ApplicationUser> SignInManager
+@inject SignInManager<Usuario> SignInManager
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Log in</PageTitle>
+<PageTitle>Iniciar Sesión - ONG Juventud Sin Límites</PageTitle>
 
-<h1>Log in</h1>
+<h1>Iniciar Sesión</h1>
 <div class="row">
-    <div class="col-md-4">
+    <div class="col-md-12">
         <section>
             <StatusMessage Message="@errorMessage" />
-            <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
-                <DataAnnotationsValidator />
-                <h2>Use a local account to log in.</h2>
+            <!-- Form HTML tradicional que hace POST real al endpoint -->
+            <form action="/Account/PerformLogin" method="post">
+                <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+
+                <h2>Accede al sistema con tu cuenta</h2>
                 <hr />
-                <ValidationSummary class="text-danger" role="alert" />
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="text-danger" role="alert">@errorMessage</div>
+                }
+
                 <div class="form-floating mb-3">
-                    <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                    <input name="email" type="email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" required />
                     <label for="email" class="form-label">Email</label>
-                    <ValidationMessage For="() => Input.Email" class="text-danger" />
                 </div>
                 <div class="form-floating mb-3">
-                    <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                    <label for="password" class="form-label">Password</label>
-                    <ValidationMessage For="() => Input.Password" class="text-danger" />
+                    <input name="password" type="password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" required />
+                    <label for="password" class="form-label">Contraseña</label>
                 </div>
                 <div class="checkbox mb-3">
                     <label class="form-label">
-                        <InputCheckbox @bind-Value="Input.RememberMe" class="darker-border-checkbox form-check-input" />
-                        Remember me
+                        <input name="rememberMe" type="checkbox" value="true" class="darker-border-checkbox form-check-input" />
+                        Recordarme
                     </label>
                 </div>
                 <div>
-                    <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
+                    <button type="submit" class="w-100 btn btn-lg btn-primary">Iniciar Sesión</button>
                 </div>
-                <div>
+                <div class="mt-3 text-center">
                     <p>
-                        <a href="Account/ForgotPassword">Forgot your password?</a>
-                    </p>
-                    <p>
-                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</a>
-                    </p>
-                    <p>
-                        <a href="Account/ResendEmailConfirmation">Resend email confirmation</a>
+                        <a href="Account/ForgotPassword">¿Olvidaste tu contraseña?</a>
                     </p>
                 </div>
-            </EditForm>
-        </section>
-    </div>
-    <div class="col-md-6 col-md-offset-2">
-        <section>
-            <h3>Use another service to log in.</h3>
-            <hr />
-            <ExternalLoginPicker />
+            </form>
         </section>
     </div>
 </div>
@@ -70,59 +64,39 @@
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
-    [SupplyParameterFromForm]
-    private InputModel Input { get; set; } = new();
-
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
 
+    [SupplyParameterFromQuery]
+    private string? Message { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
-        if (HttpMethods.IsGet(HttpContext.Request.Method))
+        // Mostrar mensaje de error si viene en query parameter
+        if (!string.IsNullOrEmpty(Message))
         {
-            // Clear the existing external cookie to ensure a clean login process
-            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+            errorMessage = Message;
         }
+
+        // Limpiar cookies de autenticación externa solo si es una solicitud GET y HttpContext está disponible
+        await ClearExternalAuthenticationAsync();
     }
 
-    public async Task LoginUser()
+    private async Task ClearExternalAuthenticationAsync()
     {
-        // This doesn't count login failures towards account lockout
-        // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-        var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
-        if (result.Succeeded)
+        try
         {
-            Logger.LogInformation("User logged in.");
-            RedirectManager.RedirectTo(ReturnUrl);
+            // Verificar que HttpContext esté disponible y que sea una solicitud GET
+            if (HttpContext?.Request != null && HttpMethods.IsGet(HttpContext.Request.Method))
+            {
+                // Clear the existing external cookie to ensure a clean login process
+                await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+            }
         }
-        else if (result.RequiresTwoFactor)
+        catch (Exception ex)
         {
-            RedirectManager.RedirectTo(
-                "Account/LoginWith2fa",
-                new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
+            // Loggear el error pero no interrumpir el flujo de la aplicación
+            Logger.LogWarning(ex, "No se pudo limpiar la autenticación externa. Esto no afecta el funcionamiento del login.");
         }
-        else if (result.IsLockedOut)
-        {
-            Logger.LogWarning("User account locked out.");
-            RedirectManager.RedirectTo("Account/Lockout");
-        }
-        else
-        {
-            errorMessage = "Error: Invalid login attempt.";
-        }
-    }
-
-    private sealed class InputModel
-    {
-        [Required]
-        [EmailAddress]
-        public string Email { get; set; } = "";
-
-        [Required]
-        [DataType(DataType.Password)]
-        public string Password { get; set; } = "";
-
-        [Display(Name = "Remember me?")]
-        public bool RememberMe { get; set; }
     }
 }

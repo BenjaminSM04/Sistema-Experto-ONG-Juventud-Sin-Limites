@@ -15,9 +15,21 @@
 </head>
 
 <body>
-    <Routes />
+    <Routes @rendermode="RenderMode.InteractiveServer" />
 
-    <script src="_framework/blazor.web.js"></script>
+    <!-- Configuración de Blazor con reconexión habilitada pero limitada -->
+    <script src="_framework/blazor.web.js" autostart="false"></script>
+    <script>
+        Blazor.start({
+            circuit: {
+     reconnectionOptions: {
+maxRetries: 3,  // Máximo 3 intentos de reconexión
+          retryIntervalMilliseconds: 3000  // 3 segundos entre intentos
+        }
+  }
+        });
+    </script>
+    
     <!-- JS opcional de MudBlazor (solo si usas algunos componentes que lo requieren) -->
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
 </body>

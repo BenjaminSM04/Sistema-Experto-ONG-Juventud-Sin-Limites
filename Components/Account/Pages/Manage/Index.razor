@@ -1,77 +1,318 @@
 ﻿@page "/Account/Manage"
-
+@layout Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Layout.MainLayout
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Authorization
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Microsoft.EntityFrameworkCore
+@using MudBlazor
+@attribute [Authorize]
 
-@inject UserManager<ApplicationUser> UserManager
-@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<Usuario> UserManager
+@inject ApplicationDbContext DbContext
+@inject ISnackbar Snackbar
 @inject IdentityUserAccessor UserAccessor
-@inject IdentityRedirectManager RedirectManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
-<PageTitle>Profile</PageTitle>
+<PageTitle>Mi Perfil</PageTitle>
 
-<h3>Profile</h3>
-<StatusMessage />
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">
+        <MudIcon Icon="@Icons.Material.Filled.AccountCircle" Class="mr-2" />
+        Mi Perfil
+    </MudText>
 
-<div class="row">
-    <div class="col-md-6">
-        <EditForm Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post">
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <input type="text" value="@username" class="form-control" placeholder="Please choose your username." disabled />
-                <label for="username" class="form-label">Username</label>
-            </div>
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number." />
-                <label for="phone-number" class="form-label">Phone number</label>
-                <ValidationMessage For="() => Input.PhoneNumber" class="text-danger" />
-            </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
-        </EditForm>
-    </div>
-</div>
+    @if (loading)
+    {
+        <MudGrid>
+            <MudItem xs="12" Class="d-flex justify-center align-center" Style="min-height:400px;">
+      <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+            </MudItem>
+        </MudGrid>
+    }
+    else if (usuario != null && persona != null)
+    {
+        <MudGrid>
+<!-- Información Personal -->
+            <MudItem xs="12" md="6">
+    <MudCard Elevation="3">
+               <MudCardHeader>
+               <CardHeaderContent>
+           <MudText Typo="Typo.h6">
+ <MudIcon Icon="@Icons.Material.Filled.Person" Class="mr-2" />
+       Información Personal
+               </MudText>
+          </CardHeaderContent>
+        </MudCardHeader>
+      <MudCardContent>
+            <EditForm Model="@inputModel" OnValidSubmit="HandleValidSubmit">
+              <DataAnnotationsValidator />
+        
+             <MudTextField 
+   Value="@usuario.Email" 
+      ReadOnly="true"
+          Label="Email" 
+  Variant="Variant.Outlined" 
+         Disabled="true"
+           Margin="Margin.Dense"
+    Class="mb-3" />
+
+          <MudTextField 
+            @bind-Value="inputModel.Nombres" 
+       Label="Nombres" 
+    Variant="Variant.Outlined"
+         Required="true"
+        RequiredError="Los nombres son requeridos"
+                     Margin="Margin.Dense"
+                Class="mb-3" />
+
+         <MudTextField 
+       @bind-Value="inputModel.Apellidos" 
+       Label="Apellidos" 
+                    Variant="Variant.Outlined"
+    Required="true"
+     RequiredError="Los apellidos son requeridos"
+       Margin="Margin.Dense"
+      Class="mb-3" />
+
+       <MudTextField 
+     @bind-Value="inputModel.Telefono" 
+               Label="Teléfono (Opcional)" 
+   Variant="Variant.Outlined"
+         Margin="Margin.Dense"
+         Class="mb-3" />
+
+              <MudDatePicker 
+    @bind-Date="inputModel.FechaNacimiento" 
+         Label="Fecha de Nacimiento"
+              Variant="Variant.Outlined"
+       Margin="Margin.Dense"
+            Editable="true"
+      DateFormat="dd/MM/yyyy"
+       Class="mb-3" />
+
+  <MudButton 
+          ButtonType="ButtonType.Submit" 
+     Variant="Variant.Filled" 
+   Color="Color.Primary" 
+          FullWidth="true"
+       StartIcon="@Icons.Material.Filled.Save"
+ Disabled="@guardando">
+  @if (guardando)
+        {
+       <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
+          <span>Guardando...</span>
+   }
+           else
+        {
+              <span>Guardar Cambios</span>
+   }
+            </MudButton>
+     </EditForm>
+             </MudCardContent>
+     </MudCard>
+    </MudItem>
+
+            <!-- Información de Cuenta -->
+            <MudItem xs="12" md="6">
+         <MudCard Elevation="3">
+      <MudCardHeader>
+        <CardHeaderContent>
+       <MudText Typo="Typo.h6">
+    <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
+       Información de Cuenta
+         </MudText>
+              </CardHeaderContent>
+      </MudCardHeader>
+      <MudCardContent>
+    <MudSimpleTable Style="overflow-x: auto;">
+   <tbody>
+      <tr>
+       <td><strong><MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" Class="mr-2" />Email</strong></td>
+      <td>@usuario.Email</td>
+    </tr>
+   <tr>
+            <td><strong><MudIcon Icon="@Icons.Material.Filled.ToggleOn" Size="Size.Small" Class="mr-2" />Estado</strong></td>
+        <td><MudChip T="string" Color="Color.Success" Size="Size.Small" Text="@usuario.Estado.ToString()" /></td>
+    </tr>
+                  <tr>
+          <td><strong><MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Small" Class="mr-2" />Roles</strong></td>
+ <td>
+   @if (roles != null && roles.Any())
+               {
+    @foreach (var rol in roles)
+        {
+    <MudChip T="string" Color="Color.Primary" Size="Size.Small" Text="@rol" Class="mr-1" />
+    }
+                }
+    else
+     {
+        <MudText Typo="Typo.body2" Color="Color.Default">Sin roles asignados</MudText>
+           }
+         </td>
+         </tr>
+  <tr>
+      <td><strong><MudIcon Icon="@Icons.Material.Filled.Event" Size="Size.Small" Class="mr-2" />Cuenta Creada</strong></td>
+ <td>@usuario.CreadoEn.ToString("dd/MM/yyyy HH:mm")</td>
+        </tr>
+   @if (usuario.EmailConfirmed)
+             {
+            <tr>
+           <td colspan="2"><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="mr-2" /><MudText Typo="Typo.body2" Color="Color.Success" Inline="true">Email Confirmado</MudText></td>
+      </tr>
+       }
+            </tbody>
+ </MudSimpleTable>
+       </MudCardContent>
+            <MudCardActions Class="d-flex flex-column pa-4">
+       <MudButton 
+   Href="/Account/Manage/ChangePassword" 
+      Variant="Variant.Filled" 
+              Color="Color.Warning" 
+      FullWidth="true"
+      StartIcon="@Icons.Material.Filled.VpnKey"
+  Class="mb-2">
+             Cambiar Contraseña
+    </MudButton>
+         <MudButton 
+            Href="/" 
+  Variant="Variant.Outlined" 
+      Color="Color.Secondary" 
+     FullWidth="true"
+         StartIcon="@Icons.Material.Filled.ArrowBack">
+               Volver al Inicio
+    </MudButton>
+   </MudCardActions>
+            </MudCard>
+  </MudItem>
+        </MudGrid>
+  }
+    else
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+            <MudText>No se pudo cargar la información del usuario. Por favor, <MudLink Href="/Account/Login" Color="Color.Inherit">inicia sesión</MudLink> nuevamente.</MudText>
+        </MudAlert>
+    }
+</MudContainer>
 
 @code {
-    private ApplicationUser user = default!;
-    private string? username;
-    private string? phoneNumber;
-
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
-    [SupplyParameterFromForm]
-    private InputModel Input { get; set; } = new();
+    private Usuario? usuario;
+    private Persona? persona;
+ private List<string>? roles;
+    private bool loading = true;
+    private bool guardando = false;
+
+  private InputModel inputModel = new();
 
     protected override async Task OnInitializedAsync()
     {
-        user = await UserAccessor.GetRequiredUserAsync(HttpContext);
-        username = await UserManager.GetUserNameAsync(user);
-        phoneNumber = await UserManager.GetPhoneNumberAsync(user);
-
-        Input.PhoneNumber ??= phoneNumber;
+      await CargarDatosUsuario();
     }
 
-    private async Task OnValidSubmitAsync()
+    private async Task CargarDatosUsuario()
     {
-        if (Input.PhoneNumber != phoneNumber)
+        try
         {
-            var setPhoneResult = await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
-            if (!setPhoneResult.Succeeded)
+            loading = true;
+
+        // Obtener el usuario desde AuthenticationStateProvider (modo interactivo Blazor)
+     var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+       var user = authState.User;
+
+     if (user?.Identity?.IsAuthenticated == true)
             {
-                RedirectManager.RedirectToCurrentPageWithStatus("Error: Failed to set phone number.", HttpContext);
-            }
+ // Usar UserManager directamente con el ClaimsPrincipal
+      usuario = await UserManager.GetUserAsync(user);
+
+          if (usuario != null)
+   {
+      // Cargar persona con AsNoTracking para evitar tracking innecesario
+         persona = await DbContext.Personas
+          .AsNoTracking()
+     .Where(p => p.PersonaId == usuario.PersonaId && !p.IsDeleted)
+      .FirstOrDefaultAsync();
+
+ if (persona != null)
+          {
+    inputModel.Nombres = persona.Nombres;
+          inputModel.Apellidos = persona.Apellidos;
+     inputModel.Telefono = persona.Telefono;
+          inputModel.FechaNacimiento = persona.FechaNacimiento;
+             }
+
+           // Cargar roles
+  roles = (await UserManager.GetRolesAsync(usuario)).ToList();
+         }
+    }
+}
+        catch (Exception ex)
+   {
+            Snackbar.Add($"Error al cargar el perfil: {ex.Message}", Severity.Error);
+     }
+        finally
+        {
+     loading = false;
         }
+ }
 
-        await SignInManager.RefreshSignInAsync(user);
-        RedirectManager.RedirectToCurrentPageWithStatus("Your profile has been updated", HttpContext);
-    }
-
-    private sealed class InputModel
+    private async Task HandleValidSubmit()
     {
-        [Phone]
-        [Display(Name = "Phone number")]
-        public string? PhoneNumber { get; set; }
+        if (guardando) return;
+
+     try
+        {
+            guardando = true;
+
+            if (persona != null)
+       {
+    // Obtener la entidad rastreada
+            var personaToUpdate = await DbContext.Personas
+         .FirstOrDefaultAsync(p => p.PersonaId == persona.PersonaId);
+
+   if (personaToUpdate != null)
+                {
+     personaToUpdate.Nombres = inputModel.Nombres ?? "";
+         personaToUpdate.Apellidos = inputModel.Apellidos ?? "";
+            personaToUpdate.Telefono = inputModel.Telefono;
+    personaToUpdate.FechaNacimiento = inputModel.FechaNacimiento;
+
+        await DbContext.SaveChangesAsync();
+
+             // Actualizar datos locales
+     persona = personaToUpdate;
+
+           Snackbar.Add("Tu perfil ha sido actualizado correctamente", Severity.Success);
+            }
+ }
+        }
+        catch (Exception ex)
+      {
+Snackbar.Add($"Error al actualizar el perfil: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            guardando = false;
+  }
     }
+
+    private class InputModel
+    {
+        [Required(ErrorMessage = "Los nombres son requeridos")]
+        [StringLength(100, ErrorMessage = "Máximo 100 caracteres")]
+      public string? Nombres { get; set; }
+
+        [Required(ErrorMessage = "Los apellidos son requeridos")]
+        [StringLength(100, ErrorMessage = "Máximo 100 caracteres")]
+   public string? Apellidos { get; set; }
+
+        [Phone(ErrorMessage = "Teléfono inválido")]
+        [StringLength(30, ErrorMessage = "Máximo 30 caracteres")]
+      public string? Telefono { get; set; }
+
+        public DateTime? FechaNacimiento { get; set; }
+ }
 }

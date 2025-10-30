@@ -1,0 +1,56 @@
+﻿@using MudBlazor
+@inherits LayoutComponentBase
+
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<div class="auth-page">
+    <main class="auth-main">
+        <article class="auth-content">
+            @Body
+     </article>
+    </main>
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+<style>
+    .auth-page {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .auth-main {
+        width: 100%;
+        max-width: 600px;
+  padding: 20px;
+    }
+
+    .auth-content {
+    background: white;
+    border-radius: 8px;
+        padding: 40px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .auth-content h1 {
+        color: #667eea;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .auth-content h2 {
+        font-size: 1.2rem;
+        color: #333;
+    margin-bottom: 20px;
+    }
+</style>

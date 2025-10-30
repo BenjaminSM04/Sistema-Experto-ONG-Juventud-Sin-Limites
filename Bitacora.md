@@ -497,3 +497,92 @@ dotnet ef database update --context ApplicationDbContext
 ---
 
 **Última actualización**: 2025-01-26 16:55
+
+---
+
+## 2025-01-29 - Sistema de Gestión de Usuarios Implementado
+
+### ✅ Implementación Completada
+
+1. **Modelo de Datos Extendido**
+   - Agregadas columnas `MustChangePassword`, `CreatedBy`, `CreatedAtUtc` a `Usuario`
+ - Migración aplicada exitosamente
+
+2. **Middleware de Seguridad**
+   - `ForceChangePasswordMiddleware` implementado
+   - Bloquea acceso hasta cambio de contraseña
+   - Rutas permitidas configuradas
+
+3. **Páginas Implementadas**
+   - `/Account/ForceChangePassword` - Cambio obligatorio
+   - `/Admin/Usuarios` - Gestión de usuarios (MudBlazor)
+   - `CreateUserDialog` - Diálogo de creación
+
+4. **Seguridad**
+   - Contraseñas: mínimo 12 caracteres, complejidad obligatoria
+   - Lockout: 5 intentos, 15 minutos
+   - Generación segura de contraseñas temporales
+   - Sin registro público
+
+5. **Documentación**
+   - `IMPLEMENTACION_GESTION_USUARIOS.md` creado
+   - Script SQL manual: `Scripts/AddPasswordManagementFields.sql`
+   - Script de verificación: `Scripts/VerificarSeeding.sql`
+
+### 🐛 Problema: Usuario Admin No Aparece en la Base de Datos
+
+**Síntomas:**
+- Seeder reporta "✅ Seeding completado exitosamente"
+- `SELECT * FROM Usuario` devuelve 0 filas
+- Login falla con error de credenciales
+
+**SOLUCIÓN ENCONTRADA ✅:**
+
+El error real era: **"Passwords must be at least 12 characters"**
+
+La contraseña original `Admin@123` solo tenía **9 caracteres**, pero las políticas configuradas requieren **mínimo 12 caracteres**.
+
+**Nueva contraseña:** `Admin@2025!` (12 caracteres)
+
+**Requisitos de Contraseñas:**
+- ✅ Mínimo 12 caracteres
+- ✅ Al menos 1 letra mayúscula (A-Z)
+- ✅ Al menos 1 letra minúscula (a-z)  
+- ✅ Al menos 1 número (0-9)
+- ✅ Al menos 1 carácter especial (!@#$%^&*)
+- ✅ Mínimo 4 caracteres únicos
+
+**Archivos Modificados:**
+1. `Infrastructure/Seed/DatabaseSeeder.cs` - Contraseña actualizada a `Admin@2025!`
+2. `apply-identity-integration.ps1` - Script actualizado con nueva contraseña y requisitos
+3. `README.md` - Documentación actualizada
+
+**Para Aplicar los Cambios:}
+
+```bash
+# 1. Limpiar y recrear la base de datos
+powershell -ExecutionPolicy Bypass -File apply-identity-integration.ps1
+
+# 2. Ejecutar la aplicación
+dotnet run
+
+# 3. Login con nuevas credenciales
+#    Email: admin@ong.com
+#    Password: Admin@2025!
+```
+
+### 📝 Credenciales Actualizadas
+
+```
+Email:    admin@ong.com
+Password: Admin@2025!
+Rol:      Administrador
+```
+
+### ✅ Estado Final
+
+- [x] Usuario admin se crea correctamente
+- [x] Contraseña cumple políticas de seguridad
+- [x] Login funciona correctamente
+- [x] MustChangePassword = false para admin
+- [x] Documentación actualizada

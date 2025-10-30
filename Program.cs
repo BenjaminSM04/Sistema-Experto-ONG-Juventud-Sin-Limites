@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +10,7 @@ using Sistema_Experto_ONG_Juventud_Sin_Limites.Data;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Extensions;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Interceptors;
+using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Middleware;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Inference;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Security;
 using System.Security.Claims;
@@ -23,23 +23,23 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
         {
             var builder = WebApplication.CreateBuilder(args);
 
-   // Add services to the container.
- builder.Services.AddRazorComponents()
- .AddInteractiveServerComponents(options => options.DetailedErrors = true);
+            // Add services to the container.
+            builder.Services.AddRazorComponents()
+          .AddInteractiveServerComponents(options => options.DetailedErrors = true);
 
             builder.Services.AddCascadingAuthenticationState();
-  builder.Services.AddScoped<IdentityUserAccessor>();
-   builder.Services.AddScoped<IdentityRedirectManager>();
-     builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
-          
-    // Servicios del Motor de Inferencia
-builder.Services.AddScoped<IFeatureProvider, FeatureProvider>();
-    builder.Services.AddScoped<IMotorInferencia, MotorInferencia>();
- builder.Services.AddHostedService<MotorScheduler>();
-    
-     // Servicio de Permisos
+            builder.Services.AddScoped<IdentityUserAccessor>();
+            builder.Services.AddScoped<IdentityRedirectManager>();
+            builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+
+            // Servicios del Motor de Inferencia
+            builder.Services.AddScoped<IFeatureProvider, FeatureProvider>();
+            builder.Services.AddScoped<IMotorInferencia, MotorInferencia>();
+            builder.Services.AddHostedService<MotorScheduler>();
+
+            // Servicio de Permisos
             builder.Services.AddScoped<IPermissionProvider, PermissionProvider>();
-     
+
             // MudBlazor
             builder.Services.AddMudServices();
 
@@ -53,43 +53,52 @@ builder.Services.AddScoped<IFeatureProvider, FeatureProvider>();
             builder.Services.AddEndpointsApiExplorer();
 
             builder.Services.AddAuthentication(options =>
-               {
-                   options.DefaultScheme = IdentityConstants.ApplicationScheme;
-                   options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-               })
-                .AddIdentityCookies();
+            {
+                options.DefaultScheme = IdentityConstants.ApplicationScheme;
+                options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+            })
+     .AddIdentityCookies();
 
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
-                          throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+            throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
             // Registrar el interceptor de auditoría
             builder.Services.AddSingleton<AuditableSaveChangesInterceptor>();
 
             // Configurar DbContext con el interceptor
             builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
-         {
-             var interceptor = serviceProvider.GetRequiredService<AuditableSaveChangesInterceptor>();
-             options.UseSqlServer(connectionString)
-             .AddInterceptors(interceptor);
-         });
+            {
+                var interceptor = serviceProvider.GetRequiredService<AuditableSaveChangesInterceptor>();
+                options.UseSqlServer(connectionString)
+            .AddInterceptors(interceptor);
+            });
 
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
             // Configurar Identity con Usuario y Rol personalizados
             builder.Services.AddIdentityCore<Usuario>(options =>
-         {
-             options.SignIn.RequireConfirmedAccount = true;
-             options.Password.RequireDigit = true;
-             options.Password.RequireLowercase = true;
-             options.Password.RequireUppercase = true;
-             options.Password.RequireNonAlphanumeric = true;
-             options.Password.RequiredLength = 8;
-             options.User.RequireUniqueEmail = true;
-         })
-     .AddRoles<Rol>() // Agregar soporte para roles personalizados
-   .AddEntityFrameworkStores<ApplicationDbContext>()
-     .AddSignInManager()
-      .AddDefaultTokenProviders();
+{
+    options.SignIn.RequireConfirmedAccount = true;
+
+    // Políticas de contraseña más restrictivas
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredLength = 12; // Aumentado a 12 caracteres mínimo
+    options.Password.RequiredUniqueChars = 4;
+
+    options.User.RequireUniqueEmail = true;
+
+    // Configuración de Lockout
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.AllowedForNewUsers = true;
+})
+           .AddRoles<Rol>() // Agregar soporte para roles personalizados
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+      .AddSignInManager()
+        .AddDefaultTokenProviders();
 
             builder.Services.AddSingleton<IEmailSender<Usuario>, IdentityNoOpEmailSender>();
 
@@ -127,6 +136,10 @@ builder.Services.AddScoped<IFeatureProvider, FeatureProvider>();
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            // ⚠️ IMPORTANTE: Middleware de cambio obligatorio de contraseña
+            // Debe estar después de UseAuthentication y UseAuthorization
+            app.UseForceChangePassword();
 
             // ========================================
             // MINIMAL API ENDPOINTS
@@ -311,7 +324,7 @@ builder.Services.AddScoped<IFeatureProvider, FeatureProvider>();
                       context.Entry(alerta).Property(a => a.RowVersion).OriginalValue = request.RowVersion;
                   }
 
-                  // Obtener ID del usuario actual
+                  // Obtener ID del usuario actuales
                   var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                   int? userId = null;
                   if (int.TryParse(userIdClaim, out int parsedUserId))
@@ -403,6 +416,7 @@ builder.Services.AddScoped<IFeatureProvider, FeatureProvider>();
 
             app.MapRazorComponents<App>()
             .AddInteractiveServerRenderMode();
+
 
             // Add additional endpoints required by the Identity /Account Razor components.
             app.MapAdditionalIdentityEndpoints();

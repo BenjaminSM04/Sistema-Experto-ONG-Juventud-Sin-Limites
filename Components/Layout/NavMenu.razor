@@ -4,73 +4,94 @@
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">Sistema-Experto-ONG-Juventud-Sin-Limites</a>
+        <a class="navbar-brand" href="">ONG Juventud Sin Límites</a>
     </div>
 </div>
 
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-  <nav class="flex-column">
-        <div class="nav-item px-3">
-          <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-       <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
+    <nav class="flex-column">
+        <!-- HOME - Visible para todos los autenticados -->
+    <AuthorizeView>
+  <Authorized>
+         <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+    <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Inicio
+              </NavLink>
+    </div>
+     </Authorized>
+        </AuthorizeView>
 
-     <div class="nav-item px-3">
-  <NavLink class="nav-link" href="counter">
-     <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-    </NavLink>
-        </div>
+        <!-- SECCIÓN: ADMINISTRACIÓN -->
+    <AuthorizeView Roles="Administrador">
+            <div class="nav-section-header px-3 mt-3">
+     <span class="section-title">Administración</span>
+    </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-      <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-  </NavLink>
-        </div>
+  <div class="nav-item px-3">
+       <NavLink class="nav-link" href="admin/usuarios">
+ <span class="bi bi-people-fill" aria-hidden="true"></span> Gestión de Usuarios
+     </NavLink>
+    </div>
+        </AuthorizeView>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="auth">
-     <span class="bi bi-lock-nav-menu" aria-hidden="true"></span> Auth Required
-        </NavLink>
-        </div>
+        <!-- SECCIÓN: MOTOR DE INFERENCIA -->
+        <AuthorizeView Roles="Administrador,Coordinador">
+            <div class="nav-section-header px-3 mt-3">
+          <span class="section-title">Motor de Inferencia</span>
+ </div>
 
-        @* Motor de Inferencia - Solo para Administrador y Coordinador *@
-      <AuthorizeView Roles="Administrador,Coordinador">
-            <div class="nav-item px-3">
-  <NavLink class="nav-link" href="admin/motor">
-    <span class="bi bi-gear-fill-nav-menu" aria-hidden="true"></span> Motor de Inferencia
-        </NavLink>
-            </div>
- </AuthorizeView>
-
-        <AuthorizeView>
-       <Authorized>
-      <div class="nav-item px-3">
-<NavLink class="nav-link" href="Account/Manage">
-   <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @context.User.Identity?.Name
-           </NavLink>
-            </div>
        <div class="nav-item px-3">
-   <NavLink class="nav-link" href="Account/Logout">
-      <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
-   </NavLink>
-            </div>
- </Authorized>
- <NotAuthorized>
-            <div class="nav-item px-3">
-        <NavLink class="nav-link" href="Account/Register">
-         <span class="bi bi-person-nav-menu" aria-hidden="true"></span> Register
-   </NavLink>
+        <NavLink class="nav-link" href="admin/motor">
+<span class="bi bi-gear-fill-nav-menu" aria-hidden="true"></span> Panel del Motor
+     </NavLink>
    </div>
-        <div class="nav-item px-3">
-    <NavLink class="nav-link" href="Account/Login">
-     <span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> Login
-           </NavLink>
-     </div>
-        </NotAuthorized>
   </AuthorizeView>
+
+        <!-- SECCIÓN: PROGRAMAS (Visible para todos los roles autenticados) -->
+        <AuthorizeView>
+            <Authorized>
+<div class="nav-section-header px-3 mt-3">
+       <span class="section-title">Programas</span>
+              </div>
+
+       <!-- TODO: Agregar enlaces a páginas de programas cuando estén disponibles -->
+       <div class="nav-item px-3">
+    <NavLink class="nav-link" href="programas" Match="NavLinkMatch.Prefix">
+    <span class="bi bi-folder-fill" aria-hidden="true"></span> Ver Programas
+       </NavLink>
+           </div>
+         </Authorized>
+        </AuthorizeView>
+
+   <!-- SECCIÓN: CUENTA -->
+        <AuthorizeView>
+            <Authorized>
+    <div class="nav-section-header px-3 mt-4">
+                  <span class="section-title">Mi Cuenta</span>
+        </div>
+
+            <div class="nav-item px-3">
+     <NavLink class="nav-link" href="Account/Manage">
+            <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @context.User.Identity?.Name
+              </NavLink>
+           </div>
+
+    <div class="nav-item px-3">
+ <NavLink class="nav-link" href="Account/Logout">
+   <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Cerrar Sesión
+   </NavLink>
+       </div>
+            </Authorized>
+            <NotAuthorized>
+        <div class="nav-item px-3">
+<NavLink class="nav-link" href="Account/Login">
+<span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> Iniciar Sesión
+      </NavLink>
+              </div>
+   </NotAuthorized>
+        </AuthorizeView>
     </nav>
 </div>
 
@@ -79,19 +100,19 @@
 
     protected override void OnInitialized()
     {
-        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-        NavigationManager.LocationChanged += OnLocationChanged;
+     currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+ NavigationManager.LocationChanged += OnLocationChanged;
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
-     StateHasChanged();
+  currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+      StateHasChanged();
     }
 
     public void Dispose()
     {
-        NavigationManager.LocationChanged -= OnLocationChanged;
+  NavigationManager.LocationChanged -= OnLocationChanged;
     }
 }
 

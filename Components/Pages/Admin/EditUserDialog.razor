@@ -1,0 +1,182 @@
+﻿@using Microsoft.AspNetCore.Components.Web
+@rendermode InteractiveServer
+@using System.ComponentModel.DataAnnotations
+@using MudBlazor
+
+<MudDialog>
+    <TitleContent>
+      <MudText Typo="Typo.h6">
+  <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2" />
+    Editar Usuario
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+   <EditForm Model="@model" OnValidSubmit="HandleValidSubmit" id="editUserForm">
+        <DataAnnotationsValidator />
+
+      <MudTextField @bind-Value="model.Email" 
+  Label="Email" 
+   Disabled="true"
+   Variant="Variant.Outlined"
+HelperText="El email no se puede modificar" />
+   
+     <MudTextField @bind-Value="model.Nombres" 
+         Label="Nombres" 
+     Required="true" 
+         RequiredError="Los nombres son requeridos"
+ Variant="Variant.Outlined" 
+                Class="mt-3" />
+     
+       <MudTextField @bind-Value="model.Apellidos" 
+     Label="Apellidos" 
+     Required="true" 
+      RequiredError="Los apellidos son requeridos"
+    Variant="Variant.Outlined" 
+        Class="mt-3" />
+       
+       <MudTextField @bind-Value="model.Telefono" 
+Label="Teléfono (Opcional)" 
+     Variant="Variant.Outlined" 
+    Class="mt-3" />
+ 
+            <MudSelect @bind-Value="model.Rol" 
+        Label="Rol Principal" 
+  Required="true" 
+    RequiredError="El rol es requerido"
+  Variant="Variant.Outlined" 
+     Class="mt-3"
+HelperText="El rol principal del usuario">
+         @foreach (var rol in AvailableRoles)
+ {
+          <MudSelectItem Value="@rol">@rol</MudSelectItem>
+ }
+   </MudSelect>
+
+       <MudSelect @bind-SelectedValues="model.ProgramasAsignados"
+      Label="Programas Asignados" 
+  MultiSelection="true"
+     Variant="Variant.Outlined"
+     Class="mt-3"
+     HelperText="Seleccione los programas a los que tiene acceso">
+      @foreach (var programa in AvailableProgramas)
+   {
+          <MudSelectItem Value="@programa.Id">@programa.Nombre</MudSelectItem>
+            }
+        </MudSelect>
+
+<MudSwitch @bind-Value="model.EmailConfirmed" 
+  Label="Email Confirmado" 
+Color="Color.Success" 
+         Class="mt-3" />
+
+   <MudSwitch @bind-Value="model.TwoFactorEnabled" 
+      Label="Autenticación de Dos Factores (2FA)" 
+ Color="Color.Primary" 
+      Class="mt-2" />
+
+  <MudAlert Severity="Severity.Info" Class="mt-3" Icon="@Icons.Material.Filled.Info">
+            Los cambios se aplicarán inmediatamente. Si cambia el rol o programas, el usuario verá los cambios en su próximo inicio de sesión.
+       </MudAlert>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+   <MudButton OnClick="Cancel" Variant="Variant.Outlined">
+         Cancelar
+     </MudButton>
+        <MudButton OnClick="Submit" Color="Color.Primary" Variant="Variant.Filled">
+     Guardar Cambios
+ </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IDialogReference? MudDialog { get; set; }
+
+    [Parameter]
+    public List<string> AvailableRoles { get; set; } = new();
+
+    [Parameter]
+    public List<ProgramaInfo> AvailableProgramas { get; set; } = new();
+
+    [Parameter]
+    public EditUserModel Model { get; set; } = new();
+
+    private EditUserModel model = new();
+
+    protected override void OnInitialized()
+    {
+        // Copiar el modelo recibido
+        model = new EditUserModel
+        {
+ UserId = Model.UserId,
+ Email = Model.Email,
+Nombres = Model.Nombres,
+      Apellidos = Model.Apellidos,
+       Telefono = Model.Telefono,
+    Rol = Model.Rol,
+       ProgramasAsignados = new HashSet<int>(Model.ProgramasAsignados),
+  EmailConfirmed = Model.EmailConfirmed,
+        TwoFactorEnabled = Model.TwoFactorEnabled
+    };
+    }
+
+    private void HandleValidSubmit()
+    {
+        // Este método se llama automáticamente cuando el formulario es válido
+ MudDialog?.Close(DialogResult.Ok(model));
+    }
+
+    private void Submit()
+    {
+        // Validar campos requeridos
+  if (string.IsNullOrWhiteSpace(model.Nombres) || 
+            string.IsNullOrWhiteSpace(model.Apellidos) || 
+   string.IsNullOrWhiteSpace(model.Rol))
+ {
+  return;
+ }
+
+     // Cerrar el diálogo con el modelo
+        MudDialog?.Close(DialogResult.Ok(model));
+    }
+
+    private void Cancel()
+  {
+MudDialog?.Close(DialogResult.Cancel());
+}
+
+    public class EditUserModel
+    {
+   public int UserId { get; set; }
+   
+        [Required]
+        public string Email { get; set; } = "";
+
+   [Required(ErrorMessage = "Los nombres son requeridos")]
+        [StringLength(100, ErrorMessage = "Máximo 100 caracteres")]
+   public string Nombres { get; set; } = "";
+
+        [Required(ErrorMessage = "Los apellidos son requeridos")]
+        [StringLength(100, ErrorMessage = "Máximo 100 caracteres")]
+        public string Apellidos { get; set; } = "";
+
+  [StringLength(30, ErrorMessage = "Máximo 30 caracteres")]
+   public string? Telefono { get; set; }
+
+        [Required(ErrorMessage = "El rol es requerido")]
+   public string Rol { get; set; } = "";
+
+        public IEnumerable<int> ProgramasAsignados { get; set; } = new HashSet<int>();
+
+        public bool EmailConfirmed { get; set; }
+ 
+        public bool TwoFactorEnabled { get; set; }
+    }
+
+    public class ProgramaInfo
+    {
+ public int Id { get; set; }
+        public string Nombre { get; set; } = "";
+ }
+}

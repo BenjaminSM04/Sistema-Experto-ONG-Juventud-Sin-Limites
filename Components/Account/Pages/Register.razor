@@ -1,21 +1,31 @@
 ﻿@page "/Account/Register"
+@layout AuthLayout
+@attribute [Authorize(Roles = "Administrador")]
+@using Microsoft.AspNetCore.Authorization
 
 @using System.ComponentModel.DataAnnotations
 @using System.Text
 @using System.Text.Encodings.Web
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
-@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security
 
-@inject UserManager<ApplicationUser> UserManager
-@inject IUserStore<ApplicationUser> UserStore
-@inject SignInManager<ApplicationUser> SignInManager
-@inject IEmailSender<ApplicationUser> EmailSender
+@inject UserManager<Usuario> UserManager
+@inject IUserStore<Usuario> UserStore
+@inject SignInManager<Usuario> SignInManager
+@inject IEmailSender<Usuario> EmailSender
 @inject ILogger<Register> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
 <PageTitle>Register</PageTitle>
+
+<div class="alert alert-warning" role="alert">
+    <h4 class="alert-heading">Página de Registro Protegida</h4>
+    <p>Esta página está protegida y solo accesible para administradores.</p>
+    <hr>
+    <p class="mb-0">Por favor, use la página de <a href="/Admin/Usuarios">Gestión de Usuarios</a> para crear nuevos usuarios.</p>
+</div>
 
 <h1>Register</h1>
 
@@ -102,26 +112,26 @@
         RedirectManager.RedirectTo(ReturnUrl);
     }
 
-    private ApplicationUser CreateUser()
+    private Usuario CreateUser()
     {
         try
         {
-            return Activator.CreateInstance<ApplicationUser>();
+            return Activator.CreateInstance<Usuario>();
         }
         catch
         {
-            throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
-                $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor.");
+            throw new InvalidOperationException($"Can't create an instance of '{nameof(Usuario)}'. " +
+                $"Ensure that '{nameof(Usuario)}' is not an abstract class and has a parameterless constructor.");
         }
     }
 
-    private IUserEmailStore<ApplicationUser> GetEmailStore()
+    private IUserEmailStore<Usuario> GetEmailStore()
     {
         if (!UserManager.SupportsUserEmail)
         {
             throw new NotSupportedException("The default UI requires a user store with email support.");
         }
-        return (IUserEmailStore<ApplicationUser>)UserStore;
+        return (IUserEmailStore<Usuario>)UserStore;
     }
 
     private sealed class InputModel

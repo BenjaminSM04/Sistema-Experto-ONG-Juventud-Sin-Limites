@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common;
 
 namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security;
@@ -8,13 +8,18 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security;
 /// </summary>
 public class Usuario : IdentityUser<int>, IAuditable, ISoftDelete
 {
-    // Relaci�n 1:1 con Persona (datos personales separados)
+    // Relación 1:1 con Persona (datos personales separados)
   public int PersonaId { get; set; }
     
-    // Estado personalizado (adem�s del LockoutEnabled de Identity)
+    // Estado personalizado (además del LockoutEnabled de Identity)
     public EstadoGeneral Estado { get; set; } = EstadoGeneral.Activo;
 
-    // Campos de auditor�a (IAuditable)
+    // Gestión de contraseñas
+ public bool MustChangePassword { get; set; } = true;
+ public string? CreatedBy { get; set; }
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+
+    // Campos de auditoría (IAuditable)
     public DateTime CreadoEn { get; set; } = DateTime.UtcNow;
     public int? CreadoPorUsuarioId { get; set; }
     public DateTime? ActualizadoEn { get; set; }
@@ -28,7 +33,7 @@ public class Usuario : IdentityUser<int>, IAuditable, ISoftDelete
     // RowVersion para concurrencia
     public byte[] RowVersion { get; set; } = null!;
 
-    // Navegaci�n
+    // Navegación
     public Persona Persona { get; set; } = null!;
     public ICollection<UsuarioRol> UsuarioRoles { get; set; } = new List<UsuarioRol>();
     public ICollection<Programas.UsuarioPrograma> UsuarioProgramas { get; set; } = new List<Programas.UsuarioPrograma>();
