@@ -575,7 +575,7 @@ dotnet run
 
 ```
 Email:    admin@ong.com
-Password: Admin@2025!
+Password: Administrador@2025!
 Rol:      Administrador
 ```
 

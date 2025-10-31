@@ -12,7 +12,7 @@ Sistema integral para la gestión de programas, actividades, participantes y pla
 
 ```
 Email:    admin@ong.com
-Password: Admin@2025!
+Password: Administrador@2025!
 Rol:      Administrador
 ```
 
