@@ -49,3 +49,44 @@ h1:focus {
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
 }
+/* ------------------------------------------- */
+/* ESTILO PARA LAS TARJETAS (MUD CARD) */
+/* ------------------------------------------- */
+
+/*.mud-card {
+    background-color: #9FD996 !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}*/
+/* Tarjeta EDV (Azul claro) */
+.card-edv {
+    background-color: #fff !important;
+    border-left: 15px solid #F7C484;
+    border-radius: 8px;
+}
+
+/* Tarjeta Academia (Rosa claro) */
+.card-academia {
+    background-color: #fff !important;
+    border-left: 15px solid #9FD996; 
+    border-radius: 8px;
+}
+
+/* Tarjeta Juventud Segura (Verde claro) */
+.card-juventud {
+    background-color: #fff !important;
+    border-left: 15px solid #F3C95A;
+    border-radius: 8px;
+}
+
+/* Tarjeta Bernabé (Amarillo claro) */
+.card-bernabe {
+    background-color: #fff !important;
+    border-left: 15px solid #4D3935;
+    border-radius: 8px;
+}
+
+
+
+
+

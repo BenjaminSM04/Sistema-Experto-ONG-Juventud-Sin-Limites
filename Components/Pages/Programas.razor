@@ -5,90 +5,98 @@
 <PageTitle>Programas</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-2">
-      <MudIcon Icon="@Icons.Material.Filled.Folder" Class="mr-2" />
-  Programas
+    <MudText Typo="Typo.h4" Class="mb-2" Style="font-family: 'Berlin Sans FB'">
+      <MudIcon Icon="@Icons.Material.Filled.Folder" Class="mr-2"/>
+        Programas
     </MudText>
-    <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
+    <MudText Typo="Typo.body1" Style="color: #4D3935;" Class="mb-4">
  Gestión de programas de la ONG
     </MudText>
 
-    <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.Info">
+    <MudAlert Severity="Severity.Warning" Icon="@Icons.Material.Filled.Info" Style="color: yellow;">
       <MudText Typo="Typo.body1">
        Esta sección está en desarrollo. Aquí podrás ver y gestionar los programas de la ONG.
         </MudText>
  </MudAlert>
 
     <MudGrid Class="mt-4">
-   <MudItem xs="12" sm="6" md="3">
-      <MudCard Elevation="3">
-    <MudCardHeader>
-    <CardHeaderContent>
-       <MudText Typo="Typo.h6">EDV</MudText>
-    </CardHeaderContent>
-  <CardHeaderAvatar>
-        <MudAvatar Color="Color.Primary">
-          <MudIcon Icon="@Icons.Material.Filled.School" />
-           </MudAvatar>
-    </CardHeaderAvatar>
-   </MudCardHeader>
+        <!-- EDV -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="3" Class="card-edv">
+                <!-- CLASE AÑADIDA -->
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">EDV</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderAvatar>
+                        <MudAvatar Style="background-color: #F7C484">
+                            <MudIcon Icon="@Icons.Material.Filled.School" Style="color: white;" />
+                        </MudAvatar>
+                    </CardHeaderAvatar>
+                </MudCardHeader>
                 <MudCardContent>
-               <MudText Typo="Typo.body2">Escuelas de Valores</MudText>
-       </MudCardContent>
+                    <MudText Typo="Typo.body2">Escuelas de Valores</MudText>
+                </MudCardContent>
             </MudCard>
         </MudItem>
 
-    <MudItem xs="12" sm="6" md="3">
-         <MudCard Elevation="3">
-     <MudCardHeader>
-               <CardHeaderContent>
-         <MudText Typo="Typo.h6">Academia</MudText>
-          </CardHeaderContent>
-            <CardHeaderAvatar>
-         <MudAvatar Color="Color.Secondary">
-              <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" />
-         </MudAvatar>
-   </CardHeaderAvatar>
-          </MudCardHeader>
-      <MudCardContent>
-        <MudText Typo="Typo.body2">Academia de Liderazgo</MudText>
-    </MudCardContent>
-   </MudCard>
-   </MudItem>
-
+        <!-- Academia -->
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Elevation="3">
-         <MudCardHeader>
-    <CardHeaderContent>
-         <MudText Typo="Typo.h6">Juventud Segura</MudText>
-</CardHeaderContent>
-    <CardHeaderAvatar>
-          <MudAvatar Color="Color.Success">
-         <MudIcon Icon="@Icons.Material.Filled.Shield" />
-     </MudAvatar>
-         </CardHeaderAvatar>
-    </MudCardHeader>
-           <MudCardContent>
-    <MudText Typo="Typo.body2">Prevención y Seguridad</MudText>
-             </MudCardContent>
- </MudCard>
+            <MudCard Elevation="3" Class="card-academia">
+                <!-- CLASE AÑADIDA -->
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Academia</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderAvatar>
+                        <MudAvatar Style="background-color: #9FD996">
+                            <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Style="color: white;"/>
+                        </MudAvatar>
+                    </CardHeaderAvatar>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText Typo="Typo.body2">Academia de Liderazgo</MudText>
+                </MudCardContent>
+            </MudCard>
         </MudItem>
 
+        <!-- Juventud Segura -->
         <MudItem xs="12" sm="6" md="3">
-    <MudCard Elevation="3">
-       <MudCardHeader>
-     <CardHeaderContent>
-             <MudText Typo="Typo.h6">Bernabé</MudText>
-   </CardHeaderContent>
-          <CardHeaderAvatar>
-       <MudAvatar Color="Color.Warning">
-  <MudIcon Icon="@Icons.Material.Filled.Handshake" />
-           </MudAvatar>
-     </CardHeaderAvatar>
-         </MudCardHeader>
-  <MudCardContent>
- <MudText Typo="Typo.body2">Acompañamiento Integral</MudText>
-              </MudCardContent>
+            <MudCard Elevation="3" Class="card-juventud">
+                <!-- CLASE AÑADIDA -->
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Juventud Segura</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderAvatar>
+                        <MudAvatar Style="background-color: #F3C95A">
+                            <MudIcon Icon="@Icons.Material.Filled.Shield" Style="color: white;"/>
+                        </MudAvatar>
+                    </CardHeaderAvatar>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText Typo="Typo.body2">Prevención y Seguridad</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <!-- Bernabé -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="3" Class="card-bernabe">
+                <!-- CLASE AÑADIDA -->
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Bernabé</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderAvatar>
+                        <MudAvatar Style="background-color: #4D3935">
+                            <MudIcon Icon="@Icons.Material.Filled.Handshake" Style="color: white;"/>
+                        </MudAvatar>
+                    </CardHeaderAvatar>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText Typo="Typo.body2">Acompañamiento Integral</MudText>
+                </MudCardContent>
             </MudCard>
         </MudItem>
     </MudGrid>
