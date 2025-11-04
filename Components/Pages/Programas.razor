@@ -1,23 +1,28 @@
 ﻿@page "/programas"
+
 @using Microsoft.AspNetCore.Authorization
+
 @attribute [Authorize]
 
 <PageTitle>Programas</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-2" Style="font-family: 'Berlin Sans FB'">
-      <MudIcon Icon="@Icons.Material.Filled.Folder" Class="mr-2"/>
+    <MudText Typo="Typo.h2" Class="mb-2" Style="font-family: Teko; color: #231709">
+        <MudIcon Icon="@Icons.Material.Filled.Folder" Class="mr-2" />
+
         Programas
     </MudText>
     <MudText Typo="Typo.body1" Style="color: #4D3935;" Class="mb-4">
- Gestión de programas de la ONG
+
+        Gestión de programas de la ONG
     </MudText>
 
     <MudAlert Severity="Severity.Warning" Icon="@Icons.Material.Filled.Info" Style="color: yellow;">
-      <MudText Typo="Typo.body1">
-       Esta sección está en desarrollo. Aquí podrás ver y gestionar los programas de la ONG.
+        <MudText Typo="Typo.body1">
+
+            Esta sección está en desarrollo. Aquí podrás ver y gestionar los programas de la ONG.
         </MudText>
- </MudAlert>
+    </MudAlert>
 
     <MudGrid Class="mt-4">
         <!-- EDV -->
@@ -50,7 +55,7 @@
                     </CardHeaderContent>
                     <CardHeaderAvatar>
                         <MudAvatar Style="background-color: #9FD996">
-                            <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Style="color: white;"/>
+                            <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Style="color: white;" />
                         </MudAvatar>
                     </CardHeaderAvatar>
                 </MudCardHeader>
@@ -70,7 +75,7 @@
                     </CardHeaderContent>
                     <CardHeaderAvatar>
                         <MudAvatar Style="background-color: #F3C95A">
-                            <MudIcon Icon="@Icons.Material.Filled.Shield" Style="color: white;"/>
+                            <MudIcon Icon="@Icons.Material.Filled.Shield" Style="color: white;" />
                         </MudAvatar>
                     </CardHeaderAvatar>
                 </MudCardHeader>
@@ -90,7 +95,7 @@
                     </CardHeaderContent>
                     <CardHeaderAvatar>
                         <MudAvatar Style="background-color: #4D3935">
-                            <MudIcon Icon="@Icons.Material.Filled.Handshake" Style="color: white;"/>
+                            <MudIcon Icon="@Icons.Material.Filled.Handshake" Style="color: white;" />
                         </MudAvatar>
                     </CardHeaderAvatar>
                 </MudCardHeader>
@@ -101,3 +106,4 @@
         </MudItem>
     </MudGrid>
 </MudContainer>
+
