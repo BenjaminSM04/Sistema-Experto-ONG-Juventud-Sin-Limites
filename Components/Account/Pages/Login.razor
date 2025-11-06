@@ -35,10 +35,19 @@
                     <input name="email" type="email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" required />
                     <label for="email" class="form-label">Email</label>
                 </div>
-                <div class="form-floating mb-3">
-                    <input name="password" type="password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" required />
+                
+                <div class="form-floating mb-3 position-relative">
+                    <input id="passwordInput" name="password" type="password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" required style="padding-right: 50px;" />
                     <label for="password" class="form-label">Contraseña</label>
+                    <button type="button" 
+                            id="togglePassword" 
+                            class="btn btn-link position-absolute end-0 top-50 translate-middle-y me-2" 
+                            style="z-index: 10; text-decoration: none; border: none; background: transparent;"
+                            tabindex="-1">
+                        <i id="eyeIcon" class="bi bi-eye-fill" style="font-size: 1.2rem; color: #6c757d;"></i>
+                    </button>
                 </div>
+
                 <div class="checkbox mb-3">
                     <label class="form-label">
                         <input name="rememberMe" type="checkbox" value="true" class="darker-border-checkbox form-check-input" />
@@ -57,6 +66,30 @@
         </section>
     </div>
 </div>
+
+<script>
+    // Script para mostrar/ocultar contraseña
+    document.addEventListener('DOMContentLoaded', function() {
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('passwordInput');
+        const eyeIcon = document.getElementById('eyeIcon');
+
+        if (togglePassword && passwordInput && eyeIcon) {
+            togglePassword.addEventListener('click', function() {
+                // Alternar el tipo de input
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+  
+                // Alternar el icono
+                if (type === 'password') {
+                    eyeIcon.className = 'bi bi-eye-fill';
+                } else {
+                    eyeIcon.className = 'bi bi-eye-slash-fill';
+                }
+            });
+        }
+    });
+</script>
 
 @code {
     private string? errorMessage;

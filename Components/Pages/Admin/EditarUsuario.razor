@@ -8,6 +8,7 @@
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using System.Text.RegularExpressions
 @using MudBlazor
 
 @inject UserManager<Usuario> UserManager
@@ -24,32 +25,32 @@
         <div class="col-md-10 offset-md-1">
       <div class="card">
 <div class="card-header bg-warning text-dark">
-         <h4><i class="bi bi-pencil-square"></i> Editar Usuario</h4>
+  <h4><i class="bi bi-pencil-square"></i> Editar Usuario</h4>
      </div>
    <div class="card-body">
-         @if (isLoading)
+    @if (isLoading)
      {
            <div class="text-center py-5">
-           <div class="spinner-border text-primary" role="status">
+    <div class="spinner-border text-primary" role="status">
 <span class="visually-hidden">Cargando...</span>
-       </div>
-      <p class="mt-2">Cargando información del usuario...</p>
   </div>
-        }
-          else if (model == null)
+  <p class="mt-2">Cargando información del usuario...</p>
+  </div>
+   }
+     else if (model == null)
      {
          <div class="alert alert-danger">
          <i class="bi bi-exclamation-triangle-fill"></i> Usuario no encontrado
-               </div>
-               }
+         </div>
+    }
     else
        {
      @if (!string.IsNullOrEmpty(errorMessage))
     {
       <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="bi bi-exclamation-triangle-fill"></i> @errorMessage
-             <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
-          </div>
+     <i class="bi bi-exclamation-triangle-fill"></i> @errorMessage
+    <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+  </div>
       }
 
    @if (!string.IsNullOrEmpty(successMessage))
@@ -60,17 +61,17 @@
    </div>
        }
 
-      <EditForm Model="@model" OnValidSubmit="HandleValidSubmit">
+    <EditForm Model="@model" OnValidSubmit="HandleValidSubmit">
       <DataAnnotationsValidator />
 
           <!-- Sección: Información de Cuenta -->
 <h5 class="border-bottom pb-2 mb-3"><i class="bi bi-person-badge"></i> Información de Cuenta</h5>
       
  <div class="row">
-                <div class="col-md-6 mb-3">
-        <label for="email" class="form-label">Email</label>
+     <div class="col-md-6 mb-3">
+<label for="email" class="form-label">Email</label>
          <InputText id="email" @bind-Value="model.Email" class="form-control" disabled />
-        <small class="form-text text-muted">El email no se puede modificar</small>
+ <small class="form-text text-muted">El email no se puede modificar</small>
       </div>
  <div class="col-md-6 mb-3">
      <label class="form-label">Estado de Cuenta</label>
@@ -79,17 +80,17 @@
     <input class="form-check-input" type="checkbox" id="emailConfirmed" @bind="model.EmailConfirmed">
       <label class="form-check-label" for="emailConfirmed">
       <i class="bi bi-envelope-check"></i> Email Confirmado
-    </label>
-            </div>
+ </label>
+    </div>
           <div class="form-check form-switch">
           <input class="form-check-input" type="checkbox" id="twoFactor" @bind="model.TwoFactorEnabled">
           <label class="form-check-label" for="twoFactor">
         <i class="bi bi-shield-lock"></i> 2FA
-          </label>
-            </div>
-      </div>
+     </label>
+          </div>
+   </div>
  <small class="form-text text-muted">Configuración de seguridad</small>
-        </div>
+      </div>
  </div>
 
     <!-- Sección: Datos Personales -->
@@ -100,89 +101,89 @@
          <label for="nombres" class="form-label">Nombres <span class="text-danger">*</span></label>
    <InputText id="nombres" @bind-Value="model.Nombres" class="form-control" />
               <ValidationMessage For="@(() => model.Nombres)" class="text-danger" />
-                  </div>
+             </div>
    <div class="col-md-6 mb-3">
           <label for="apellidos" class="form-label">Apellidos <span class="text-danger">*</span></label>
    <InputText id="apellidos" @bind-Value="model.Apellidos" class="form-control" />
-            <ValidationMessage For="@(() => model.Apellidos)" class="text-danger" />
+    <ValidationMessage For="@(() => model.Apellidos)" class="text-danger" />
      </div>
     </div>
 
  <div class="mb-3">
      <label for="telefono" class="form-label">Teléfono (Opcional)</label>
-                 <InputText id="telefono" @bind-Value="model.Telefono" class="form-control" placeholder="+505 8888-8888" />
-              <ValidationMessage For="@(() => model.Telefono)" class="text-danger" />
-              </div>
+        <InputText id="telefono" @bind-Value="model.Telefono" class="form-control" placeholder="+505 8888-8888" />
+  <ValidationMessage For="@(() => model.Telefono)" class="text-danger" />
+        </div>
 
-         <!-- Sección: Rol y Permisos -->
+<!-- Sección: Rol y Permisos -->
 <h5 class="border-bottom pb-2 mb-3 mt-4"><i class="bi bi-shield-fill-check"></i> Rol y Permisos</h5>
-                   
-          <div class="mb-3">
+         
+       <div class="mb-3">
    <label for="rol" class="form-label">Rol Principal <span class="text-danger">*</span></label>
   <InputSelect id="rol" @bind-Value="model.Rol" class="form-select">
-         <option value="">-- Seleccione un rol --</option>
-         @foreach (var rol in availableRoles)
+  <option value="">-- Seleccione un rol --</option>
+    @foreach (var rol in availableRoles)
          {
-        <option value="@rol">@rol</option>
+ <option value="@rol">@rol</option>
       }
       </InputSelect>
-           <ValidationMessage For="@(() => model.Rol)" class="text-danger" />
+        <ValidationMessage For="@(() => model.Rol)" class="text-danger" />
    <small class="form-text text-muted">El rol determina los permisos del usuario en el sistema</small>
        </div>
 
   <!-- Sección: Programas Asignados -->
              <h5 class="border-bottom pb-2 mb-3 mt-4"><i class="bi bi-folder-fill"></i> Programas Asignados</h5>
-           
+   
       <div class="mb-3">
  <label class="form-label">Seleccione los programas a los que tiene acceso</label>
            <div class="row">
            @foreach (var programa in availableProgramas)
         {
-        <div class="col-md-6 mb-2">
-         <div class="form-check">
+    <div class="col-md-6 mb-2">
+      <div class="form-check">
          <input class="form-check-input" type="checkbox" 
-           id="prog_@programa.Id" 
-         checked="@model.ProgramasAsignados.Contains(programa.Id)"
+       id="prog_@programa.Id" 
+       checked="@model.ProgramasAsignados.Contains(programa.Id)"
         @onchange="@((e) => TogglePrograma(programa.Id, (bool)e.Value!))" />
        <label class="form-check-label" for="prog_@programa.Id">
  <MudChip T="string" Size="Size.Small" Color="Color.Info">@programa.Nombre</MudChip>
      </label>
-            </div>
+  </div>
           </div>
 }
-             </div>
-       @if (model.ProgramasAsignados.Count == 0)
+          </div>
+     @if (model.ProgramasAsignados.Count == 0)
 {
-              <small class="text-warning">
-            <i class="bi bi-exclamation-triangle"></i> Sin programas asignados, el usuario no podrá acceder a funcionalidades específicas
+    <small class="text-warning">
+        <i class="bi bi-exclamation-triangle"></i> Sin programas asignados, el usuario no podrá acceder a funcionalidades específicas
    </small>
      }
         else
-       {
+  {
                 <small class="text-success">
-        <i class="bi bi-check-circle"></i> @model.ProgramasAsignados.Count programa(s) seleccionado(s)
-       </small>
+    <i class="bi bi-check-circle"></i> @model.ProgramasAsignados.Count programa(s) seleccionado(s)
+     </small>
               }
    </div>
 
-            <div class="alert alert-info mt-4">
+     <div class="alert alert-info mt-4">
   <i class="bi bi-info-circle-fill"></i> Los cambios se aplicarán inmediatamente. Si cambia el rol o programas, el usuario verá los cambios en su próximo inicio de sesión.
-            </div>
+         </div>
 
   <div class="d-flex justify-content-between mt-4">
            <button type="button" class="btn btn-secondary" @onclick="Cancelar" disabled="@isSubmitting">
-                <i class="bi bi-x-circle"></i> Cancelar
-              </button>
-               <button type="submit" class="btn btn-warning text-dark" disabled="@isSubmitting">
+    <i class="bi bi-x-circle"></i> Cancelar
+           </button>
+     <button type="submit" class="btn btn-warning text-dark" disabled="@isSubmitting">
   @if (isSubmitting)
         {
-        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
          }
         <i class="bi bi-save"></i> Guardar Cambios
      </button>
-            </div>
+    </div>
          </EditForm>
-                 }
+  }
  </div>
        </div>
         </div>
@@ -191,14 +192,14 @@
 
 @code {
     [Parameter]
-    public int UserId { get; set; }
+ public int UserId { get; set; }
 
-    private EditUserModel? model;
+  private EditUserModel? model;
     private List<string> availableRoles = new();
   private List<ProgramaInfo> availableProgramas = new();
     private string? errorMessage;
     private string? successMessage;
-    private bool isLoading = true;
+ private bool isLoading = true;
     private bool isSubmitting = false;
 
     protected override async Task OnInitializedAsync()
@@ -207,63 +208,63 @@
         {
     // Cargar roles disponibles
 availableRoles = await RoleManager.Roles
-          .Where(r => !r.IsDeleted)
+    .Where(r => !r.IsDeleted)
      .Select(r => r.Name ?? "")
-                .ToListAsync();
+       .ToListAsync();
 
 // Cargar programas disponibles
    availableProgramas = await Context.Programas
-                .Where(p => !p.IsDeleted)
+          .Where(p => !p.IsDeleted)
              .Select(p => new ProgramaInfo { Id = p.ProgramaId, Nombre = p.Nombre })
        .ToListAsync();
 
           // Cargar usuario
-            var user = await Context.Users
+       var user = await Context.Users
        .Include(u => u.Persona)
          .Include(u => u.UsuarioRoles)
-               .ThenInclude(ur => ur.Rol)
+    .ThenInclude(ur => ur.Rol)
  .Include(u => u.UsuarioProgramas)
-         .FirstOrDefaultAsync(u => u.Id == UserId && !u.IsDeleted);
+   .FirstOrDefaultAsync(u => u.Id == UserId && !u.IsDeleted);
 
   if (user != null)
     {
-       model = new EditUserModel
-                {
-             UserId = user.Id,
-     Email = user.Email ?? "",
+    model = new EditUserModel
+  {
+          UserId = user.Id,
+Email = user.Email ?? "",
     Nombres = user.Persona.Nombres,
-                 Apellidos = user.Persona.Apellidos,
+  Apellidos = user.Persona.Apellidos,
            Telefono = user.Persona.Telefono,
-         Rol = user.UsuarioRoles.FirstOrDefault()?.Rol.Name ?? "",
-           ProgramasAsignados = user.UsuarioProgramas
+   Rol = user.UsuarioRoles.FirstOrDefault()?.Rol.Name ?? "",
+ProgramasAsignados = user.UsuarioProgramas
      .Where(up => !up.IsDeleted)
     .Select(up => up.ProgramaId)
-         .ToHashSet(),
+.ToHashSet(),
    EmailConfirmed = user.EmailConfirmed,
-                  TwoFactorEnabled = user.TwoFactorEnabled
+       TwoFactorEnabled = user.TwoFactorEnabled
            };
       }
         }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error al cargar usuario {UserId}", UserId);
+     catch (Exception ex)
+ {
+      Logger.LogError(ex, "Error al cargar usuario {UserId}", UserId);
     errorMessage = "Error al cargar el usuario";
         }
         finally
-        {
+    {
      isLoading = false;
-        }
+      }
     }
 
     private void TogglePrograma(int programaId, bool isChecked)
     {
 if (isChecked)
-        {
-            model!.ProgramasAsignados.Add(programaId);
-        }
+    {
+          model!.ProgramasAsignados.Add(programaId);
+      }
         else
-        {
-         model!.ProgramasAsignados.Remove(programaId);
+ {
+       model!.ProgramasAsignados.Remove(programaId);
         }
     }
 
@@ -271,92 +272,130 @@ if (isChecked)
     {
   if (isSubmitting || model == null) return;
 
-        errorMessage = null;
-        successMessage = null;
+ errorMessage = null;
+     successMessage = null;
+
+    // Validar nombres (solo letras y espacios)
+        var nombresValidation = ValidateNombreOApellido(model.Nombres, "nombres");
+        if (!string.IsNullOrEmpty(nombresValidation))
+        {
+       errorMessage = nombresValidation;
+         return;
+      }
+
+        // Validar apellidos (solo letras y espacios)
+        var apellidosValidation = ValidateNombreOApellido(model.Apellidos, "apellidos");
+        if (!string.IsNullOrEmpty(apellidosValidation))
+      {
+            errorMessage = apellidosValidation;
+   return;
+        }
+
         isSubmitting = true;
 
      try
         {
-          var user = await Context.Users
-        .Include(u => u.Persona)
+   var user = await Context.Users
+    .Include(u => u.Persona)
               .Include(u => u.UsuarioRoles)
+                .ThenInclude(ur => ur.Rol)
 .Include(u => u.UsuarioProgramas)
-     .FirstOrDefaultAsync(u => u.Id == model.UserId);
+   .FirstOrDefaultAsync(u => u.Id == model.UserId);
 
     if (user == null)
-            {
-         errorMessage = "Usuario no encontrado";
+      {
+      errorMessage = "Usuario no encontrado";
      return;
-            }
+       }
 
    // Actualizar persona
-     user.Persona.Nombres = model.Nombres;
-       user.Persona.Apellidos = model.Apellidos;
-      user.Persona.Telefono = model.Telefono;
+  user.Persona.Nombres = model.Nombres.Trim();
+ user.Persona.Apellidos = model.Apellidos.Trim();
+  user.Persona.Telefono = model.Telefono;
 
      // Actualizar configuración de seguridad
     user.TwoFactorEnabled = model.TwoFactorEnabled;
-            user.EmailConfirmed = model.EmailConfirmed;
+      user.EmailConfirmed = model.EmailConfirmed;
 
-            // Actualizar rol
-            var currentRoles = await UserManager.GetRolesAsync(user);
-            await UserManager.RemoveFromRolesAsync(user, currentRoles);
-     await UserManager.AddToRoleAsync(user, model.Rol);
+            // Actualizar rol CORRECTAMENTE usando UserManager
+ var currentRoles = await UserManager.GetRolesAsync(user);
+          if (!currentRoles.Contains(model.Rol))
+     {
+       // Solo actualizar si el rol cambió
+                if (currentRoles.Any())
+      {
+          await UserManager.RemoveFromRolesAsync(user, currentRoles);
+                }
+                await UserManager.AddToRoleAsync(user, model.Rol);
+  }
 
-        // Actualizar programas asignados (soft delete de los no seleccionados)
-            foreach (var up in user.UsuarioProgramas.Where(up => !up.IsDeleted))
+      // Actualizar programas asignados (soft delete de los no seleccionados)
+        foreach (var up in user.UsuarioProgramas.Where(up => !up.IsDeleted))
             {
-      if (!model.ProgramasAsignados.Contains(up.ProgramaId))
+ if (!model.ProgramasAsignados.Contains(up.ProgramaId))
     {
   up.IsDeleted = true;
           up.EliminadoEn = DateTime.UtcNow;
-       }
+}
     }
 
             // Agregar nuevos programas
  foreach (var programaId in model.ProgramasAsignados)
       {
   var existente = user.UsuarioProgramas.FirstOrDefault(up => up.ProgramaId == programaId);
-          if (existente != null)
+  if (existente != null)
      {
-            // Reactivar si existía
+    // Reactivar si existía
     existente.IsDeleted = false;
-          existente.EliminadoEn = null;
+   existente.EliminadoEn = null;
     }
-         else
+  else
         {
        // Crear nueva asignación
      user.UsuarioProgramas.Add(new UsuarioPrograma
      {
  UsuarioId = user.Id,
          ProgramaId = programaId,
-       Desde = DateTime.Today,
-          CreadoEn = DateTime.UtcNow
+    Desde = DateTime.Today,
+    CreadoEn = DateTime.UtcNow
        });
     }
       }
 
-            user.ActualizadoEn = DateTime.UtcNow;
+       user.ActualizadoEn = DateTime.UtcNow;
        await Context.SaveChangesAsync();
 
-            Logger.LogInformation("Usuario {Email} actualizado exitosamente", user.Email);
-            successMessage = "✅ Usuario actualizado exitosamente";
+     Logger.LogInformation("Usuario {Email} actualizado exitosamente", user.Email);
+       successMessage = "✅ Usuario actualizado exitosamente";
   Snackbar.Add("Usuario actualizado exitosamente", Severity.Success);
 
-     // Redirigir después de 2 segundos
-         await Task.Delay(2000);
-       NavigationManager.NavigateTo("/Admin/Usuarios");
-        }
+ // Redirigir después de 2 segundos
+await Task.Delay(2000);
+ NavigationManager.NavigateTo("/Admin/Usuarios");
+   }
         catch (Exception ex)
         {
     Logger.LogError(ex, "Error al actualizar usuario");
-            errorMessage = "Error inesperado al actualizar usuario. Por favor, intente nuevamente.";
+    errorMessage = "Error inesperado al actualizar usuario. Por favor, intente nuevamente.";
             Snackbar.Add("Error al actualizar usuario", Severity.Error);
   }
    finally
-        {
+  {
        isSubmitting = false;
-        }
+      }
+    }
+
+    private string? ValidateNombreOApellido(string valor, string campo)
+    {
+  if (string.IsNullOrWhiteSpace(valor))
+  return $"El campo {campo} es requerido";
+
+        // Validar que solo contenga letras, espacios, tildes y caracteres especiales del español
+        var regex = new Regex(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$");
+  if (!regex.IsMatch(valor))
+   return $"El campo {campo} solo debe contener letras y espacios";
+
+     return null;
     }
 
     private void Cancelar()
@@ -369,10 +408,10 @@ if (isChecked)
         public int UserId { get; set; }
 
         [Required]
-        public string Email { get; set; } = "";
+   public string Email { get; set; } = "";
 
-        [Required(ErrorMessage = "Los nombres son requeridos")]
-        [StringLength(100, ErrorMessage = "Máximo 100 caracteres")]
+ [Required(ErrorMessage = "Los nombres son requeridos")]
+    [StringLength(100, ErrorMessage = "Máximo 100 caracteres")]
         public string Nombres { get; set; } = "";
 
         [Required(ErrorMessage = "Los apellidos son requeridos")]
@@ -389,7 +428,7 @@ if (isChecked)
 
         public bool EmailConfirmed { get; set; }
 
-        public bool TwoFactorEnabled { get; set; }
+   public bool TwoFactorEnabled { get; set; }
     }
 
     public class ProgramaInfo

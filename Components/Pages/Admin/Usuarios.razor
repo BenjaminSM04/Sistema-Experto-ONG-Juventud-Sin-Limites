@@ -19,126 +19,223 @@
 
 <PageTitle>Gestión de Usuarios</PageTitle>
 
+<style>
+    .mythra-header {
+        background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
+        color: #FEFEFD;
+        padding: 1.5rem;
+    border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+
+    .mythra-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+border-left: 4px solid #4D3935;
+    }
+
+    .mythra-toolbar {
+      background-color: #F7C484;
+        border-radius: 8px 8px 0 0;
+        padding: 1rem;
+    }
+
+    .mythra-button-primary {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .mythra-button-primary:hover {
+        background: linear-gradient(135deg, #85C97C 0%, #9FD996 100%) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(159, 217, 150, 0.4) !important;
+    }
+
+    .mythra-table-header {
+  background-color: #4D3935 !important;
+        color: #FEFEFD !important;
+      font-weight: 600;
+    }
+
+    .mythra-table-row:hover {
+   background-color: #F7C48420 !important;
+    }
+
+    .mythra-chip-admin {
+        background-color: #F7C484 !important;
+        color: #4D3935 !important;
+        font-weight: 600;
+    }
+
+    .mythra-chip-coordinador {
+ background-color: #9FD996 !important;
+    color: #4D3935 !important;
+  font-weight: 600;
+    }
+
+ .mythra-chip-facilitador {
+        background-color: #F3C95A !important;
+   color: #4D3935 !important;
+        font-weight: 600;
+    }
+
+    .mythra-chip-info {
+     background-color: #9FD996 !important;
+    color: #4D3935 !important;
+    }
+
+    .mythra-chip-success {
+        background-color: #9FD996 !important;
+        color: #4D3935 !important;
+    }
+
+  .mythra-chip-default {
+        background-color: #F7C484 !important;
+        color: #4D3935 !important;
+    }
+</style>
+
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" GutterBottom="true">
-        <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-2" /> Gestión de Usuarios
-    </MudText>
+    <div class="mythra-header">
+        <MudText Typo="Typo.h4">
+            <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-2" /> Gestión de Usuarios
+  </MudText>
+        <MudText Typo="Typo.body1" Class="mt-2" Style="opacity: 0.9;">
+            Administra usuarios, roles y permisos del sistema
+        </MudText>
+    </div>
 
-  <MudPaper Class="pa-4 mt-4">
- <MudToolBar>
-            <MudTextField @bind-Value="searchString" Placeholder="Buscar por email..." Adornment="Adornment.Start"
-           AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Immediate="true"></MudTextField>
-          <MudSpacer />
-       <MudButton Variant="Variant.Filled" 
-     Color="Color.Primary" 
-          StartIcon="@Icons.Material.Filled.Add" 
-         Href="/Admin/Usuarios/Crear">
-     Nuevo Usuario
-     </MudButton>
-  </MudToolBar>
+    <MudPaper Class="mythra-card" Elevation="3">
+   <div class="mythra-toolbar">
+   <MudToolBar Style="background: transparent;">
+        <MudTextField @bind-Value="searchString" 
+Placeholder="Buscar por email o nombre..." 
+            Adornment="Adornment.Start"
+        AdornmentIcon="@Icons.Material.Filled.Search" 
+       IconSize="Size.Medium" 
+        Class="mt-0" 
+           Immediate="true"
+     Style="background-color: #FEFEFD; border-radius: 4px;"></MudTextField>
+                <MudSpacer />
+            <MudButton Variant="Variant.Filled" 
+           Class="mythra-button-primary"
+ StartIcon="@Icons.Material.Filled.Add" 
+   Href="/Admin/Usuarios/Crear"
+       Size="Size.Large">
+            Nuevo Usuario
+         </MudButton>
+      </MudToolBar>
+     </div>
 
-        <MudTable Items="@usuarios" Dense="true" Hover="true" Loading="@isLoading" Filter="new Func<UsuarioViewModel, bool>(FilterFunc)">
-   <HeaderContent>
-     <MudTh>Email</MudTh>
-       <MudTh>Nombre Completo</MudTh>
-        <MudTh>Rol</MudTh>
-        <MudTh>Programas</MudTh>
-       <MudTh>Estado</MudTh>
-    <MudTh>2FA</MudTh>
-         <MudTh>Debe Cambiar Pass</MudTh>
-         <MudTh>Creado</MudTh>
- <MudTh>Acciones</MudTh>
- </HeaderContent>
-            <RowTemplate>
-       <MudTd DataLabel="Email">
-        <MudText Typo="Typo.body2">@context.Email</MudText>
-    @if (context.EmailConfirmed)
-         {
-  <MudIcon Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Color="Color.Success" Title="Email confirmado" />
-      }
-    </MudTd>
-      <MudTd DataLabel="Nombre">@context.NombreCompleto</MudTd>
-   <MudTd DataLabel="Rol">
-    <MudChip T="string" Size="Size.Small" Color="@GetRoleColor(context.RolPrincipal)">@context.RolPrincipal</MudChip>
-    </MudTd>
-<MudTd DataLabel="Programas">
-         @if (context.Programas.Any())
-          {
-    @foreach (var programa in context.Programas.Take(2))
+        <MudTable Items="@usuarios" 
+     Dense="true" 
+  Hover="true" 
+         Loading="@isLoading" 
+     Filter="new Func<UsuarioViewModel, bool>(FilterFunc)"
+            Elevation="0">
+            <HeaderContent>
+     <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Email</MudTh>
+    <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Nombre Completo</MudTh>
+         <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Rol</MudTh>
+ <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Programas</MudTh>
+             <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Estado</MudTh>
+             <MudTh Style="background-color: #4D3935; color: #FEFEFD;">2FA</MudTh>
+     <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Debe Cambiar Pass</MudTh>
+      <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Creado</MudTh>
+      <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Acciones</MudTh>
+      </HeaderContent>
+  <RowTemplate>
+                <MudTd DataLabel="Email">
+               <MudText Typo="Typo.body2" Style="color: #4D3935; font-weight: 500;">@context.Email</MudText>
+            @if (context.EmailConfirmed)
     {
-     <MudChip T="string" Size="Size.Small" Color="Color.Info">@programa</MudChip>
-   }
-      @if (context.Programas.Count > 2)
-  {
-    <MudChip T="string" Size="Size.Small">+@(context.Programas.Count - 2)</MudChip>
-            }
-   }
-           else
+              <MudIcon Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Style="color: #9FD996;" Title="Email confirmado" />
+              }
+         </MudTd>
+          <MudTd DataLabel="Nombre">
+    <MudText Typo="Typo.body2" Style="color: #4D3935;">@context.NombreCompleto</MudText>
+           </MudTd>
+        <MudTd DataLabel="Rol">
+  <MudChip T="string" Size="Size.Small" Class="@GetRoleClass(context.RolPrincipal)">@context.RolPrincipal</MudChip>
+    </MudTd>
+     <MudTd DataLabel="Programas">
+        @if (context.Programas.Any())
+    {
+       @foreach (var programa in context.Programas.Take(2))
    {
+            <MudChip T="string" Size="Size.Small" Class="mythra-chip-info">@programa</MudChip>
+    }
+      @if (context.Programas.Count > 2)
+        {
+           <MudChip T="string" Size="Size.Small" Style="background-color: #F3C95A; color: #4D3935;">+@(context.Programas.Count - 2)</MudChip>
+           }
+              }
+  else
+              {
     <MudText Typo="Typo.caption" Color="Color.Secondary">Sin programas</MudText>
-     }
-        </MudTd>
-     <MudTd DataLabel="Estado">
-     @if (context.IsActive)
-    {
-   <MudChip T="string" Size="Size.Small" Color="Color.Success">Activo</MudChip>
-       }
-      else
-      {
-       <MudChip T="string" Size="Size.Small" Color="Color.Default">Inactivo</MudChip>
-         }
+    }
      </MudTd>
-     <MudTd DataLabel="2FA">
+          <MudTd DataLabel="Estado">
+         @if (context.IsActive)
+      {
+   <MudChip T="string" Size="Size.Small" Class="mythra-chip-success">Activo</MudChip>
+            }
+          else
+        {
+ <MudChip T="string" Size="Size.Small" Class="mythra-chip-default">Inactivo</MudChip>
+       }
+      </MudTd>
+        <MudTd DataLabel="2FA">
  @if (context.TwoFactorEnabled)
+              {
+<MudIcon Icon="@Icons.Material.Filled.Security" Style="color: #9FD996;" Title="2FA Activado" />
+            }
+         else
+ {
+          <MudIcon Icon="@Icons.Material.Filled.SecurityUpdateWarning" Color="Color.Default" Title="2FA Desactivado" />
+    }
+     </MudTd>
+                <MudTd DataLabel="Debe Cambiar Pass">
+             @if (context.MustChangePassword)
+       {
+             <MudIcon Icon="@Icons.Material.Filled.Warning" Style="color: #F3C95A;" Title="Debe cambiar contraseña" />
+ }
+    else
+              {
+      <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: #9FD996;" Title="Contraseña OK" />
+        }
+     </MudTd>
+    <MudTd DataLabel="Creado">
+     <MudText Typo="Typo.caption" Style="color: #4D3935;">@context.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy")</MudText>
+          </MudTd>
+            <MudTd DataLabel="Acciones">
+     <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
+      <MudMenuItem Icon="@Icons.Material.Filled.Edit" 
+Href="@($"/Admin/Usuarios/Editar/{context.Id}")">
+       Editar
+         </MudMenuItem>
+     <MudMenuItem Icon="@Icons.Material.Filled.VpnKey" OnClick="@(() => ResetPasswordAsync(context))">
+           Resetear Contraseña
+                </MudMenuItem>
+  @if (context.IsActive)
   {
-          <MudIcon Icon="@Icons.Material.Filled.Security" Color="Color.Success" Title="2FA Activado" />
-   }
+      <MudMenuItem Icon="@Icons.Material.Filled.Block" OnClick="@(() => ToggleUserStatusAsync(context))">
+         Desactivar
+     </MudMenuItem>
+     }
          else
   {
-       <MudIcon Icon="@Icons.Material.Filled.SecurityUpdateWarning" Color="Color.Default" Title="2FA Desactivado" />
-         }
-     </MudTd>
-    <MudTd DataLabel="Debe Cambiar Pass">
-  @if (context.MustChangePassword)
-        {
-  <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Title="Debe cambiar contraseña" />
-   }
-   else
-       {
-   <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Title="Contraseña OK" />
-          }
-     </MudTd>
-         <MudTd DataLabel="Creado">
-        <MudText Typo="Typo.caption">@context.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy")</MudText>
-      </MudTd>
-   <MudTd DataLabel="Acciones">
- <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
-   <MudMenuItem Icon="@Icons.Material.Filled.Edit" 
-        Href="@($"/Admin/Usuarios/Editar/{context.Id}")">
-     Editar
-</MudMenuItem>
-   <MudMenuItem Icon="@Icons.Material.Filled.VpnKey" OnClick="@(() => ResetPasswordAsync(context))">
-        Resetear Contraseña
-       </MudMenuItem>
- @if (context.IsActive)
-     {
-   <MudMenuItem Icon="@Icons.Material.Filled.Block" OnClick="@(() => ToggleUserStatusAsync(context))">
-        Desactivar
-      </MudMenuItem>
-  }
-   else
-     {
- <MudMenuItem Icon="@Icons.Material.Filled.CheckCircle" OnClick="@(() => ToggleUserStatusAsync(context))">
+                <MudMenuItem Icon="@Icons.Material.Filled.CheckCircle" OnClick="@(() => ToggleUserStatusAsync(context))">
      Activar
-     </MudMenuItem>
-      }
-        </MudMenu>
-   </MudTd>
-       </RowTemplate>
-  <PagerContent>
-       <MudTablePager />
-         </PagerContent>
-   </MudTable>
+               </MudMenuItem>
+   }
+               </MudMenu>
+  </MudTd>
+            </RowTemplate>
+            <PagerContent>
+    <MudTablePager />
+          </PagerContent>
+        </MudTable>
     </MudPaper>
 </MudContainer>
 
@@ -221,6 +318,17 @@ MustChangePassword = u.MustChangePassword,
             _ => Color.Default
  };
   }
+
+    private string GetRoleClass(string rol)
+    {
+        return rol switch
+        {
+            "Administrador" => "mythra-chip-admin",
+    "Coordinador" => "mythra-chip-coordinador",
+            "Facilitador" => "mythra-chip-facilitador",
+            _ => "mythra-chip-info"
+        };
+    }
 
     private async Task OpenEditUserDialog(UsuarioViewModel userViewModel)
     {

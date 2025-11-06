@@ -6,41 +6,45 @@
 @using Microsoft.EntityFrameworkCore
 @using System.ComponentModel.DataAnnotations
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
 @using System.Security.Cryptography
 @using System.Text.RegularExpressions
+@using MudBlazor
+@using Microsoft.JSInterop
 
 @inject UserManager<Usuario> UserManager
 @inject RoleManager<Rol> RoleManager
 @inject ApplicationDbContext Context
 @inject NavigationManager NavigationManager
 @inject ILogger<CrearUsuario> Logger
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Crear Usuario</PageTitle>
 
 <div class="container mt-4">
     <div class="row">
-        <div class="col-md-8 offset-md-2">
+<div class="col-md-10 offset-md-1">
   <div class="card">
-     <div class="card-header bg-primary text-white">
+   <div class="card-header bg-primary text-white">
             <h4><i class="bi bi-person-plus-fill"></i> Crear Nuevo Usuario</h4>
          </div>
    <div class="card-body">
-       @if (!string.IsNullOrEmpty(errorMessage))
-            {
+     @if (!string.IsNullOrEmpty(errorMessage))
+         {
       <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle-fill"></i> @errorMessage
+    <i class="bi bi-exclamation-triangle-fill"></i> @errorMessage
     <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
   </div>
        }
 
     @if (!string.IsNullOrEmpty(successMessage))
-         {
+   {
     <div class="alert alert-success alert-dismissible fade show" role="alert">
-     <i class="bi bi-check-circle-fill"></i> @successMessage
+ <i class="bi bi-check-circle-fill"></i> @successMessage
         <button type="button" class="btn-close" @onclick="() => successMessage = null"></button>
-       </div>
-       }
+  </div>
+  }
 
    @if (!string.IsNullOrEmpty(generatedPassword))
      {
@@ -52,23 +56,30 @@
    <p class="mb-2"><strong>Email:</strong> @model.Email</p>
       <p class="mb-3"><strong>Nombre:</strong> @model.Nombres @model.Apellidos</p>
       
-           <div class="alert alert-warning mb-3">
-     <i class="bi bi-exclamation-triangle-fill"></i> 
-        <strong>¡IMPORTANTE!</strong> Copie y guarde esta contraseña temporal de forma segura. No se volverá a mostrar.
+       <div class="alert alert-warning mb-3">
+ <i class="bi bi-exclamation-triangle-fill"></i> 
+  <strong>¡IMPORTANTE!</strong> Copie y guarde esta contraseña temporal de forma segura. No se volverá a mostrar.
   </div>
 
-       <div class="input-group input-group-lg mb-3">
+  <div class="input-group input-group-lg mb-3">
      <span class="input-group-text bg-dark text-white"><i class="bi bi-lock-fill"></i></span>
-      <input type="@(showPassword ? "text" : "password")" 
-         class="form-control font-monospace fw-bold text-center" 
-         value="@generatedPassword" 
+      <input id="passwordField" type="@(showPassword ? "text" : "password")" 
+    class="form-control font-monospace fw-bold text-center" 
+ value="@generatedPassword" 
         readonly 
-       style="letter-spacing: 2px; font-size: 1.2rem;" />
+     style="letter-spacing: 2px; font-size: 1.2rem;" />
        <button class="btn btn-outline-secondary" type="button" @onclick="TogglePasswordVisibility">
-     <i class="bi @(showPassword ? "bi-eye-slash" : "bi-eye")"></i>
+     @if (showPassword)
+                {
+        <i class="bi bi-eye-slash-fill"></i>
+         }
+    else
+       {
+           <i class="bi bi-eye-fill"></i>
+         }
        </button>
-       <button class="btn btn-primary" type="button" @onclick="CopyPassword">
- <i class="bi bi-clipboard"></i> Copiar
+    <button class="btn btn-primary" type="button" @onclick="CopyPassword">
+ <i class="bi bi-clipboard-fill"></i> Copiar
   </button>
       </div>
 
@@ -76,101 +87,148 @@
    {
    <div class="alert alert-success">
     <i class="bi bi-check-circle-fill"></i> Contraseña copiada al portapapeles
-      </div>
-           }
+    </div>
+    }
 
     <div class="alert alert-info mb-0">
 <h6><i class="bi bi-info-circle-fill"></i> Próximos pasos:</h6>
     <ol class="mb-0">
  <li>Envíe estas credenciales al usuario de forma segura</li>
-        <li>El usuario debe cambiar la contraseña en su primer inicio de sesión</li>
-        <li class="text-muted"><em>(Próximamente: Envío automático por email)</em></li>
+     <li>El usuario debe cambiar la contraseña en su primer inicio de sesión</li>
+  <li class="text-muted"><em>(Próximamente: Envío automático por email)</em></li>
       </ol>
-       </div>
+ </div>
    </div>
         <div class="card-footer">
-         <div class="d-flex justify-content-between">
+       <div class="d-flex justify-content-between">
         <button type="button" class="btn btn-secondary" @onclick="CrearOtroUsuario">
-            <i class="bi bi-person-plus"></i> Crear Otro Usuario
+ <i class="bi bi-person-plus"></i> Crear Otro Usuario
    </button>
     <button type="button" class="btn btn-success" @onclick="VolverALista">
-               <i class="bi bi-list-ul"></i> Volver a la Lista
-        </button>
+<i class="bi bi-list-ul"></i> Volver a la Lista
+   </button>
       </div>
  </div>
-          </div>
+  </div>
         }
 
    @if (string.IsNullOrEmpty(generatedPassword))
      {
      <EditForm Model="@model" OnValidSubmit="HandleValidSubmit">
-             <DataAnnotationsValidator />
-      
+  <DataAnnotationsValidator />
+   
+<!-- Sección: Información de Cuenta -->
+      <h5 class="border-bottom pb-2 mb-3"><i class="bi bi-person-badge"></i> Información de Cuenta</h5>
+
       <div class="mb-3">
   <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
-             <InputText id="email" @bind-Value="model.Email" class="form-control" placeholder="usuario@dominio.com" />
+ <InputText id="email" @bind-Value="model.Email" class="form-control" placeholder="usuario@dominio.com" />
      <ValidationMessage For="@(() => model.Email)" class="text-danger" />
-            <small class="form-text text-muted">Debe ser un email corporativo o institucional válido</small>
+   <small class="form-text text-muted">Debe ser un email corporativo o institucional válido</small>
       </div>
 
-             <div class="mb-3">
-            <label for="nombres" class="form-label">Nombres <span class="text-danger">*</span></label>
-     <InputText id="nombres" @bind-Value="model.Nombres" class="form-control" />
-      <ValidationMessage For="@(() => model.Nombres)" class="text-danger" />
-              </div>
+  <!-- Sección: Datos Personales -->
+    <h5 class="border-bottom pb-2 mb-3 mt-4"><i class="bi bi-person"></i> Datos Personales</h5>
+  
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="nombres" class="form-label">Nombres <span class="text-danger">*</span></label>
+       <InputText id="nombres" @bind-Value="model.Nombres" class="form-control" />
+     <ValidationMessage For="@(() => model.Nombres)" class="text-danger" />
+     </div>
+        <div class="col-md-6 mb-3">
+      <label for="apellidos" class="form-label">Apellidos <span class="text-danger">*</span></label>
+ <InputText id="apellidos" @bind-Value="model.Apellidos" class="form-control" />
+   <ValidationMessage For="@(() => model.Apellidos)" class="text-danger" />
+        </div>
+      </div>
 
-        <div class="mb-3">
-          <label for="apellidos" class="form-label">Apellidos <span class="text-danger">*</span></label>
-            <InputText id="apellidos" @bind-Value="model.Apellidos" class="form-control" />
-          <ValidationMessage For="@(() => model.Apellidos)" class="text-danger" />
-          </div>
+      <div class="mb-3">
+   <label for="telefono" class="form-label">Teléfono (Opcional)</label>
+        <InputText id="telefono" @bind-Value="model.Telefono" class="form-control" placeholder="+505 8888-8888" />
+     <ValidationMessage For="@(() => model.Telefono)" class="text-danger" />
+      </div>
 
-          <div class="mb-3">
- <label for="telefono" class="form-label">Teléfono (Opcional)</label>
-    <InputText id="telefono" @bind-Value="model.Telefono" class="form-control" placeholder="+505 8888-8888" />
-        <ValidationMessage For="@(() => model.Telefono)" class="text-danger" />
-              </div>
+      <!-- Sección: Rol y Permisos -->
+      <h5 class="border-bottom pb-2 mb-3 mt-4"><i class="bi bi-shield-fill-check"></i> Rol y Permisos</h5>
 
-     <div class="mb-3">
-    <label for="rol" class="form-label">Rol <span class="text-danger">*</span></label>
+      <div class="mb-3">
+        <label for="rol" class="form-label">Rol Principal <span class="text-danger">*</span></label>
         <InputSelect id="rol" @bind-Value="model.Rol" class="form-select">
-           <option value="">-- Seleccione un rol --</option>
-   @foreach (var rol in roles)
-  {
-           <option value="@rol">@rol</option>
- }
-             </InputSelect>
-           <ValidationMessage For="@(() => model.Rol)" class="text-danger" />
-                </div>
+       <option value="">-- Seleccione un rol --</option>
+@foreach (var rol in roles)
+ {
+            <option value="@rol">@rol</option>
+  }
+        </InputSelect>
+     <ValidationMessage For="@(() => model.Rol)" class="text-danger" />
+ <small class="form-text text-muted">El rol determina los permisos del usuario en el sistema</small>
+    </div>
+
+      <!-- Sección: Programas Asignados -->
+      <h5 class="border-bottom pb-2 mb-3 mt-4"><i class="bi bi-folder-fill"></i> Programas Asignados</h5>
+      
+      <div class="mb-3">
+    <label class="form-label">Seleccione los programas a los que tiene acceso</label>
+        <div class="row">
+          @foreach (var programa in availableProgramas)
+          {
+            <div class="col-md-6 mb-2">
+       <div class="form-check">
+          <input class="form-check-input" type="checkbox" 
+      id="prog_@programa.Id" 
+          checked="@model.ProgramasAsignados.Contains(programa.Id)"
+   @onchange="@((e) => TogglePrograma(programa.Id, (bool)e.Value!))" />
+      <label class="form-check-label" for="prog_@programa.Id">
+     <MudChip T="string" Size="Size.Small" Color="Color.Info">@programa.Nombre</MudChip>
+   </label>
+   </div>
+   </div>
+          }
+        </div>
+    @if (model.ProgramasAsignados.Count == 0)
+        {
+  <small class="text-warning">
+   <i class="bi bi-exclamation-triangle"></i> Sin programas asignados, el usuario no podrá acceder a funcionalidades específicas
+  </small>
+      }
+   else
+        {
+    <small class="text-success">
+     <i class="bi bi-check-circle"></i> @model.ProgramasAsignados.Count programa(s) seleccionado(s)
+          </small>
+        }
+      </div>
 
      <div class="alert alert-info">
  <i class="bi bi-info-circle-fill"></i> Se generará una contraseña temporal segura automáticamente. El usuario deberá cambiarla en su primer inicio de sesión.
      </div>
 
-                <div class="d-flex justify-content-between mt-4">
-          <button type="button" class="btn btn-secondary" @onclick="Cancelar" disabled="@isSubmitting">
+          <div class="d-flex justify-content-between mt-4">
+    <button type="button" class="btn btn-secondary" @onclick="Cancelar" disabled="@isSubmitting">
  <i class="bi bi-x-circle"></i> Cancelar
-           </button>
+       </button>
     <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
      @if (isSubmitting)
-      {
+   {
      <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-     }
+}
        <i class="bi bi-check-circle"></i> Crear Usuario
-         </button>
-              </div>
+     </button>
+     </div>
   </EditForm>
      }
  </div>
-       </div>
-        </div>
-    </div>
+  </div>
+</div>
+ </div>
 </div>
 
 @code {
  private CreateUserModel model = new();
   private List<string> roles = new();
-    private string? errorMessage;
+  private List<ProgramaInfo> availableProgramas = new();
+  private string? errorMessage;
     private string? successMessage;
 private bool isSubmitting = false;
     private string? generatedPassword;
@@ -185,30 +243,63 @@ private bool isSubmitting = false;
         roles = await RoleManager.Roles
    .Where(r => !r.IsDeleted)
   .Select(r => r.Name ?? "")
-     .ToListAsync();
+   .ToListAsync();
+
+        // Cargar programas disponibles
+     availableProgramas = await Context.Programas
+      .Where(p => !p.IsDeleted)
+ .Select(p => new ProgramaInfo { Id = p.ProgramaId, Nombre = p.Nombre })
+        .ToListAsync();
+    }
+
+private void TogglePrograma(int programaId, bool isChecked)
+ {
+  if (isChecked)
+     {
+         model.ProgramasAsignados.Add(programaId);
+        }
+        else
+        {
+  model.ProgramasAsignados.Remove(programaId);
+    }
     }
 
     private void TogglePasswordVisibility()
     {
-        showPassword = !showPassword;
+  showPassword = !showPassword;
+      StateHasChanged();
     }
 
     private async Task CopyPassword()
     {
         try
+   {
+          // Copiar al portapapeles usando JavaScript
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", generatedPassword);
+      passwordCopied = true;
+            
+          // Ocultar el mensaje después de 3 segundos
+            await Task.Delay(3000);
+            passwordCopied = false;
+   StateHasChanged();
+        }
+ catch (Exception ex)
         {
- // Intentar copiar al portapapeles usando JavaScript interop
-  // Por ahora solo mostramos el mensaje
-  passwordCopied = true;
-   
-         // El usuario puede copiar manualmente desde el campo de texto
+            Logger.LogError(ex, "Error al copiar contraseña al portapapeles");
+   // Fallback: intentar con un método alternativo
+    try
+            {
+       await JSRuntime.InvokeVoidAsync("eval", $"document.getElementById('passwordField').select(); document.execCommand('copy');");
+             passwordCopied = true;
    await Task.Delay(3000);
-        passwordCopied = false;
-      }
-     catch
-{
-// Silenciar errores de clipboard
- }
+      passwordCopied = false;
+StateHasChanged();
+   }
+        catch
+            {
+       // Si falla, el usuario puede copiar manualmente
+            }
+   }
     }
 
     private void CrearOtroUsuario()
@@ -216,112 +307,140 @@ private bool isSubmitting = false;
         model = new();
    generatedPassword = null;
         successMessage = null;
-     errorMessage = null;
+  errorMessage = null;
         passwordCopied = false;
-        showPassword = false;
-    }
+     showPassword = false;
+ }
 
     private void VolverALista()
     {
-        NavigationManager.NavigateTo("/Admin/Usuarios");
+  NavigationManager.NavigateTo("/Admin/Usuarios");
     }
 
     private async Task HandleValidSubmit()
     {
-        if (isSubmitting) return;
+   if (isSubmitting) return;
 
-        errorMessage = null;
-        successMessage = null;
-        passwordCopied = false;
+      errorMessage = null;
+   successMessage = null;
+passwordCopied = false;
 
-// Validar email personalizado
+        // Validar email personalizado
         var emailValidation = ValidateEmail(model.Email);
-        if (!string.IsNullOrEmpty(emailValidation))
-  {
+ if (!string.IsNullOrEmpty(emailValidation))
+   {
   errorMessage = emailValidation;
-    return;
+   return;
         }
 
-        isSubmitting = true;
+   // Validar nombres (solo letras y espacios)
+        var nombresValidation = ValidateNombreOApellido(model.Nombres, "nombres");
+      if (!string.IsNullOrEmpty(nombresValidation))
+   {
+    errorMessage = nombresValidation;
+            return;
+        }
 
-     try
+        // Validar apellidos (solo letras y espacios)
+        var apellidosValidation = ValidateNombreOApellido(model.Apellidos, "apellidos");
+    if (!string.IsNullOrEmpty(apellidosValidation))
+   {
+     errorMessage = apellidosValidation;
+       return;
+  }
+
+    isSubmitting = true;
+
+        try
         {
-            // Obtener usuario current
-    var authState = await authenticationState!;
-  var currentUserEmail = authState.User.Identity?.Name;
+      // Obtener usuario current
+            var authState = await authenticationState!;
+     var currentUserEmail = authState.User.Identity?.Name;
 
-            // Verificar si el email ya existe
-            var existingUser = await UserManager.FindByEmailAsync(model.Email);
-     if (existingUser != null)
- {
-                errorMessage = "Ya existe un usuario con ese email";
-          return;
+   // Verificar si el email ya existe
+    var existingUser = await UserManager.FindByEmailAsync(model.Email);
+   if (existingUser != null)
+      {
+     errorMessage = "Ya existe un usuario con ese email";
+   return;
             }
 
-     // Crear persona
-         var persona = new Persona
-            {
-      Nombres = model.Nombres,
-           Apellidos = model.Apellidos,
-       FechaNacimiento = null,
-     Telefono = model.Telefono,
-      CreadoEn = DateTime.UtcNow
-            };
-            Context.Personas.Add(persona);
+        // Crear persona
+      var persona = new Persona
+ {
+Nombres = model.Nombres.Trim(),
+          Apellidos = model.Apellidos.Trim(),
+    FechaNacimiento = null,
+  Telefono = model.Telefono,
+    CreadoEn = DateTime.UtcNow
+ };
+        Context.Personas.Add(persona);
       await Context.SaveChangesAsync();
 
-          // Generar contraseña temporal fuerte
-            var tempPassword = GenerateSecurePassword();
+     // Generar contraseña temporal fuerte
+   var tempPassword = GenerateSecurePassword();
 
-            // Crear usuario
+ // Crear usuario
  var usuario = new Usuario
-      {
-        PersonaId = persona.PersonaId,
-     UserName = model.Email,
-         Email = model.Email,
-         EmailConfirmed = true,
-      Estado = Domain.Common.EstadoGeneral.Activo,
+  {
+   PersonaId = persona.PersonaId,
+             UserName = model.Email,
+       Email = model.Email,
+          EmailConfirmed = true,
+  Estado = Domain.Common.EstadoGeneral.Activo,
     MustChangePassword = true,
-                CreatedBy = currentUserEmail ?? "Admin",
- CreatedAtUtc = DateTime.UtcNow,
-  CreadoEn = DateTime.UtcNow
-   };
+    CreatedBy = currentUserEmail ?? "Admin",
+        CreatedAtUtc = DateTime.UtcNow,
+       CreadoEn = DateTime.UtcNow
+         };
 
-            var result = await UserManager.CreateAsync(usuario, tempPassword);
-            if (!result.Succeeded)
-            {
-       errorMessage = $"Error al crear usuario: {string.Join("; ", result.Errors.Select(e => e.Description))}";
-     
-        // Eliminar la persona si falló la creación del usuario
-     Context.Personas.Remove(persona);
-        await Context.SaveChangesAsync();
-     return;
-            }
+   var result = await UserManager.CreateAsync(usuario, tempPassword);
+     if (!result.Succeeded)
+      {
+    errorMessage = $"Error al crear usuario: {string.Join("; ", result.Errors.Select(e => e.Description))}";
+  
+       // Eliminar la persona si falló la creación del usuario
+   Context.Personas.Remove(persona);
+    await Context.SaveChangesAsync();
+      return;
+        }
 
-         // Asignar rol
-            await UserManager.AddToRoleAsync(usuario, model.Rol);
+// Asignar rol
+   await UserManager.AddToRoleAsync(usuario, model.Rol);
 
-     Logger.LogInformation("Usuario {Email} creado por {CreatedBy} con contraseña temporal", model.Email, currentUserEmail);
+          // Asignar programas seleccionados
+     foreach (var programaId in model.ProgramasAsignados)
+      {
+   var usuarioPrograma = new UsuarioPrograma
+       {
+UsuarioId = usuario.Id,
+       ProgramaId = programaId,
+     Desde = DateTime.Today,
+CreadoEn = DateTime.UtcNow
+    };
+     Context.UsuarioProgramas.Add(usuarioPrograma);
+          }
+
+       await Context.SaveChangesAsync();
+
+        Logger.LogInformation("Usuario {Email} creado por {CreatedBy} con contraseña temporal", model.Email, currentUserEmail);
 
  // Guardar la contraseña generada para mostrarla
-            generatedPassword = tempPassword;
-         successMessage = $"Usuario creado exitosamente";
-         
-   // NO limpiar el formulario ni redirigir automáticamente
-   // El usuario debe ver la contraseña y decidir qué hacer
-        
-      // NO redirigir: await Task.Delay(3000); NavigationManager.NavigateTo("/Admin/Usuarios");
+  generatedPassword = tempPassword;
+   successMessage = $"Usuario creado exitosamente";
+   
+   // NO redirigir: await Task.Delay(3000); NavigationManager.NavigateTo("/Admin/Usuarios");
    }
       catch (Exception ex)
-     {
-            Logger.LogError(ex, "Error al crear usuario");
-          errorMessage = "Error inesperado al crear usuario. Por favor, intente nuevamente.";
-        }
-        finally
         {
-    isSubmitting = false;
-        }
+    Logger.LogError(ex, "Error al crear usuario");
+     errorMessage = "Error inesperado al crear usuario. Por favor, intente nuevamente.";
+     }
+        finally
+    {
+  isSubmitting = false;
     }
+ }
 
     private string? ValidateEmail(string email)
     {
@@ -329,12 +448,12 @@ private bool isSubmitting = false;
        return "El email es requerido";
 
         // Validar formato básico de email
-        var emailRegex = new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+     var emailRegex = new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
         if (!emailRegex.IsMatch(email))
-     return "Formato de email inválido";
+  return "Formato de email inválido";
 
         // Validar que no sea un email de prueba o genérico
-        var invalidPatterns = new[]
+    var invalidPatterns = new[]
  {
       @"^[a-z]@[a-z]\.(com|net|org)$",
             @"^test@",
@@ -345,11 +464,11 @@ private bool isSubmitting = false;
     @"@example\."
       };
 
-        foreach (var pattern in invalidPatterns)
+foreach (var pattern in invalidPatterns)
         {
-    if (Regex.IsMatch(email.ToLower(), pattern))
+  if (Regex.IsMatch(email.ToLower(), pattern))
    return "Email no válido. Use un email corporativo o institucional real";
-        }
+      }
 
         // Validar dominios de un solo carácter
         var parts = email.Split('@');
@@ -357,15 +476,28 @@ private bool isSubmitting = false;
         {
      var domainParts = parts[1].Split('.');
             if (domainParts.Any(p => p.Length < 2))
-            return "Dominio de email inválido";
-        }
+     return "Dominio de email inválido";
+   }
 
   // Validar longitud mínima del usuario
         if (parts[0].Length < 3)
-      return "El nombre de usuario debe tener al menos 3 caracteres";
+   return "El nombre de usuario debe tener al menos 3 caracteres";
+
+   return null;
+    }
+
+    private string? ValidateNombreOApellido(string valor, string campo)
+    {
+  if (string.IsNullOrWhiteSpace(valor))
+        return $"El campo {campo} es requerido";
+
+        // Validar que solo contenga letras, espacios, tildes y caracteres especiales del español
+    var regex = new Regex(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$");
+        if (!regex.IsMatch(valor))
+ return $"El campo {campo} solo debe contener letras y espacios";
 
         return null;
-    }
+ }
 
     private string GenerateSecurePassword()
     {
@@ -375,15 +507,15 @@ private bool isSubmitting = false;
    // Asegurar al menos un carácter de cada tipo
   password[0] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[RandomNumberGenerator.GetInt32(26)];
         password[1] = "abcdefghijklmnopqrstuvwxyz"[RandomNumberGenerator.GetInt32(26)];
-        password[2] = "1234567890"[RandomNumberGenerator.GetInt32(10)];
+  password[2] = "1234567890"[RandomNumberGenerator.GetInt32(10)];
         password[3] = "!@#$%^&*"[RandomNumberGenerator.GetInt32(8)];
 
         for (int i = 4; i < 12; i++)
-        {
+      {
    password[i] = validChars[RandomNumberGenerator.GetInt32(validChars.Length)];
    }
 
-        return new string(password.OrderBy(x => RandomNumberGenerator.GetInt32(1000)).ToArray());
+  return new string(password.OrderBy(x => RandomNumberGenerator.GetInt32(1000)).ToArray());
     }
 
     private void Cancelar()
@@ -397,8 +529,8 @@ private bool isSubmitting = false;
         [EmailAddress(ErrorMessage = "Email inválido")]
      public string Email { get; set; } = "";
 
-        [Required(ErrorMessage = "Los nombres son requeridos")]
-        [StringLength(100, ErrorMessage = "Máximo 100 caracteres")]
+  [Required(ErrorMessage = "Los nombres son requeridos")]
+  [StringLength(100, ErrorMessage = "Máximo 100 caracteres")]
         public string Nombres { get; set; } = "";
 
      [Required(ErrorMessage = "Los apellidos son requeridos")]
@@ -408,7 +540,15 @@ private bool isSubmitting = false;
 [StringLength(30, ErrorMessage = "Máximo 30 caracteres")]
     public string? Telefono { get; set; }
 
-        [Required(ErrorMessage = "El rol es requerido")]
-        public string Rol { get; set; } = "";
+    [Required(ErrorMessage = "El rol es requerido")]
+      public string Rol { get; set; } = "";
+
+ public HashSet<int> ProgramasAsignados { get; set; } = new();
+    }
+
+    public class ProgramaInfo
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; } = "";
     }
 }

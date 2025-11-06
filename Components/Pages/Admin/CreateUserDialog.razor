@@ -6,68 +6,70 @@
 @inject ILogger<CreateUserDialog> Logger
 
 <MudDialog>
-    <TitleContent>
+ <TitleContent>
      <MudText Typo="Typo.h6">
     <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Class="mr-2" />
-            Crear Nuevo Usuario
+      Crear Nuevo Usuario
       </MudText>
     </TitleContent>
-    <DialogContent>
-        <EditForm Model="@model" OnValidSubmit="HandleValidSubmit" id="createUserForm">
+  <DialogContent>
+      <EditForm Model="@model" OnValidSubmit="HandleValidSubmit" id="createUserForm">
      <DataAnnotationsValidator />
-     <ValidationSummary />
+  <ValidationSummary />
    
-        <MudTextField @bind-Value="model.Email" 
+ <MudTextField @bind-Value="model.Email" 
  Label="Email" 
-    Required="true" 
+  Required="true" 
     RequiredError="El email es requerido"
-          Variant="Variant.Outlined"
+   Variant="Variant.Outlined"
      HelperText="Debe ser un email corporativo o institucional válido"
-    Validation="@(new Func<string, string>(ValidateEmail))" />
+    Validation="@EmailValidator" />
    
         <MudTextField @bind-Value="model.Nombres" 
-           Label="Nombres" 
+       Label="Nombres" 
         Required="true" 
   RequiredError="Los nombres son requeridos"
-        Variant="Variant.Outlined" 
-    Class="mt-3" />
+     Variant="Variant.Outlined" 
+    Class="mt-3"
+    Validation="@NombresValidator" />
       
   <MudTextField @bind-Value="model.Apellidos" 
-        Label="Apellidos" 
+    Label="Apellidos" 
 Required="true" 
         RequiredError="Los apellidos son requeridos"
-      Variant="Variant.Outlined" 
-     Class="mt-3" />
+    Variant="Variant.Outlined" 
+   Class="mt-3"
+   Validation="@ApellidosValidator" />
  
        <MudTextField @bind-Value="model.Telefono" 
    Label="Teléfono (Opcional)" 
-      Variant="Variant.Outlined" 
+   Variant="Variant.Outlined" 
         Class="mt-3"
       HelperText="Formato: +505 8888-8888" />
    
-            <MudSelect @bind-Value="model.Rol" 
-                Label="Rol" 
+  <MudSelect @bind-Value="model.Rol" 
+Label="Rol" 
  Required="true" 
-             RequiredError="El rol es requerido"
-            Variant="Variant.Outlined" 
+     RequiredError="El rol es requerido"
+  Variant="Variant.Outlined" 
     Class="mt-3">
-     @foreach (var rol in Roles)
+ @foreach (var rol in Roles)
     {
          <MudSelectItem Value="@rol">@rol</MudSelectItem>
-                }
-            </MudSelect>
+     }
+   </MudSelect>
 
-         <MudAlert Severity="Severity.Info" Class="mt-3" Icon="@Icons.Material.Filled.Info">
+   <MudAlert Severity="Severity.Info" Class="mt-3" Icon="@Icons.Material.Filled.Info">
       Se generará una contraseña temporal segura automáticamente. El usuario deberá cambiarla en su primer inicio de sesión.
-            </MudAlert>
-        </EditForm>
+    </MudAlert>
+  </EditForm>
     </DialogContent>
     <DialogActions>
   <MudButton OnClick="Cancel" Variant="Variant.Outlined">
-            Cancelar
+   Cancelar
         </MudButton>
         <MudButton OnClick="Submit" Color="Color.Primary" Variant="Variant.Filled">
-        Crear Usuario
+   Crear Usuario
    </MudButton>
     </DialogActions>
 </MudDialog>
@@ -82,120 +84,166 @@ Required="true"
   private CreateUserModel model = new();
     private bool _isSubmitting = false;
 
+    private Func<string, string?> EmailValidator => ValidateEmail;
+    private Func<string, string?> NombresValidator => ValidateNombres;
+    private Func<string, string?> ApellidosValidator => ValidateApellidos;
+
     protected override void OnInitialized()
  {
-        Logger.LogInformation("✅ CreateUserDialog inicializado");
-        Logger.LogInformation("📋 Roles disponibles: {Count}", Roles?.Count ?? 0);
-        Logger.LogInformation("🔍 MudDialog es null: {IsNull}", MudDialog == null);
+  Logger.LogInformation("✅ CreateUserDialog inicializado");
+    Logger.LogInformation("📋 Roles disponibles: {Count}", Roles?.Count ?? 0);
+ Logger.LogInformation("🔍 MudDialog es null: {IsNull}", MudDialog == null);
     }
 
     private string? ValidateEmail(string email)
-    {
-        if (string.IsNullOrWhiteSpace(email))
+ {
+    if (string.IsNullOrWhiteSpace(email))
   return "El email es requerido";
 
-        // Validar formato básico de email
-        var emailRegex = new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+   // Validar formato básico de email
+     var emailRegex = new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
  if (!emailRegex.IsMatch(email))
      return "Formato de email inválido";
 
-        // Validar que no sea un email de prueba o genérico
+  // Validar que no sea un email de prueba o genérico
    var invalidPatterns = new[]
 {
-            @"^[a-z]@[a-z]\.(com|net|org)$", // a@a.com, b@c.net
+      @"^[a-z]@[a-z]\.(com|net|org)$", // a@a.com, b@c.net
 @"^test@", // test@...
-            @"^prueba@", // prueba@...
-       @"^demo@", // demo@...
-       @"@test\.", // ...@test.com
+    @"^prueba@", // prueba@...
+  @"^demo@", // demo@...
+    @"@test\.", // ...@test.com
    @"@ejemplo\.", // ...@ejemplo.com
-            @"@example\." // ...@example.com
-        };
+   @"@example\." // ...@example.com
+ };
 
-        foreach (var pattern in invalidPatterns)
+foreach (var pattern in invalidPatterns)
         {
        if (Regex.IsMatch(email.ToLower(), pattern))
    return "Email no válido. Use un email corporativo o institucional real";
     }
 
-        // Validar dominios de un solo carácter
-        var parts = email.Split('@');
+      // Validar dominios de un solo carácter
+    var parts = email.Split('@');
         if (parts.Length == 2)
         {
-       var domainParts = parts[1].Split('.');
-            if (domainParts.Any(p => p.Length < 2))
+    var domainParts = parts[1].Split('.');
+     if (domainParts.Any(p => p.Length < 2))
   return "Dominio de email inválido";
   }
 
         // Validar longitud mínima del usuario (antes del @)
   if (parts[0].Length < 3)
-            return "El nombre de usuario debe tener al menos 3 caracteres";
+         return "El nombre de usuario debe tener al menos 3 caracteres";
 
         return null; // Email válido
+}
+
+    private string? ValidateNombres(string valor)
+    {
+        if (string.IsNullOrWhiteSpace(valor))
+   return "El campo nombres es requerido";
+
+      // Validar que solo contenga letras, espacios, tildes y caracteres especiales del español
+      var regex = new Regex(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$");
+        if (!regex.IsMatch(valor))
+ return "El campo nombres solo debe contener letras y espacios";
+
+    return null;
+    }
+
+    private string? ValidateApellidos(string valor)
+    {
+   if (string.IsNullOrWhiteSpace(valor))
+  return "El campo apellidos es requerido";
+
+        // Validar que solo contenga letras, espacios, tildes y caracteres especiales del español
+     var regex = new Regex(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$");
+        if (!regex.IsMatch(valor))
+  return "El campo apellidos solo debe contener letras y espacios";
+
+   return null;
     }
 
     private void HandleValidSubmit()
-    {
+  {
    Logger.LogInformation("✅ HandleValidSubmit llamado");
    Logger.LogInformation("📧 Email: {Email}, Nombres: {Nombres}, Rol: {Rol}", model.Email, model.Nombres, model.Rol);
   
-        // Cerrar el diálogo con el modelo
+     // Cerrar el diálogo con el modelo
         MudDialog?.Close(DialogResult.Ok(model));
     }
 
     private void Submit()
     {
    Logger.LogInformation("✅ Submit (botón) llamado");
-      
+   
      if (_isSubmitting)
-            return;
+    return;
 
-        // Validar manualmente el formulario
-        var emailValidation = ValidateEmail(model.Email);
-        if (!string.IsNullOrEmpty(emailValidation))
+     // Validar manualmente el formulario
+      var emailValidation = ValidateEmail(model.Email);
+      if (!string.IsNullOrEmpty(emailValidation))
      {
-            Logger.LogWarning("❌ Validación de email falló: {Message}", emailValidation);
-        return;
-    }
+ Logger.LogWarning("❌ Validación de email falló: {Message}", emailValidation);
+   return;
+ }
 
-    if (string.IsNullOrWhiteSpace(model.Nombres) || 
+    // Validar nombres
+  var nombresValidation = ValidateNombres(model.Nombres);
+        if (!string.IsNullOrEmpty(nombresValidation))
+      {
+  Logger.LogWarning("❌ Validación de nombres falló: {Message}", nombresValidation);
+ return;
+     }
+
+   // Validar apellidos
+        var apellidosValidation = ValidateApellidos(model.Apellidos);
+    if (!string.IsNullOrEmpty(apellidosValidation))
+        {
+          Logger.LogWarning("❌ Validación de apellidos falló: {Message}", apellidosValidation);
+       return;
+ }
+
+  if (string.IsNullOrWhiteSpace(model.Nombres) || 
      string.IsNullOrWhiteSpace(model.Apellidos) || 
     string.IsNullOrWhiteSpace(model.Rol))
    {
-         Logger.LogWarning("❌ Faltan campos requeridos");
-            return;
+     Logger.LogWarning("❌ Faltan campos requeridos");
+    return;
     }
 
-        _isSubmitting = true;
+      _isSubmitting = true;
   Logger.LogInformation("📧 Email: {Email}, Nombres: {Nombres}, Rol: {Rol}", model.Email, model.Nombres, model.Rol);
-      
+   
         // Cerrar el diálogo con el modelo
-        MudDialog?.Close(DialogResult.Ok(model));
-    }
+   MudDialog?.Close(DialogResult.Ok(model));
+ }
 
     private void Cancel()
     {
-        Logger.LogInformation("❌ Cancel llamado");
+Logger.LogInformation("❌ Cancel llamado");
         MudDialog?.Close(DialogResult.Cancel());
     }
 
     public class CreateUserModel
     {
-        [Required(ErrorMessage = "El email es requerido")]
+  [Required(ErrorMessage = "El email es requerido")]
   [EmailAddress(ErrorMessage = "Email inválido")]
-        public string Email { get; set; } = "";
+ public string Email { get; set; } = "";
 
-        [Required(ErrorMessage = "Los nombres son requeridos")]
+    [Required(ErrorMessage = "Los nombres son requeridos")]
    [StringLength(100, ErrorMessage = "Máximo 100 caracteres")]
   public string Nombres { get; set; } = "";
 
-        [Required(ErrorMessage = "Los apellidos son requeridos")]
-        [StringLength(100, ErrorMessage = "Máximo 100 caracteres")]
-        public string Apellidos { get; set; } = "";
+[Required(ErrorMessage = "Los apellidos son requeridos")]
+    [StringLength(100, ErrorMessage = "Máximo 100 caracteres")]
+  public string Apellidos { get; set; } = "";
 
         [StringLength(30, ErrorMessage = "Máximo 30 caracteres")]
    public string? Telefono { get; set; }
 
-        [Required(ErrorMessage = "El rol es requerido")]
+ [Required(ErrorMessage = "El rol es requerido")]
   public string Rol { get; set; } = "";
     }
 }
