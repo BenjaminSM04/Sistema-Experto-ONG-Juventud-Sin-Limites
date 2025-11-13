@@ -17,182 +17,287 @@
 
 <PageTitle>Mi Perfil</PageTitle>
 
+<style>
+    .mythra-header {
+        background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
+        color: #FEFEFD;
+        padding: 1.5rem;
+        border-radius: 8px;
+ margin-bottom: 2rem;
+    }
+
+    .mythra-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-left: 4px solid #4D3935;
+    }
+
+    .mythra-card-header {
+        background-color: #F7C484;
+        color: #4D3935;
+        padding: 1rem;
+     border-radius: 8px 8px 0 0;
+    }
+
+    .mythra-button-primary {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+     color: #4D3935 !important;
+        font-weight: 600 !important;
+  }
+
+    .mythra-button-primary:hover {
+   background: linear-gradient(135deg, #85C97C 0%, #9FD996 100%) !important;
+    transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(159, 217, 150, 0.4) !important;
+    }
+
+    .mythra-button-warning {
+        background: linear-gradient(135deg, #F3C95A 0%, #E5BA45 100%) !important;
+      color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .mythra-button-warning:hover {
+        background: linear-gradient(135deg, #E5BA45 0%, #F3C95A 100%) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(243, 201, 90, 0.4) !important;
+    }
+
+    .mythra-button-secondary {
+        background-color: transparent !important;
+        border: 2px solid #4D3935 !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .mythra-button-secondary:hover {
+        background-color: #4D393510 !important;
+        transform: translateY(-2px);
+    }
+
+    .mythra-chip-success {
+        background-color: #9FD996 !important;
+  color: #4D3935 !important;
+   font-weight: 600;
+    }
+
+    .mythra-chip-primary {
+        background-color: #F7C484 !important;
+        color: #4D3935 !important;
+        font-weight: 600;
+    }
+
+    .mythra-table {
+     background-color: transparent;
+  }
+
+    .mythra-table tr {
+     border-bottom: 1px solid #F7C48440;
+    }
+
+    .mythra-table td {
+ color: #4D3935;
+        padding: 0.75rem 0.5rem;
+    }
+
+    .mythra-alert-error {
+        background: linear-gradient(135deg, #F3C95A 0%, #F7C484 100%);
+        color: #4D3935;
+        border-left: 4px solid #4D3935;
+    }
+</style>
+
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">
-        <MudIcon Icon="@Icons.Material.Filled.AccountCircle" Class="mr-2" />
-        Mi Perfil
-    </MudText>
+    <div class="mythra-header">
+        <MudText Typo="Typo.h4">
+     <MudIcon Icon="@Icons.Material.Filled.AccountCircle" Class="mr-2" />
+            Mi Perfil
+        </MudText>
+        <MudText Typo="Typo.body1" Class="mt-2" Style="opacity: 0.9;">
+            Gestiona tu información personal y configuración de cuenta
+ </MudText>
+    </div>
 
     @if (loading)
     {
-        <MudGrid>
+ <MudGrid>
             <MudItem xs="12" Class="d-flex justify-center align-center" Style="min-height:400px;">
-      <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
-            </MudItem>
-        </MudGrid>
-    }
+         <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+     </MudItem>
+</MudGrid>
+ }
     else if (usuario != null && persona != null)
     {
         <MudGrid>
-<!-- Información Personal -->
+      <!-- Información Personal -->
             <MudItem xs="12" md="6">
-    <MudCard Elevation="3">
-               <MudCardHeader>
-               <CardHeaderContent>
-           <MudText Typo="Typo.h6">
- <MudIcon Icon="@Icons.Material.Filled.Person" Class="mr-2" />
-       Información Personal
-               </MudText>
-          </CardHeaderContent>
-        </MudCardHeader>
-      <MudCardContent>
-            <EditForm Model="@inputModel" OnValidSubmit="HandleValidSubmit">
-              <DataAnnotationsValidator />
-        
-             <MudTextField 
-   Value="@usuario.Email" 
-      ReadOnly="true"
-          Label="Email" 
-  Variant="Variant.Outlined" 
-         Disabled="true"
-           Margin="Margin.Dense"
-    Class="mb-3" />
+      <MudPaper Class="mythra-card" Elevation="3">
+          <div class="mythra-card-header">
+        <MudText Typo="Typo.h6" Style="font-weight: 600;">
+                <MudIcon Icon="@Icons.Material.Filled.Person" Class="mr-2" />
+      Información Personal
+        </MudText>
+  </div>
+         <MudCardContent>
+   <EditForm Model="@inputModel" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+              
+           <MudTextField 
+          Value="@usuario.Email" 
+          ReadOnly="true"
+              Label="Email" 
+          Variant="Variant.Outlined" 
+   Disabled="true"
+    Margin="Margin.Dense"
+           Class="mb-3"
+   Style="background-color: #F7F7F7;" />
 
-          <MudTextField 
-            @bind-Value="inputModel.Nombres" 
-       Label="Nombres" 
-    Variant="Variant.Outlined"
-         Required="true"
-        RequiredError="Los nombres son requeridos"
-                     Margin="Margin.Dense"
-                Class="mb-3" />
+              <MudTextField 
+      @bind-Value="inputModel.Nombres" 
+  Label="Nombres" 
+ Variant="Variant.Outlined"
+             Required="true"
+    RequiredError="Los nombres son requeridos"
+   Margin="Margin.Dense"
+       Class="mb-3"
+     Style="background-color: #FEFEFD;" />
 
-         <MudTextField 
+      <MudTextField 
        @bind-Value="inputModel.Apellidos" 
-       Label="Apellidos" 
-                    Variant="Variant.Outlined"
-    Required="true"
-     RequiredError="Los apellidos son requeridos"
-       Margin="Margin.Dense"
-      Class="mb-3" />
+             Label="Apellidos" 
+Variant="Variant.Outlined"
+              Required="true"
+         RequiredError="Los apellidos son requeridos"
+    Margin="Margin.Dense"
+ Class="mb-3"
+    Style="background-color: #FEFEFD;" />
 
        <MudTextField 
-     @bind-Value="inputModel.Telefono" 
-               Label="Teléfono (Opcional)" 
-   Variant="Variant.Outlined"
-         Margin="Margin.Dense"
-         Class="mb-3" />
+        @bind-Value="inputModel.Telefono" 
+    Label="Teléfono (Opcional)" 
+        Variant="Variant.Outlined"
+    Margin="Margin.Dense"
+   Class="mb-3"
+         Style="background-color: #FEFEFD;" />
 
-              <MudDatePicker 
-    @bind-Date="inputModel.FechaNacimiento" 
-         Label="Fecha de Nacimiento"
-              Variant="Variant.Outlined"
-       Margin="Margin.Dense"
-            Editable="true"
+       <MudDatePicker 
+         @bind-Date="inputModel.FechaNacimiento" 
+       Label="Fecha de Nacimiento"
+      Variant="Variant.Outlined"
+    Margin="Margin.Dense"
+  Editable="true"
       DateFormat="dd/MM/yyyy"
-       Class="mb-3" />
+        Class="mb-3"
+                 Style="background-color: #FEFEFD;"
+ AdornmentIcon="@Icons.Material.Filled.CalendarToday" />
 
-  <MudButton 
-          ButtonType="ButtonType.Submit" 
-     Variant="Variant.Filled" 
-   Color="Color.Primary" 
-          FullWidth="true"
-       StartIcon="@Icons.Material.Filled.Save"
- Disabled="@guardando">
-  @if (guardando)
-        {
-       <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
-          <span>Guardando...</span>
-   }
-           else
-        {
-              <span>Guardar Cambios</span>
-   }
-            </MudButton>
-     </EditForm>
-             </MudCardContent>
-     </MudCard>
-    </MudItem>
-
-            <!-- Información de Cuenta -->
-            <MudItem xs="12" md="6">
-         <MudCard Elevation="3">
-      <MudCardHeader>
-        <CardHeaderContent>
-       <MudText Typo="Typo.h6">
-    <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
-       Información de Cuenta
-         </MudText>
-              </CardHeaderContent>
-      </MudCardHeader>
-      <MudCardContent>
-    <MudSimpleTable Style="overflow-x: auto;">
-   <tbody>
-      <tr>
-       <td><strong><MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" Class="mr-2" />Email</strong></td>
-      <td>@usuario.Email</td>
-    </tr>
-   <tr>
-            <td><strong><MudIcon Icon="@Icons.Material.Filled.ToggleOn" Size="Size.Small" Class="mr-2" />Estado</strong></td>
-        <td><MudChip T="string" Color="Color.Success" Size="Size.Small" Text="@usuario.Estado.ToString()" /></td>
-    </tr>
-                  <tr>
-          <td><strong><MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Small" Class="mr-2" />Roles</strong></td>
- <td>
-   @if (roles != null && roles.Any())
-               {
-    @foreach (var rol in roles)
-        {
-    <MudChip T="string" Color="Color.Primary" Size="Size.Small" Text="@rol" Class="mr-1" />
-    }
-                }
+        <MudButton 
+  ButtonType="ButtonType.Submit" 
+        Variant="Variant.Filled" 
+              Class="mythra-button-primary"
+         FullWidth="true"
+             StartIcon="@Icons.Material.Filled.Save"
+        Disabled="@guardando"
+               Size="Size.Large">
+          @if (guardando)
+   {
+      <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
+               <span>Guardando...</span>
+          }
     else
-     {
-        <MudText Typo="Typo.body2" Color="Color.Default">Sin roles asignados</MudText>
-           }
-         </td>
-         </tr>
-  <tr>
-      <td><strong><MudIcon Icon="@Icons.Material.Filled.Event" Size="Size.Small" Class="mr-2" />Cuenta Creada</strong></td>
- <td>@usuario.CreadoEn.ToString("dd/MM/yyyy HH:mm")</td>
+      {
+           <span>Guardar Cambios</span>
+   }
+    </MudButton>
+</EditForm>
+ </MudCardContent>
+      </MudPaper>
+   </MudItem>
+
+    <!-- Información de Cuenta -->
+        <MudItem xs="12" md="6">
+     <MudPaper Class="mythra-card" Elevation="3">
+            <div class="mythra-card-header">
+          <MudText Typo="Typo.h6" Style="font-weight: 600;">
+             <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
+                 Información de Cuenta
+  </MudText>
+    </div>
+      <MudCardContent>
+             <MudSimpleTable Class="mythra-table" Style="overflow-x: auto;">
+      <tbody>
+                  <tr>
+      <td><strong><MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" Class="mr-2" />Email</strong></td>
+         <td>@usuario.Email</td>
+            </tr>
+       <tr>
+    <td><strong><MudIcon Icon="@Icons.Material.Filled.ToggleOn" Size="Size.Small" Class="mr-2" />Estado</strong></td>
+       <td><MudChip T="string" Class="mythra-chip-success" Size="Size.Small" Text="@usuario.Estado.ToString()" /></td>
+       </tr>
+       <tr>
+           <td><strong><MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Small" Class="mr-2" />Roles</strong></td>
+     <td>
+ @if (roles != null && roles.Any())
+        {
+           @foreach (var rol in roles)
+            {
+        <MudChip T="string" Class="mythra-chip-primary" Size="Size.Small" Text="@rol" Style="margin-right: 0.25rem;" />
+      }
+ }
+         else
+    {
+    <MudText Typo="Typo.body2" Color="Color.Default">Sin roles asignados</MudText>
+          }
+                </td>
         </tr>
-   @if (usuario.EmailConfirmed)
-             {
-            <tr>
-           <td colspan="2"><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="mr-2" /><MudText Typo="Typo.body2" Color="Color.Success" Inline="true">Email Confirmado</MudText></td>
-      </tr>
-       }
-            </tbody>
- </MudSimpleTable>
-       </MudCardContent>
-            <MudCardActions Class="d-flex flex-column pa-4">
-       <MudButton 
-   Href="/Account/Manage/ChangePassword" 
-      Variant="Variant.Filled" 
-              Color="Color.Warning" 
-      FullWidth="true"
-      StartIcon="@Icons.Material.Filled.VpnKey"
-  Class="mb-2">
-             Cambiar Contraseña
-    </MudButton>
-         <MudButton 
-            Href="/" 
-  Variant="Variant.Outlined" 
-      Color="Color.Secondary" 
-     FullWidth="true"
-         StartIcon="@Icons.Material.Filled.ArrowBack">
-               Volver al Inicio
-    </MudButton>
+       <tr>
+ <td><strong><MudIcon Icon="@Icons.Material.Filled.Event" Size="Size.Small" Class="mr-2" />Cuenta Creada</strong></td>
+           <td>@usuario.CreadoEn.ToString("dd/MM/yyyy HH:mm")</td>
+   </tr>
+      @if (usuario.EmailConfirmed)
+        {
+    <tr>
+      <td colspan="2">
+          <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Class="mr-2" Style="color: #9FD996;" />
+     <MudText Typo="Typo.body2" Inline="true" Style="color: #9FD996; font-weight: 600;">Email Confirmado</MudText>
+           </td>
+             </tr>
+        }
+          </tbody>
+         </MudSimpleTable>
+         </MudCardContent>
+   <MudCardActions Class="d-flex flex-column pa-4">
+     <MudButton 
+     Href="/Account/Manage/ChangePassword" 
+     Variant="Variant.Filled" 
+     Class="mythra-button-warning"
+          FullWidth="true"
+       StartIcon="@Icons.Material.Filled.VpnKey"
+        Size="Size.Large"
+            Style="margin-bottom: 0.5rem;">
+         Cambiar Contraseña
+     </MudButton>
+      <MudButton 
+             Href="/" 
+         Variant="Variant.Outlined" 
+   Class="mythra-button-secondary"
+    FullWidth="true"
+             StartIcon="@Icons.Material.Filled.ArrowBack"
+       Size="Size.Large">
+     Volver al Inicio
+       </MudButton>
    </MudCardActions>
-            </MudCard>
-  </MudItem>
+           </MudPaper>
+   </MudItem>
         </MudGrid>
-  }
+    }
     else
     {
-        <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
-            <MudText>No se pudo cargar la información del usuario. Por favor, <MudLink Href="/Account/Login" Color="Color.Inherit">inicia sesión</MudLink> nuevamente.</MudText>
-        </MudAlert>
+    <MudPaper Class="mythra-alert-error" Elevation="2">
+  <div style="padding: 1rem;">
+        <MudIcon Icon="@Icons.Material.Filled.Error" Class="mr-2" />
+        <MudText Inline="true">No se pudo cargar la información del usuario. Por favor, <MudLink Href="/Account/Login" Style="color: #4D3935; font-weight: 600; text-decoration: underline;">inicia sesión</MudLink> nuevamente.</MudText>
+   </div>
+        </MudPaper>
     }
 </MudContainer>
 

@@ -18,383 +18,500 @@
 
 <PageTitle>Motor de Inferencia</PageTitle>
 
+<style>
+    .mythra-header {
+      background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
+    color: #FEFEFD;
+        padding: 1.5rem;
+        border-radius: 8px;
+     margin-bottom: 2rem;
+    }
+
+    .mythra-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-left: 4px solid #4D3935;
+  }
+
+    .mythra-panel {
+        background-color: #F7C484;
+        border-radius: 8px;
+        padding: 1.5rem;
+    }
+
+    .mythra-button-primary {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .mythra-button-primary:hover {
+        background: linear-gradient(135deg, #85C97C 0%, #9FD996 100%) !important;
+     transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(159, 217, 150, 0.4) !important;
+    }
+
+    .mythra-button-success {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+     color: #4D3935 !important;
+        font-weight: 600 !important;
+      border: none !important;
+  }
+
+    .mythra-button-success:hover {
+   background: linear-gradient(135deg, #85C97C 0%, #9FD996 100%) !important;
+    }
+
+    .mythra-button-warning {
+        background: linear-gradient(135deg, #F3C95A 0%, #E5BA45 100%) !important;
+        color: #4D3935 !important;
+   font-weight: 600 !important;
+        border: none !important;
+    }
+
+    .mythra-button-warning:hover {
+        background: linear-gradient(135deg, #E5BA45 0%, #F3C95A 100%) !important;
+    }
+
+    .mythra-table-header {
+        background-color: #4D3935 !important;
+        color: #FEFEFD !important;
+     font-weight: 600;
+    }
+
+  .mythra-table-row:hover {
+        background-color: #F7C48420 !important;
+    }
+
+    .mythra-alert-success {
+        background: linear-gradient(135deg, #9FD996 0%, #B5E3AD 100%);
+        color: #4D3935;
+        border-left: 4px solid #4D3935;
+}
+
+    .mythra-alert-error {
+        background: linear-gradient(135deg, #F3C95A 0%, #F7C484 100%);
+        color: #4D3935;
+        border-left: 4px solid #4D3935;
+    }
+
+    .mythra-chip-info {
+        background-color: #9FD996 !important;
+        color: #4D3935 !important;
+        font-weight: 600;
+    }
+
+    .mythra-chip-warning {
+     background-color: #F3C95A !important;
+        color: #4D3935 !important;
+        font-weight: 600;
+    }
+
+    .mythra-chip-error {
+        background-color: #F7C484 !important;
+        color: #4D3935 !important;
+        font-weight: 600;
+  }
+
+    .mythra-chip-success {
+      background-color: #9FD996 !important;
+        color: #4D3935 !important;
+        font-weight: 600;
+    }
+
+    .mythra-chip-secondary {
+        background-color: #4D3935 !important;
+        color: #FEFEFD !important;
+        font-weight: 600;
+    }
+
+    .mythra-chip-open {
+ background-color: #F3C95A !important;
+        color: #4D3935 !important;
+        font-weight: 600;
+    }
+</style>
+
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
     <!-- Título -->
-    <MudText Typo="Typo.h4" Class="mb-2">
-        <MudIcon Icon="@Icons.Material.Filled.Psychology" Class="mr-2" />
-    Motor de Inferencia
-    </MudText>
- <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
-     Ejecuta el motor de inferencia para detectar alertas y riesgos en los programas
-  @if (_esCoordinador)
-      {
-            <span class="text-warning"> (Limitado a tus programas asignados)</span>
- }
-    </MudText>
+    <div class="mythra-header">
+        <MudText Typo="Typo.h4">
+  <MudIcon Icon="@Icons.Material.Filled.Psychology" Class="mr-2" />
+      Motor de Inferencia
+        </MudText>
+  <MudText Typo="Typo.body1" Class="mt-2" Style="opacity: 0.9;">
+         Ejecuta el motor de inferencia para detectar alertas y riesgos en los programas
+     @if (_esCoordinador)
+        {
+     <span> (Limitado a tus programas asignados)</span>
+  }
+     </MudText>
+    </div>
 
     <!-- Panel de Ejecución -->
-    <MudCard Class="mb-4">
-        <MudCardContent>
-   <MudGrid>
-          <MudItem xs="12" md="5">
-   <MudTextField 
-             Label="Fecha de Corte" 
-       @bind-Value="_fechaCorteString" 
-            Placeholder="dd/MM/yyyy"
-   HelperText="Fecha hasta la cual se evaluarán las reglas (default: hoy)" />
-   </MudItem>
-       <MudItem xs="12" md="4">
- @if (_esCoordinador)
-  {
-     <MudSelect T="int?" 
-      Label="Programa" 
-         @bind-Value="_programaId"
-      Clearable="true"
-       Required="true"
-  HelperText="Selecciona uno de tus programas asignados">
-      @foreach (var programa in _programasDisponibles)
-   {
-       <MudSelectItem Value="@((int?)programa.Id)">@programa.Nombre</MudSelectItem>
-  }
-          </MudSelect>
-      }
-             else
-    {
-     <MudNumericField 
-     Label="Programa ID (Opcional)" 
-      @bind-Value="_programaId" 
-                 Min="1"
-    Clearable="true"
- HelperText="Dejar vacío para evaluar todos los programas" />
- }
-     </MudItem>
-         <MudItem xs="12" md="3" Class="d-flex align-end">
-     <MudButton 
-   Variant="Variant.Filled" 
-   Color="Color.Primary" 
-    StartIcon="@Icons.Material.Filled.PlayArrow" 
-     OnClick="HandleEjecutarClick"
- Disabled="@_ejecutando"
-         FullWidth="true">
- @if (_ejecutando)
-  {
-       <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-  <span>Ejecutando...</span>
+    <MudPaper Class="mythra-card mb-4" Elevation="3">
+        <div class="mythra-panel">
+     <MudGrid>
+      <MudItem xs="12" md="5">
+            <MudDatePicker 
+       Label="Fecha de Corte" 
+  @bind-Date="_fechaCorte"
+      DateFormat="dd/MM/yyyy"
+     Editable="true"
+      HelperText="Fecha hasta la cual se evaluarán las reglas"
+          Style="background-color: #FEFEFD; border-radius: 4px;"
+     Placeholder="Seleccione una fecha"
+     AdornmentIcon="@Icons.Material.Filled.CalendarToday"
+          Adornment="Adornment.End" />
+           </MudItem>
+     <MudItem xs="12" md="4">
+      <MudSelect T="int?" 
+  Label="Programa" 
+        @bind-Value="_programaId"
+                     Clearable="true"
+         HelperText="@(_esCoordinador ? "Selecciona uno de tus programas asignados" : "Dejar vacío para evaluar todos los programas")"
+            Style="background-color: #FEFEFD; border-radius: 4px;"
+        AdornmentIcon="@Icons.Material.Filled.Folder"
+        Adornment="Adornment.Start">
+           @foreach (var programa in _programasDisponibles)
+ {
+        <MudSelectItem Value="@((int?)programa.Id)">@programa.Nombre</MudSelectItem>
+        }
+              </MudSelect>
+           </MudItem>
+  <MudItem xs="12" md="3" Class="d-flex align-end">
+      <MudButton 
+    Variant="Variant.Filled" 
+    Class="mythra-button-primary"
+       StartIcon="@Icons.Material.Filled.PlayArrow" 
+  OnClick="HandleEjecutarClick"
+        Disabled="@_ejecutando"
+ FullWidth="true"
+     Size="Size.Large">
+           @if (_ejecutando)
+            {
+        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+      <span>Ejecutando...</span>
+             }
+   else
+          {
+   <span>Ejecutar Ahora</span>
      }
-     else
-  {
-  <span>Ejecutar Ahora</span>
-          }
-        </MudButton>
- </MudItem>
-   </MudGrid>
-        </MudCardContent>
-    </MudCard>
+     </MudButton>
+       </MudItem>
+        </MudGrid>
+ </div>
+    </MudPaper>
 
     <!-- Resumen de Ejecución -->
-  @if (_resumen != null)
-  {
-   <MudAlert Severity="Severity.Success" Icon="@Icons.Material.Filled.CheckCircle" Class="mb-4">
- <MudText Typo="Typo.body1" Class="mb-2"><strong>Ejecución Completada</strong></MudText>
-   <MudGrid>
- <MudItem xs="12" sm="4">
-      <MudText Typo="Typo.body2">
-      <strong>Reglas Ejecutadas:</strong> @_resumen.ReglasEjecutadas
-  </MudText>
-</MudItem>
-       <MudItem xs="12" sm="4">
-       <MudText Typo="Typo.body2">
-  <strong>Alertas Generadas:</strong> @_resumen.AlertasGeneradas
-    </MudText>
-   </MudItem>
-       <MudItem xs="12" sm="4">
-                <MudText Typo="Typo.body2">
-   <strong>Errores:</strong> @_resumen.Errores
-    </MudText>
-  </MudItem>
-  </MudGrid>
-    </MudAlert>
+    @if (_resumen != null)
+    {
+        <MudPaper Class="mythra-alert-success mb-4" Elevation="2">
+            <div style="padding: 1rem;">
+       <MudText Typo="Typo.body1" Class="mb-2" Style="font-weight: 600;">
+      <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="mr-2" />
+            Ejecución Completada
+        </MudText>
+         <MudGrid>
+        <MudItem xs="12" sm="4">
+  <MudText Typo="Typo.body2">
+     <strong>Reglas Ejecutadas:</strong> @_resumen.ReglasEjecutadas
+             </MudText>
+ </MudItem>
+    <MudItem xs="12" sm="4">
+  <MudText Typo="Typo.body2">
+          <strong>Alertas Generadas:</strong> @_resumen.AlertasGeneradas
+          </MudText>
+    </MudItem>
+      <MudItem xs="12" sm="4">
+             <MudText Typo="Typo.body2">
+       <strong>Errores:</strong> @_resumen.Errores
+     </MudText>
+         </MudItem>
+        </MudGrid>
+            </div>
+    </MudPaper>
     }
 
     <!-- Mensaje de Error -->
-  @if (!string.IsNullOrEmpty(_error))
+    @if (!string.IsNullOrEmpty(_error))
     {
-   <MudAlert Severity="Severity.Error" Icon="@Icons.Material.Filled.Error" Class="mb-4">
-  <div class="d-flex align-center justify-space-between">
-   <span>@_error</span>
-  <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="@(() => _error = null)" />
-      </div>
-        </MudAlert>
+        <MudPaper Class="mythra-alert-error mb-4" Elevation="2">
+            <div class="d-flex align-center justify-space-between" style="padding: 1rem;">
+   <div>
+    <MudIcon Icon="@Icons.Material.Filled.Error" Class="mr-2" />
+     <span>@_error</span>
+             </div>
+        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="@(() => _error = null)" Style="color: #4D3935;" />
+         </div>
+  </MudPaper>
     }
 
     <!-- Mensaje de Éxito -->
-    @if (!string.IsNullOrEmpty(_successMessage))
-    {
-        <MudAlert Severity="Severity.Success" Icon="@Icons.Material.Filled.CheckCircle" Class="mb-4">
-  <div class="d-flex align-center justify-space-between">
-          <span>@_successMessage</span>
-          <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="@(() => _successMessage = null)" />
- </div>
-      </MudAlert>
-    }
+  @if (!string.IsNullOrEmpty(_successMessage))
+ {
+        <MudPaper Class="mythra-alert-success mb-4" Elevation="2">
+      <div class="d-flex align-center justify-space-between" style="padding: 1rem;">
+ <div>
+  <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="mr-2" />
+      <span>@_successMessage</span>
+  </div>
+     <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="@(() => _successMessage = null)" Style="color: #4D3935;" />
+    </div>
+    </MudPaper>
+ }
 
- <!-- Tabla de Alertas -->
-    <MudCard>
-        <MudCardHeader>
-  <CardHeaderContent>
-<MudText Typo="Typo.h6">
-    <MudIcon Icon="@Icons.Material.Filled.Warning" Class="mr-2" />
-         Alertas Generadas (@_alertas.Count)
-      </MudText>
-            </CardHeaderContent>
-   </MudCardHeader>
-        <MudCardContent Class="pa-0">
-            <MudTable 
-        Items="@_alertas" 
-       Dense="true" 
-     Hover="true" 
-     Loading="@_cargando"
-                LoadingProgressColor="Color.Primary"
-    Breakpoint="Breakpoint.Sm"
-    Elevation="0">
-     <HeaderContent>
- <MudTh>ID</MudTh>
-    <MudTh>Severidad</MudTh>
-       <MudTh>Mensaje</MudTh>
-      <MudTh>Programa</MudTh>
- <MudTh>Actividad</MudTh>
-          <MudTh>Participante</MudTh>
-       <MudTh>Generada</MudTh>
-     <MudTh>Estado</MudTh>
-        <MudTh>Acciones</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-   <MudTd DataLabel="ID">@context.AlertaId</MudTd>
+    <!-- Tabla de Alertas -->
+    <MudPaper Class="mythra-card" Elevation="3">
+        <div style="background-color: #F7C484; border-radius: 8px 8px 0 0; padding: 1rem;">
+    <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 600;">
+       <MudIcon Icon="@Icons.Material.Filled.Warning" Class="mr-2" />
+    Alertas Generadas (@_alertas.Count)
+            </MudText>
+        </div>
+   <MudTable 
+      Items="@_alertas" 
+            Dense="true" 
+  Hover="true" 
+            Loading="@_cargando"
+ LoadingProgressColor="Color.Primary"
+            Breakpoint="Breakpoint.Sm"
+            Elevation="0"
+        Class="mythra-table">
+  <HeaderContent>
+          <MudTh Style="background-color: #4D3935; color: #FEFEFD;">ID</MudTh>
+      <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Severidad</MudTh>
+             <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Mensaje</MudTh>
+       <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Programa</MudTh>
+     <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Actividad</MudTh>
+       <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Participante</MudTh>
+                <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Generada</MudTh>
+       <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Estado</MudTh>
+           <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Acciones</MudTh>
+ </HeaderContent>
+        <RowTemplate>
+     <MudTd DataLabel="ID">
+    <MudText Typo="Typo.body2" Style="color: #4D3935; font-weight: 500;">@context.AlertaId</MudText>
+        </MudTd>
       <MudTd DataLabel="Severidad">
-<MudText Typo="Typo.body2" Color="@ObtenerColorSeveridad(context.Severidad)" Style="font-weight: 600;">
-   @ObtenerTextoSeveridad(context.Severidad)
-      </MudText>
- </MudTd>
-      <MudTd DataLabel="Mensaje">
-      <MudText Typo="Typo.body2">@context.Mensaje</MudText>
-  </MudTd>
-       <MudTd DataLabel="Programa">
-@{
- var nombrePrograma = context.ProgramaId.HasValue ? _programasDisponibles.FirstOrDefault(p => p.Id == context.ProgramaId.Value)?.Nombre ?? context.ProgramaId.Value.ToString() : "-";
-}
-  @nombrePrograma
+     <MudChip T="string" Size="Size.Small" Class="@ObtenerClaseSeveridad(context.Severidad)">
+        @ObtenerTextoSeveridad(context.Severidad)
+            </MudChip>
+     </MudTd>
+    <MudTd DataLabel="Mensaje">
+   <MudText Typo="Typo.body2" Style="color: #4D3935;">@context.Mensaje</MudText>
       </MudTd>
-     <MudTd DataLabel="Actividad">@(context.ActividadId?.ToString() ?? "-")</MudTd>
-     <MudTd DataLabel="Participante">@(context.ParticipanteId?.ToString() ?? "-")</MudTd>
-        <MudTd DataLabel="Generada">
-         <MudText Typo="Typo.body2">
-   @context.GeneradaEn.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
-    </MudText>
+      <MudTd DataLabel="Programa">
+         @{
+ var nombrePrograma = context.ProgramaId.HasValue ? _programasDisponibles.FirstOrDefault(p => p.Id == context.ProgramaId.Value)?.Nombre ?? context.ProgramaId.Value.ToString() : "-";
+          }
+        <MudText Typo="Typo.body2" Style="color: #4D3935;">@nombrePrograma</MudText>
+         </MudTd>
+        <MudTd DataLabel="Actividad">
+            <MudText Typo="Typo.body2" Style="color: #4D3935;">@(context.ActividadId?.ToString() ?? "-")</MudText>
+                </MudTd>
+             <MudTd DataLabel="Participante">
+       <MudText Typo="Typo.body2" Style="color: #4D3935;">@(context.ParticipanteId?.ToString() ?? "-")</MudText>
+     </MudTd>
+       <MudTd DataLabel="Generada">
+       <MudText Typo="Typo.caption" Style="color: #4D3935;">
+               @context.GeneradaEn.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                    </MudText>
+                </MudTd>
+                <MudTd DataLabel="Estado">
+        <MudChip T="string" Size="Size.Small" Class="@ObtenerClaseEstado(context.Estado)">
+    @ObtenerTextoEstado(context.Estado)
+    </MudChip>
     </MudTd>
-    <MudTd DataLabel="Estado">
-    <MudText Typo="Typo.body2" Color="@ObtenerColorEstado(context.Estado)" Style="font-weight: 600;">
-  @ObtenerTextoEstado(context.Estado)
-       </MudText>
-    </MudTd>
-        <MudTd DataLabel="Acciones">
-     @if (context.Estado == (byte)EstadoAlerta.Abierta)
-       {
-        <MudButtonGroup Size="Size.Small" Variant="Variant.Outlined">
-     <MudButton 
+           <MudTd DataLabel="Acciones">
+    @if (context.Estado == (byte)EstadoAlerta.Abierta)
+     {
+ <MudButtonGroup Size="Size.Small" Variant="Variant.Filled">
+       <MudButton 
+Class="mythra-button-success"
      StartIcon="@Icons.Material.Filled.CheckCircle" 
-        Color="Color.Success" 
-         Size="Size.Small"
-      OnClick="@(() => CambiarEstadoAlerta(context.AlertaId, EstadoAlerta.Resuelta, context.RowVersion))">
-      Resolver
-     </MudButton>
-    <MudButton 
- StartIcon="@Icons.Material.Filled.Cancel" 
-   Color="Color.Warning" 
-   Size="Size.Small"
+                Size="Size.Small"
+        OnClick="@(() => CambiarEstadoAlerta(context.AlertaId, EstadoAlerta.Resuelta, context.RowVersion))">
+           Resolver
+            </MudButton>
+      <MudButton 
+         Class="mythra-button-warning"
+     StartIcon="@Icons.Material.Filled.Cancel" 
+      Size="Size.Small"
            OnClick="@(() => CambiarEstadoAlerta(context.AlertaId, EstadoAlerta.Descartada, context.RowVersion))">
- Descartar
-      </MudButton>
-    </MudButtonGroup>
-     }
-  else
-         {
-<MudText Typo="Typo.caption" Color="Color.Secondary">-</MudText>
-   }
-   </MudTd>
-   </RowTemplate>
-     <NoRecordsContent>
-        <MudText Class="pa-4">
-  <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
-     No hay alertas para mostrar. Ejecute el motor para generar alertas.
-   </MudText>
-   </NoRecordsContent>
-       <LoadingContent>
-   <MudText Class="pa-4">
- <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-       Cargando alertas...
-       </MudText>
-    </LoadingContent>
+      Descartar
+                 </MudButton>
+           </MudButtonGroup>
+        }
+           else
+     {
+     <MudText Typo="Typo.caption" Color="Color.Secondary">-</MudText>
+        }
+                </MudTd>
+      </RowTemplate>
+    <NoRecordsContent>
+          <MudText Class="pa-4" Style="color: #4D3935;">
+           <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
+  No hay alertas para mostrar. Ejecute el motor para generar alertas.
+  </MudText>
+        </NoRecordsContent>
+   <LoadingContent>
+      <MudText Class="pa-4" Style="color: #4D3935;">
+     <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+      Cargando alertas...
+              </MudText>
+            </LoadingContent>
         </MudTable>
- </MudCardContent>
-    </MudCard>
+    </MudPaper>
 </MudContainer>
 
 @code {
-    private string _fechaCorteString = DateTime.Now.ToString("dd/MM/yyyy");
-    private int? _programaId;
+    private DateTime? _fechaCorte = DateTime.Now;
+ private int? _programaId;
     private bool _ejecutando = false;
     private bool _cargando = false;
     private ResumenEjecucion? _resumen;
-    private List<AlertaDto> _alertas = new();
+ private List<AlertaDto> _alertas = new();
     private string? _error;
     private string? _successMessage;
     private bool _esCoordinador = false;
     private List<ProgramaInfo> _programasDisponibles = new();
-  private Usuario? _usuarioActual;
+    private Usuario? _usuarioActual;
 
     protected override async Task OnInitializedAsync()
-{
- Logger.LogInformation("🎯 Motor.razor inicializado");
-   _alertas = new List<AlertaDto>();
+    {
+  Logger.LogInformation("🎯 Motor.razor inicializado");
+        _alertas = new List<AlertaDto>();
 
         // Obtener usuario y programas asignados
- var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-     var user = authState.User;
+  var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
 
-  if (user?.Identity?.IsAuthenticated == true)
+     if (user?.Identity?.IsAuthenticated == true)
         {
- _esCoordinador = user.IsInRole("Coordinador");
+    _esCoordinador = user.IsInRole("Coordinador");
     
-        // Obtener usuario desde la BD con sus programas asignados
-    _usuarioActual = await DbContext.Users
-   .Include(u => u.UsuarioProgramas)
-     .ThenInclude(up => up.Programa)
-       .FirstOrDefaultAsync(u => u.Email == user.Identity.Name);
+     // Obtener usuario desde la BD con sus programas asignados
+            _usuarioActual = await DbContext.Users
+     .Include(u => u.UsuarioProgramas)
+             .ThenInclude(up => up.Programa)
+             .FirstOrDefaultAsync(u => u.Email == user.Identity.Name);
 
-       if (_usuarioActual != null)
-            {
-         if (_esCoordinador)
+          if (_usuarioActual != null)
        {
+    if (_esCoordinador)
+         {
     // Coordinadores solo ven sus programas asignados
-      _programasDisponibles = _usuarioActual.UsuarioProgramas
-   .Where(up => !up.IsDeleted && !up.Programa.IsDeleted)
-        .Select(up => new ProgramaInfo { Id = up.ProgramaId, Nombre = up.Programa.Nombre })
-      .ToList();
+        _programasDisponibles = _usuarioActual.UsuarioProgramas
+       .Where(up => !up.IsDeleted && !up.Programa.IsDeleted)
+            .Select(up => new ProgramaInfo { Id = up.ProgramaId, Nombre = up.Programa.Nombre })
+    .ToList();
 
-      Logger.LogInformation("👤 Coordinador {Email} tiene acceso a {Count} programas", 
-        _usuarioActual.Email, _programasDisponibles.Count);
-         }
+                    Logger.LogInformation("👤 Coordinador {Email} tiene acceso a {Count} programas", 
+      _usuarioActual.Email, _programasDisponibles.Count);
+             }
      else
-  {
-   // Administradores ven todos los programas
-        _programasDisponibles = await DbContext.Programas
-        .Where(p => !p.IsDeleted)
-        .Select(p => new ProgramaInfo { Id = p.ProgramaId, Nombre = p.Nombre })
-    .ToListAsync();
+                {
+         // Administradores ven todos los programas
+         _programasDisponibles = await DbContext.Programas
+    .Where(p => !p.IsDeleted)
+ .Select(p => new ProgramaInfo { Id = p.ProgramaId, Nombre = p.Nombre })
+        .ToListAsync();
+      }
+            }
         }
-    }
-}
     }
 
     private void HandleEjecutarClick()
     {
-   Logger.LogInformation("🖱️ HandleEjecutarClick llamado");
+        Logger.LogInformation("🖱️ HandleEjecutarClick llamado");
         
-     // Validar que coordinadores hayan seleccionado un programa
- if (_esCoordinador && !_programaId.HasValue)
+        // Validar que coordinadores hayan seleccionado un programa
+        if (_esCoordinador && !_programaId.HasValue)
         {
-      _error = "Por favor, selecciona un programa antes de ejecutar el motor.";
-      return;
-    }
+   _error = "Por favor, selecciona un programa antes de ejecutar el motor.";
+  return;
+        }
 
         _ = EjecutarMotor();
-}
-
-private DateTime? ParseFecha(string fechaString)
-{
-  if (DateTime.TryParseExact(fechaString, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out DateTime fecha))
-        {
-     return fecha;
-        }
-        return DateTime.Now;
     }
 
     private async Task EjecutarMotor()
     {
         Logger.LogInformation("🚀 EjecutarMotor() llamado");
         
-        _ejecutando = true;
-   _error = null;
-        _successMessage = null;
-      _resumen = null;
- _alertas.Clear();
-        
+   _ejecutando = true;
+_error = null;
+    _successMessage = null;
+     _resumen = null;
+        _alertas.Clear();
+  
         StateHasChanged();
 
         try
-        {
-  var fechaCorte = ParseFecha(_fechaCorteString);
-          var fechaCorteOnly = DateOnly.FromDateTime(fechaCorte ?? DateTime.Now);
+      {
+          var fechaCorteOnly = _fechaCorte.HasValue 
+              ? DateOnly.FromDateTime(_fechaCorte.Value) 
+         : DateOnly.FromDateTime(DateTime.Now);
 
-   Logger.LogInformation("📤 Ejecutando motor: FechaCorte={FechaCorte}, ProgramaId={ProgramaId}", 
-    fechaCorteOnly, _programaId);
+     Logger.LogInformation("📤 Ejecutando motor: FechaCorte={FechaCorte}, ProgramaId={ProgramaId}", 
+                fechaCorteOnly, _programaId);
             
-    // Llamada directa al servicio del motor
-   var resumen = await MotorInferencia.EjecutarAsync(fechaCorteOnly, _programaId, CancellationToken.None);
+   // Llamada directa al servicio del motor
+  var resumen = await MotorInferencia.EjecutarAsync(fechaCorteOnly, _programaId, CancellationToken.None);
 
-  Logger.LogInformation("✅ Motor ejecutado: Reglas={Reglas}, Alertas={Alertas}, Errores={Errores}",
-             resumen.ReglasEjecutadas, resumen.AlertasGeneradas, resumen.Errores);
+       Logger.LogInformation("✅ Motor ejecutado: Reglas={Reglas}, Alertas={Alertas}, Errores={Errores}",
+         resumen.ReglasEjecutadas, resumen.AlertasGeneradas, resumen.Errores);
 
-   // Filtrar alertas según los permisos del usuario
+       // Filtrar alertas según los permisos del usuario
      var queryAlertas = DbContext.Alertas.Where(a => !a.IsDeleted);
 
-   if (_esCoordinador && _usuarioActual != null)
-   {
-      // Coordinadores solo ven alertas de sus programas asignados
+     if (_esCoordinador && _usuarioActual != null)
+    {
+           // Coordinadores solo ven alertas de sus programas asignados
       var programasIds = _usuarioActual.UsuarioProgramas
-       .Where(up => !up.IsDeleted)
-      .Select(up => up.ProgramaId)
-          .ToList();
+        .Where(up => !up.IsDeleted)
+        .Select(up => up.ProgramaId)
+   .ToList();
 
-    queryAlertas = queryAlertas.Where(a => a.ProgramaId.HasValue && programasIds.Contains(a.ProgramaId.Value));
-    }
+            queryAlertas = queryAlertas.Where(a => a.ProgramaId.HasValue && programasIds.Contains(a.ProgramaId.Value));
+         }
 
-     _alertas = await queryAlertas
-       .OrderByDescending(a => a.AlertaId)
-     .Take(50)
-     .Select(a => new AlertaDto(
-      a.AlertaId,
-    a.Mensaje,
-           (byte)a.Severidad,
-   (byte)a.Estado,
-   a.GeneradaEn,
-   a.ReglaId,
-     a.ProgramaId,
-        a.ActividadId,
-   a.ParticipanteId,
-  a.RowVersion
-      ))
-       .ToListAsync();
+    _alertas = await queryAlertas
+    .OrderByDescending(a => a.AlertaId)
+        .Take(50)
+                .Select(a => new AlertaDto(
+          a.AlertaId,
+              a.Mensaje,
+ (byte)a.Severidad,
+          (byte)a.Estado,
+     a.GeneradaEn,
+           a.ReglaId,
+   a.ProgramaId,
+   a.ActividadId,
+         a.ParticipanteId,
+         a.RowVersion
+         ))
+         .ToListAsync();
 
-    Logger.LogInformation("📋 Obtenidas {Count} alertas", _alertas.Count);
+            Logger.LogInformation("📋 Obtenidas {Count} alertas", _alertas.Count);
 
-_resumen = new ResumenEjecucion(
+            _resumen = new ResumenEjecucion(
        resumen.ReglasEjecutadas,
- resumen.AlertasGeneradas,
-resumen.Errores
-    );
+             resumen.AlertasGeneradas,
+         resumen.Errores
+            );
 
-     _successMessage = $"Motor ejecutado exitosamente. {_resumen.AlertasGeneradas} alertas generadas.";
-      }
-     catch (Exception ex)
+  _successMessage = $"Motor ejecutado exitosamente. {_resumen.AlertasGeneradas} alertas generadas.";
+        }
+ catch (Exception ex)
         {
-  _error = $"Error inesperado: {ex.Message}";
-       Logger.LogError(ex, "❌ Error ejecutando motor");
+            _error = $"Error inesperado: {ex.Message}";
+            Logger.LogError(ex, "❌ Error ejecutando motor");
         }
         finally
         {
      _ejecutando = false;
-      StateHasChanged();
+            StateHasChanged();
         }
     }
 
@@ -473,37 +590,59 @@ catch (Exception ex)
       }
     }
 
-    private Color ObtenerColorSeveridad(byte severidad)
+    private string ObtenerClaseSeveridad(byte severidad)
     {
         return severidad switch
     {
-     1 => Color.Info,
-          2 => Color.Warning,
-            3 => Color.Error,
-            _ => Color.Default
-      };
+            1 => "mythra-chip-info",
+            2 => "mythra-chip-warning",
+     3 => "mythra-chip-error",
+ _ => "mythra-chip-info"
+        };
     }
 
-  private string ObtenerTextoSeveridad(byte severidad)
+    private Color ObtenerColorSeveridad(byte severidad)
+    {
+   return severidad switch
+    {
+            1 => Color.Info,
+     2 => Color.Warning,
+         3 => Color.Error,
+ _ => Color.Default
+        };
+    }
+
+    private string ObtenerTextoSeveridad(byte severidad)
     {
       return severidad switch
-        {
-  1 => "Info",
-       2 => "Alta",
-3 => "Crítica",
-  _ => "Desconocida"
+  {
+       1 => "Info",
+ 2 => "Alta",
+ 3 => "Crítica",
+      _ => "Desconocida"
   };
+    }
+
+    private string ObtenerClaseEstado(byte estado)
+    {
+    return estado switch
+        {
+            1 => "mythra-chip-open",
+          2 => "mythra-chip-success",
+    3 => "mythra-chip-secondary",
+    _ => "mythra-chip-info"
+        };
     }
 
     private Color ObtenerColorEstado(byte estado)
     {
-  return estado switch
-    {
-            1 => Color.Warning,
- 2 => Color.Success,
-            3 => Color.Secondary,
-       _ => Color.Default
-   };
+        return estado switch
+        {
+    1 => Color.Warning,
+    2 => Color.Success,
+    3 => Color.Secondary,
+            _ => Color.Default
+        };
     }
 
     private string ObtenerTextoEstado(byte estado)

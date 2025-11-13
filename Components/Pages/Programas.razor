@@ -1,109 +1,233 @@
 ﻿@page "/programas"
+@rendermode InteractiveServer
 
 @using Microsoft.AspNetCore.Authorization
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Microsoft.EntityFrameworkCore
 
 @attribute [Authorize]
 
+@inject ApplicationDbContext DbContext
+@inject NavigationManager Navigation
+
 <PageTitle>Programas</PageTitle>
 
+<style>
+    .mythra-header {
+        background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
+  color: #FEFEFD;
+        padding: 2rem;
+border-radius: 8px;
+      margin-bottom: 2rem;
+    }
+
+    .program-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+        height: 100%;
+    }
+
+    .program-card:hover {
+        transform: translateY(-8px);
+     box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+    }
+
+    .card-edv:hover {
+   border: 2px solid #F7C484;
+    }
+
+    .card-academia:hover {
+ border: 2px solid #9FD996;
+    }
+
+    .card-juventud:hover {
+        border: 2px solid #F3C95A;
+    }
+
+    .card-bernabe:hover {
+        border: 2px solid #4D3935;
+    }
+</style>
+
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h2" Class="mb-2" Style="font-family: Teko; color: #231709">
-        <MudIcon Icon="@Icons.Material.Filled.Folder" Class="mr-2" />
-
-        Programas
-    </MudText>
-    <MudText Typo="Typo.body1" Style="color: #4D3935;" Class="mb-4">
-
-        Gestión de programas de la ONG
-    </MudText>
-
-    <MudAlert Severity="Severity.Warning" Icon="@Icons.Material.Filled.Info" Style="color: yellow;">
-        <MudText Typo="Typo.body1">
-
-            Esta sección está en desarrollo. Aquí podrás ver y gestionar los programas de la ONG.
+    <div class="mythra-header">
+  <MudText Typo="Typo.h3" Style="font-weight: 600;">
+        <MudIcon Icon="@Icons.Material.Filled.Folder" Class="mr-3" Size="Size.Large" />
+      Programas de la ONG
         </MudText>
-    </MudAlert>
+        <MudText Typo="Typo.body1" Class="mt-2" Style="opacity: 0.9;">
+            Selecciona un programa para gestionar actividades, participantes y evidencias
+ </MudText>
+    </div>
 
-    <MudGrid Class="mt-4">
+    <MudGrid>
         <!-- EDV -->
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Elevation="3" Class="card-edv">
-                <!-- CLASE AÑADIDA -->
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">EDV</MudText>
-                    </CardHeaderContent>
-                    <CardHeaderAvatar>
-                        <MudAvatar Style="background-color: #F7C484">
-                            <MudIcon Icon="@Icons.Material.Filled.School" Style="color: white;" />
-                        </MudAvatar>
-                    </CardHeaderAvatar>
-                </MudCardHeader>
-                <MudCardContent>
-                    <MudText Typo="Typo.body2">Escuelas de Valores</MudText>
-                </MudCardContent>
+            <MudCard Elevation="3" Class="card-edv program-card" @onclick="@(() => NavegarPrograma("EDV"))">
+     <MudCardHeader>
+          <CardHeaderContent>
+      <MudText Typo="Typo.h6" Style="font-weight: 600;">EDV</MudText>
+ </CardHeaderContent>
+  <CardHeaderAvatar>
+        <MudAvatar Style="background-color: #F7C484" Size="Size.Large">
+       <MudIcon Icon="@Icons.Material.Filled.School" Style="color: white;" Size="Size.Large" />
+      </MudAvatar>
+     </CardHeaderAvatar>
+            </MudCardHeader>
+          <MudCardContent>
+       <MudText Typo="Typo.body2" Style="color: #6D534F;">
+        Escuelas de Valores
+          </MudText>
+       <MudText Typo="Typo.caption" Class="mt-2">
+Programa de formación en valores para jóvenes
+          </MudText>
+    </MudCardContent>
+      <MudCardActions>
+     <MudButton Variant="Variant.Text" 
+         Color="Color.Primary" 
+       Size="Size.Small"
+    OnClick="@(() => NavegarPrograma("EDV"))"
+      StartIcon="@Icons.Material.Filled.ArrowForward">
+    Ir al Programa
+    </MudButton>
+    </MudCardActions>
             </MudCard>
-        </MudItem>
+    </MudItem>
 
         <!-- Academia -->
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Elevation="3" Class="card-academia">
-                <!-- CLASE AÑADIDA -->
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Academia</MudText>
-                    </CardHeaderContent>
-                    <CardHeaderAvatar>
-                        <MudAvatar Style="background-color: #9FD996">
-                            <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Style="color: white;" />
-                        </MudAvatar>
-                    </CardHeaderAvatar>
-                </MudCardHeader>
-                <MudCardContent>
-                    <MudText Typo="Typo.body2">Academia de Liderazgo</MudText>
-                </MudCardContent>
-            </MudCard>
+            <MudCard Elevation="3" Class="card-academia program-card" @onclick="@(() => NavegarPrograma("ACADEMIA"))">
+ <MudCardHeader>
+     <CardHeaderContent>
+    <MudText Typo="Typo.h6" Style="font-weight: 600;">Academia</MudText>
+    </CardHeaderContent>
+      <CardHeaderAvatar>
+   <MudAvatar Style="background-color: #9FD996" Size="Size.Large">
+<MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Style="color: white;" Size="Size.Large" />
+          </MudAvatar>
+       </CardHeaderAvatar>
+     </MudCardHeader>
+    <MudCardContent>
+      <MudText Typo="Typo.body2" Style="color: #6D534F;">
+        Academia de Liderazgo
+   </MudText>
+    <MudText Typo="Typo.caption" Class="mt-2">
+  Desarrollo de habilidades de liderazgo
+ </MudText>
+       </MudCardContent>
+   <MudCardActions>
+  <MudButton Variant="Variant.Text" 
+            Color="Color.Primary" 
+     Size="Size.Small"
+       OnClick="@(() => NavegarPrograma("ACADEMIA"))"
+            StartIcon="@Icons.Material.Filled.ArrowForward">
+      Ir al Programa
+         </MudButton>
+  </MudCardActions>
+     </MudCard>
         </MudItem>
 
         <!-- Juventud Segura -->
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Elevation="3" Class="card-juventud">
-                <!-- CLASE AÑADIDA -->
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Juventud Segura</MudText>
-                    </CardHeaderContent>
-                    <CardHeaderAvatar>
-                        <MudAvatar Style="background-color: #F3C95A">
-                            <MudIcon Icon="@Icons.Material.Filled.Shield" Style="color: white;" />
-                        </MudAvatar>
-                    </CardHeaderAvatar>
-                </MudCardHeader>
-                <MudCardContent>
-                    <MudText Typo="Typo.body2">Prevención y Seguridad</MudText>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
+     <MudCard Elevation="3" Class="card-juventud program-card" @onclick="@(() => NavegarPrograma("JUVENTUD_SEGURA"))">
+         <MudCardHeader>
+          <CardHeaderContent>
+   <MudText Typo="Typo.h6" Style="font-weight: 600;">Juventud Segura</MudText>
+  </CardHeaderContent>
+ <CardHeaderAvatar>
+     <MudAvatar Style="background-color: #F3C95A" Size="Size.Large">
+        <MudIcon Icon="@Icons.Material.Filled.Shield" Style="color: white;" Size="Size.Large" />
+   </MudAvatar>
+         </CardHeaderAvatar>
+  </MudCardHeader>
+       <MudCardContent>
+   <MudText Typo="Typo.body2" Style="color: #6D534F;">
+         Prevención y Seguridad
+         </MudText>
+          <MudText Typo="Typo.caption" Class="mt-2">
+ Programa de prevención y seguridad juvenil
+   </MudText>
+ </MudCardContent>
+        <MudCardActions>
+     <MudButton Variant="Variant.Text" 
+        Color="Color.Primary" 
+           Size="Size.Small"
+     OnClick="@(() => NavegarPrograma("JUVENTUD_SEGURA"))"
+        StartIcon="@Icons.Material.Filled.ArrowForward">
+     Ir al Programa
+       </MudButton>
+ </MudCardActions>
+</MudCard>
+    </MudItem>
 
         <!-- Bernabé -->
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Elevation="3" Class="card-bernabe">
-                <!-- CLASE AÑADIDA -->
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Bernabé</MudText>
-                    </CardHeaderContent>
-                    <CardHeaderAvatar>
-                        <MudAvatar Style="background-color: #4D3935">
-                            <MudIcon Icon="@Icons.Material.Filled.Handshake" Style="color: white;" />
-                        </MudAvatar>
-                    </CardHeaderAvatar>
-                </MudCardHeader>
-                <MudCardContent>
-                    <MudText Typo="Typo.body2">Acompañamiento Integral</MudText>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-    </MudGrid>
+            <MudCard Elevation="3" Class="card-bernabe program-card" @onclick="@(() => NavegarPrograma("BERNABE"))">
+       <MudCardHeader>
+        <CardHeaderContent>
+       <MudText Typo="Typo.h6" Style="font-weight: 600;">Bernabé</MudText>
+   </CardHeaderContent>
+          <CardHeaderAvatar>
+     <MudAvatar Style="background-color: #4D3935" Size="Size.Large">
+     <MudIcon Icon="@Icons.Material.Filled.Handshake" Style="color: white;" Size="Size.Large" />
+        </MudAvatar>
+</CardHeaderAvatar>
+      </MudCardHeader>
+  <MudCardContent>
+        <MudText Typo="Typo.body2" Style="color: #6D534F;">
+      Acompañamiento Integral
+       </MudText>
+  <MudText Typo="Typo.caption" Class="mt-2">
+  Programa de acompañamiento integral a jóvenes
+        </MudText>
+        </MudCardContent>
+     <MudCardActions>
+     <MudButton Variant="Variant.Text" 
+     Color="Color.Primary" 
+         Size="Size.Small"
+OnClick="@(() => NavegarPrograma("BERNABE"))"
+    StartIcon="@Icons.Material.Filled.ArrowForward">
+          Ir al Programa
+     </MudButton>
+    </MudCardActions>
+  </MudCard>
+   </MudItem>
+ </MudGrid>
 </MudContainer>
+
+@code {
+    private Dictionary<string, int?> _programasIds = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+         // Obtener IDs de todos los programas
+     var programas = await DbContext.Programas
+         .Where(p => !p.IsDeleted)
+            .Select(p => new { p.Clave, p.ProgramaId })
+       .ToListAsync();
+
+    _programasIds = programas.ToDictionary(p => p.Clave, p => (int?)p.ProgramaId);
+        }
+      catch (Exception ex)
+        {
+            // Loguear error si es necesario
+  Console.WriteLine($"Error al cargar programas: {ex.Message}");
+      }
+    }
+
+    private void NavegarPrograma(string clavePrograma)
+    {
+if (_programasIds.TryGetValue(clavePrograma, out var id) && id.HasValue)
+        {
+Navigation.NavigateTo($"/programa/academia/{id.Value}");
+        }
+        else
+        {
+            // Si no se encuentra el programa, volver a la lista
+       Navigation.NavigateTo("/programas");
+        }
+ }
+}
 

@@ -1,0 +1,342 @@
+﻿@page "/programa/{ProgramaId:int}/evidencia/subir"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Operacion
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Security.Claims
+@attribute [Authorize]
+
+@inject ApplicationDbContext DbContext
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject IWebHostEnvironment Environment
+@inject ILogger<SubirEvidencia> Logger
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Subir Evidencias</PageTitle>
+
+<style>
+    .mythra-header {
+        background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
+     color: #FEFEFD;
+        padding: 1.5rem;
+        border-radius: 8px;
+ margin-bottom: 2rem;
+    }
+
+    .mythra-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+     border-left: 4px solid #4D3935;
+    }
+
+    .mythra-button-primary {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .mythra-button-secondary {
+        background-color: transparent !important;
+        border: 2px solid #4D3935 !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+</style>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <div class="mythra-header">
+        <MudText Typo="Typo.h4">
+            <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Class="mr-2" />
+      Subir Evidencias
+        </MudText>
+        <MudText Typo="Typo.body1" Class="mt-2" Style="opacity: 0.9;">
+       Programa: @(_programa?.Nombre ?? "Cargando...")
+        </MudText>
+    </div>
+
+    @if (_cargando)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else
+    {
+        <MudPaper Class="mythra-card pa-6" Elevation="3">
+          <MudGrid>
+      <MudItem xs="12" md="6">
+      <MudSelect @bind-Value="_actividadSeleccionada"
+    Label="Actividad"
+             Required="true"
+             T="Actividad"
+  ToStringFunc="@(a => a?.Titulo ?? "")"
+              Variant="Variant.Outlined">
+          @foreach (var act in _actividades)
+         {
+               <MudSelectItem Value="@act">@act.Titulo (@act.FechaInicio.ToString("dd/MM/yyyy"))</MudSelectItem>
+           }
+                  </MudSelect>
+      </MudItem>
+
+             <MudItem xs="12" md="6">
+   <MudSelect @bind-Value="_tipoEvidencia"
+      Label="Tipo de Evidencia"
+       Required="true"
+    Variant="Variant.Outlined">
+       <MudSelectItem Value="@TipoEvidencia.Foto">📸 Foto</MudSelectItem>
+   <MudSelectItem Value="@TipoEvidencia.Acta">📄 Acta</MudSelectItem>
+      <MudSelectItem Value="@TipoEvidencia.Lista">📋 Lista de Asistencia</MudSelectItem>
+       <MudSelectItem Value="@TipoEvidencia.Video">🎥 Video</MudSelectItem>
+  <MudSelectItem Value="@TipoEvidencia.Otro">📎 Otro</MudSelectItem>
+</MudSelect>
+         </MudItem>
+
+  <MudItem xs="12">
+           <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+    FilesChanged="OnFilesChanged"
+    Accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.mp4"
+           MaximumFileCount="10">
+          <ActivatorContent>
+               <MudButton HtmlTag="label"
+       Variant="Variant.Filled"
+             Color="Color.Primary"
+StartIcon="@Icons.Material.Filled.AttachFile"
+       FullWidth="true">
+            Seleccionar Archivos (Máximo 10 archivos, 10 MB c/u)
+    </MudButton>
+       </ActivatorContent>
+   </MudFileUpload>
+            </MudItem>
+
+          @if (_archivosSeleccionados.Any())
+       {
+    <MudItem xs="12">
+       <MudText Typo="Typo.subtitle1" Class="mb-2" Style="font-weight: 600;">
+        Archivos seleccionados (@_archivosSeleccionados.Count):
+    </MudText>
+     @foreach (var archivo in _archivosSeleccionados)
+    {
+   <MudChip T="string"
+        OnClose="@(() => RemoverArchivo(archivo))"
+         Color="Color.Info"
+               Size="Size.Medium"
+      Class="mb-2 mr-2">
+    @archivo.Name (@FormatBytes(archivo.Size))
+          </MudChip>
+    }
+         </MudItem>
+         }
+
+                <MudItem xs="12" Class="d-flex gap-3 justify-end mt-4">
+ <MudButton Variant="Variant.Outlined"
+Class="mythra-button-secondary"
+    OnClick="Cancelar"
+      StartIcon="@Icons.Material.Filled.ArrowBack">
+   Cancelar
+   </MudButton>
+<MudButton Variant="Variant.Filled"
+    Class="mythra-button-primary"
+   OnClick="Guardar"
+    Disabled="@(_actividadSeleccionada == null || !_archivosSeleccionados.Any() || _subiendo)"
+      StartIcon="@Icons.Material.Filled.Upload">
+    @if (_subiendo)
+  {
+        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            <span>Subiendo...</span>
+        }
+             else
+                {
+           <span>Subir Evidencias</span>
+      }
+          </MudButton>
+      </MudItem>
+  </MudGrid>
+    </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public int ProgramaId { get; set; }
+
+    private Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas.Programa? _programa;
+    private bool _cargando = true;
+private bool _subiendo = false;
+    private int? _usuarioId;
+    private Actividad? _actividadSeleccionada;
+ private TipoEvidencia _tipoEvidencia = TipoEvidencia.Foto;
+    private List<Actividad> _actividades = new();
+    private List<IBrowserFile> _archivosSeleccionados = new();
+
+    protected override async Task OnInitializedAsync()
+{
+      try
+        {
+   // Obtener usuario actual
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+   if (user?.Identity?.IsAuthenticated == true)
+    {
+     var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+  if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+        {
+   _usuarioId = userId;
+  }
+        }
+
+            _programa = await DbContext.Programas
+        .FirstOrDefaultAsync(p => p.ProgramaId == ProgramaId && !p.IsDeleted);
+
+            if (_programa == null)
+      {
+           Snackbar.Add("Programa no encontrado", Severity.Error);
+        NavigationManager.NavigateTo("/programas");
+    return;
+         }
+
+            await CargarActividadesAsync();
+      }
+        catch (Exception ex)
+   {
+        Logger.LogError(ex, "Error al cargar datos");
+    Snackbar.Add("Error al cargar datos", Severity.Error);
+      }
+        finally
+ {
+       _cargando = false;
+      }
+    }
+
+    private async Task CargarActividadesAsync()
+    {
+        _actividades = await DbContext.Actividades
+       .Where(a => a.ProgramaId == ProgramaId &&
+        !a.IsDeleted &&
+   a.Estado != EstadoActividad.Cancelada)
+            .OrderByDescending(a => a.FechaInicio)
+            .Take(20)
+       .ToListAsync();
+    }
+
+    private void OnFilesChanged(IReadOnlyList<IBrowserFile> files)
+ {
+        _archivosSeleccionados.Clear();
+        _archivosSeleccionados.AddRange(files);
+    StateHasChanged();
+    }
+
+    private void RemoverArchivo(IBrowserFile archivo)
+    {
+_archivosSeleccionados.Remove(archivo);
+      StateHasChanged();
+    }
+
+    private async Task Guardar()
+    {
+        if (_actividadSeleccionada == null || !_archivosSeleccionados.Any())
+  {
+    Snackbar.Add("Seleccione una actividad y al menos un archivo", Severity.Warning);
+    return;
+        }
+
+        _subiendo = true;
+
+        try
+        {
+     // Validar que Environment no sea null
+            if (Environment?.WebRootPath == null)
+{
+     Logger.LogError("WebRootPath es null");
+      Snackbar.Add("Error: No se pudo determinar la ruta de almacenamiento", Severity.Error);
+  return;
+      }
+
+      var uploadsPath = Path.Combine(Environment.WebRootPath, "uploads", "evidencias");
+
+      // Crear directorio si no existe
+         if (!Directory.Exists(uploadsPath))
+      {
+   Directory.CreateDirectory(uploadsPath);
+    Logger.LogInformation($"Directorio creado: {uploadsPath}");
+            }
+
+          var evidenciasGuardadas = 0;
+
+            foreach (var archivo in _archivosSeleccionados)
+            {
+      try
+       {
+        // Generar nombre único
+var extension = Path.GetExtension(archivo.Name);
+    var nombreArchivo = $"{Guid.NewGuid()}{extension}";
+     var rutaCompleta = Path.Combine(uploadsPath, nombreArchivo);
+
+        // Guardar archivo
+          await using var stream = new FileStream(rutaCompleta, FileMode.Create);
+      await archivo.OpenReadStream(maxAllowedSize: 10485760).CopyToAsync(stream); // 10 MB max
+
+         Logger.LogInformation($"Archivo guardado: {rutaCompleta}");
+
+             // Crear registro en base de datos
+    var evidencia = new EvidenciaActividad
+ {
+  ActividadId = _actividadSeleccionada.ActividadId,
+             Tipo = _tipoEvidencia,
+           ArchivoPath = $"/uploads/evidencias/{nombreArchivo}",
+       SubidoPorUsuarioId = _usuarioId,
+           SubidoEn = DateTime.UtcNow,
+               CreadoEn = DateTime.UtcNow
+            };
+
+ DbContext.EvidenciaActividades.Add(evidencia);
+                evidenciasGuardadas++;
+                }
+       catch (Exception exArchivo)
+        {
+        Logger.LogError(exArchivo, $"Error al guardar archivo: {archivo.Name}");
+                Snackbar.Add($"Error al subir {archivo.Name}", Severity.Warning);
+     }
+            }
+
+            // Guardar cambios en la base de datos
+     if (evidenciasGuardadas > 0)
+          {
+        await DbContext.SaveChangesAsync();
+         Snackbar.Add($"{evidenciasGuardadas} evidencia(s) subida(s) correctamente", Severity.Success);
+       NavigationManager.NavigateTo($"/programa/academia/{ProgramaId}");
+}
+            else
+{
+      Snackbar.Add("No se pudo subir ningún archivo", Severity.Warning);
+        }
+        }
+        catch (Exception ex)
+        {
+        Logger.LogError(ex, "Error general al subir evidencias");
+            Snackbar.Add($"Error al subir evidencias: {ex.Message}", Severity.Error);
+        }
+        finally
+    {
+       _subiendo = false;
+        }
+    }
+
+    private void Cancelar()
+    {
+    NavigationManager.NavigateTo($"/programa/academia/{ProgramaId}");
+    }
+
+    private string FormatBytes(long bytes)
+    {
+string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+    int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+     len = len / 1024;
+   }
+        return $"{len:0.##} {sizes[order]}";
+    }
+}

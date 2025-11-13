@@ -1,0 +1,415 @@
+﻿@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Operacion
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
+@using Microsoft.EntityFrameworkCore
+@using MudBlazor
+
+@inject ApplicationDbContext DbContext
+@inject ILogger<ParticipantesTab> Logger
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+
+<style>
+    .mythra-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-left: 4px solid #4D3935;
+    }
+
+    .mythra-toolbar {
+     background-color: #F7C484;
+  border-radius: 8px 8px 0 0;
+        padding: 1rem;
+    }
+
+    .mythra-chip-activo {
+  background-color: #9FD996 !important;
+        color: #4D3935 !important;
+    font-weight: 600;
+    }
+
+    .mythra-chip-inactivo {
+  background-color: #F7C484 !important;
+        color: #4D3935 !important;
+  font-weight: 600;
+    }
+
+    .mythra-chip-inscrito {
+        background-color: #F3C95A !important;
+        color: #4D3935 !important;
+        font-weight: 600;
+    }
+
+    .mythra-chip-retirado {
+        background-color: #6D534F !important;
+        color: #FEFEFD !important;
+   font-weight: 600;
+    }
+
+  .mythra-button-primary {
+      background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .participante-card {
+    background-color: #FEFEFD;
+border: 2px solid #F7C484;
+        border-radius: 8px;
+        padding: 1.5rem;
+     margin-bottom: 1rem;
+        transition: all 0.3s ease;
+}
+
+    .participante-card:hover {
+    border-color: #F3C95A;
+     box-shadow: 0 4px 12px rgba(247, 196, 132, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .avatar-participante {
+        width: 60px;
+     height: 60px;
+   border-radius: 50%;
+   background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%);
+    display: flex;
+     align-items: center;
+        justify-content: center;
+      color: #4D3935;
+        font-weight: 700;
+        font-size: 1.5rem;
+    }
+</style>
+
+<MudPaper Class="mythra-card" Elevation="3">
+    <div class="mythra-toolbar">
+        <MudGrid>
+        <MudItem xs="12" md="4">
+<MudTextField @bind-Value="_searchString" Placeholder="Buscar por nombre..."
+      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+  Style="background-color: #FEFEFD; border-radius: 4px;" 
+        Immediate="true"
+         DebounceInterval="300"
+      OnDebounceIntervalElapsed="CargarParticipantesAsync" />
+ </MudItem>
+     <MudItem xs="12" md="3">
+      <MudSelect T="EstadoGeneral?" Label="Estado Participante" @bind-Value="_filtroEstadoParticipante" Clearable="true"
+        Style="background-color: #FEFEFD; border-radius: 4px;" @bind-Value:after="CargarParticipantesAsync">
+            <MudSelectItem Value="@((EstadoGeneral?)EstadoGeneral.Activo)">Activo</MudSelectItem>
+      <MudSelectItem Value="@((EstadoGeneral?)EstadoGeneral.Inactivo)">Inactivo</MudSelectItem>
+  </MudSelect>
+  </MudItem>
+<MudItem xs="12" md="3">
+    <MudSelect T="EstadoInscripcion?" Label="Estado Inscripción" @bind-Value="_filtroEstadoInscripcion" Clearable="true"
+          Style="background-color: #FEFEFD; border-radius: 4px;" @bind-Value:after="CargarParticipantesAsync">
+  <MudSelectItem Value="@((EstadoInscripcion?)EstadoInscripcion.Inscrito)">Inscrito</MudSelectItem>
+       <MudSelectItem Value="@((EstadoInscripcion?)EstadoInscripcion.Retirado)">Retirado</MudSelectItem>
+        </MudSelect>
+          </MudItem>
+   <MudItem xs="12" md="2">
+       <MudButton Variant="Variant.Filled" Class="mythra-button-primary" 
+     StartIcon="@Icons.Material.Filled.Add" FullWidth="true"
+     OnClick="AbrirDialogoAgregarParticipante">
+  Agregar
+</MudButton>
+            </MudItem>
+   </MudGrid>
+    </div>
+
+    <!-- Contenido -->
+    <div style="padding: 2rem;">
+ <!-- Header con selector de vista -->
+        <div class="d-flex justify-space-between align-center mb-4">
+   <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 600;">
+  <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-2" />
+Participantes del Programa (@_participantes.Count)
+     </MudText>
+            <MudButtonGroup Size="Size.Small" Variant="Variant.Filled">
+    <MudButton OnClick="@CambiarAVistaCards"
+        Color="@(_vistaCards ? Color.Primary : Color.Default)"
+    StartIcon="@Icons.Material.Filled.ViewModule">
+   Cards
+        </MudButton>
+        <MudButton OnClick="@CambiarAVistaTabla"
+       Color="@(!_vistaCards ? Color.Primary : Color.Default)"
+    StartIcon="@Icons.Material.Filled.TableChart">
+     Tabla
+ </MudButton>
+</MudButtonGroup>
+ </div>
+
+    <!-- Contenido dinámico con @key -->
+        <div @key="_vistaCards">
+  @if (_vistaCards)
+ {
+         <!-- Vista Cards -->
+         @if (_cargando)
+         {
+  <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    }
+         else if (!_participantes.Any())
+   {
+               <MudAlert Severity="Severity.Info">No hay participantes para mostrar</MudAlert>
+       }
+      else
+       {
+       <MudGrid>
+       @foreach (var item in _participantes)
+ {
+   <MudItem xs="12" sm="6" md="4">
+       <div class="participante-card">
+   <div class="d-flex align-start gap-3 mb-3">
+  <div class="avatar-participante">
+           @ObtenerIniciales(item.Participante.Persona.Nombres, item.Participante.Persona.Apellidos)
+       </div>
+    <div style="flex: 1;">
+    <MudText Typo="Typo.h6" Style="color: #4D3935; margin-bottom: 0.5rem;">
+      @item.Participante.Persona.Nombres @item.Participante.Persona.Apellidos
+     </MudText>
+       <div class="d-flex gap-2">
+       <MudChip T="string" Size="Size.Small" Class="@ObtenerClaseEstadoParticipante(item.Participante.Estado)">
+       @item.Participante.Estado.ToString()
+    </MudChip>
+    <MudChip T="string" Size="Size.Small" Class="@ObtenerClaseEstadoInscripcion(item.Estado)">
+      @item.Estado.ToString()
+   </MudChip>
+    </div>
+ </div>
+   </div>
+         
+           <MudDivider Class="my-2" />
+        
+      <div style="font-size: 0.875rem; color: #6D534F;">
+       <div class="d-flex justify-space-between mb-1">
+ <span><strong>Edad:</strong></span>
+          <span>@CalcularEdad(item.Participante.Persona.FechaNacimiento) años</span>
+            </div>
+       <div class="d-flex justify-space-between mb-1">
+          <span><strong>Fecha Alta:</strong></span>
+  <span>@item.Participante.FechaAlta.ToString("dd/MM/yyyy")</span>
+         </div>
+  @if (!string.IsNullOrEmpty(item.Participante.Persona.Telefono))
+   {
+    <div class="d-flex justify-space-between">
+            <span><strong>Teléfono:</strong></span>
+        <span>@item.Participante.Persona.Telefono</span>
+  </div>
+       }
+      </div>
+
+       <MudButtonGroup Class="mt-3" Size="Size.Small" Variant="Variant.Text" FullWidth="true">
+        <MudButton StartIcon="@Icons.Material.Filled.Visibility" Color="Color.Primary">
+       Ver Detalles
+      </MudButton>
+  <MudButton StartIcon="@Icons.Material.Filled.Assessment" Color="Color.Info">
+       Asistencias
+     </MudButton>
+  </MudButtonGroup>
+         </div>
+      </MudItem>
+   }
+   </MudGrid>
+       }
+}
+            else
+{
+  <!-- Vista Tabla -->
+    <MudTable Items="@_participantes" Dense="true" Hover="true" Loading="@_cargando" Elevation="0">
+     <HeaderContent>
+     <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Nombre Completo</MudTh>
+  <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Edad</MudTh>
+       <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Teléfono</MudTh>
+            <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Estado Participante</MudTh>
+    <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Estado Inscripción</MudTh>
+       <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Fecha Alta</MudTh>
+     <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Acciones</MudTh>
+          </HeaderContent>
+      <RowTemplate>
+           <MudTd DataLabel="Nombre">
+   <strong>@context.Participante.Persona.Nombres @context.Participante.Persona.Apellidos</strong>
+           </MudTd>
+      <MudTd DataLabel="Edad">@CalcularEdad(context.Participante.Persona.FechaNacimiento)</MudTd>
+      <MudTd DataLabel="Teléfono">@(context.Participante.Persona.Telefono ?? "-")</MudTd>
+       <MudTd DataLabel="Estado Participante">
+  <MudChip T="string" Size="Size.Small" Class="@ObtenerClaseEstadoParticipante(context.Participante.Estado)">
+        @context.Participante.Estado.ToString()
+       </MudChip>
+ </MudTd>
+         <MudTd DataLabel="Estado Inscripción">
+       <MudChip T="string" Size="Size.Small" Class="@ObtenerClaseEstadoInscripcion(context.Estado)">
+       @context.Estado.ToString()
+     </MudChip>
+   </MudTd>
+  <MudTd DataLabel="Fecha Alta">
+      <MudText Typo="Typo.caption">@context.Participante.FechaAlta.ToString("dd/MM/yyyy")</MudText>
+      </MudTd>
+ <MudTd DataLabel="Acciones">
+      <MudButtonGroup Size="Size.Small" Variant="Variant.Text">
+ <MudButton StartIcon="@Icons.Material.Filled.Visibility" Color="Color.Primary">
+   Ver
+        </MudButton>
+    <MudButton StartIcon="@Icons.Material.Filled.Assessment" Color="Color.Info">
+           Asistencias
+        </MudButton>
+    </MudButtonGroup>
+      </MudTd>
+   </RowTemplate>
+        <NoRecordsContent>
+      <MudText Class="pa-4" Style="color: #4D3935;">
+           <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
+     No hay participantes para mostrar
+    </MudText>
+  </NoRecordsContent>
+         </MudTable>
+   }
+ </div>
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter] public int ProgramaId { get; set; }
+
+    private List<ParticipantePrograma> _participantes = new();
+    private bool _cargando = true;
+    private bool _vistaCards = true;
+    private string _searchString = "";
+    private EstadoGeneral? _filtroEstadoParticipante = null;
+private EstadoInscripcion? _filtroEstadoInscripcion = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+      await CargarParticipantesAsync();
+    }
+
+  private async Task CargarParticipantesAsync()
+    {
+  try
+        {
+     _cargando = true;
+
+            // Obtener todos los participantes que tienen actividades en este programa
+      var query = DbContext.ActividadParticipantes
+           .Include(ap => ap.Participante)
+ .ThenInclude(p => p.Persona)
+                .Include(ap => ap.Actividad)
+          .Where(ap => ap.Actividad.ProgramaId == ProgramaId && 
+      !ap.IsDeleted && 
+      !ap.Participante.IsDeleted &&
+   !ap.Participante.Persona.IsDeleted)
+                .AsQueryable();
+
+            // Aplicar filtros
+    if (_filtroEstadoParticipante.HasValue)
+       {
+   query = query.Where(ap => ap.Participante.Estado == _filtroEstadoParticipante.Value);
+ }
+
+   if (_filtroEstadoInscripcion.HasValue)
+      {
+        query = query.Where(ap => ap.Estado == _filtroEstadoInscripcion.Value);
+     }
+
+   if (!string.IsNullOrWhiteSpace(_searchString))
+          {
+ var search = _searchString.ToLower();
+      query = query.Where(ap => 
+          ap.Participante.Persona.Nombres.ToLower().Contains(search) ||
+  ap.Participante.Persona.Apellidos.ToLower().Contains(search));
+     }
+
+   // Primero traer los datos de la base de datos
+      var actividadParticipantes = await query
+     .Select(ap => new 
+      {
+       ap.ParticipanteId,
+  ap.Participante,
+ ap.Estado
+ })
+      .ToListAsync();
+
+     // Luego agrupar y ordenar en memoria
+            _participantes = actividadParticipantes
+   .GroupBy(ap => ap.ParticipanteId)
+       .Select(g => new ParticipantePrograma
+     {
+    ParticipanteId = g.Key,
+          Participante = g.First().Participante,
+     Estado = g.First().Estado
+    })
+       .OrderBy(p => p.Participante.Persona.Apellidos)
+      .ThenBy(p => p.Participante.Persona.Nombres)
+   .ToList();
+        }
+        catch (Exception ex)
+      {
+ Logger.LogError(ex, "Error al cargar participantes");
+            Snackbar.Add("Error al cargar participantes", Severity.Error);
+ }
+        finally
+        {
+     _cargando = false;
+        }
+    }
+
+    private void CambiarAVistaCards()
+    {
+ _vistaCards = true;
+        StateHasChanged();
+    }
+
+    private void CambiarAVistaTabla()
+    {
+     _vistaCards = false;
+    StateHasChanged();
+    }
+
+    private void AbrirDialogoAgregarParticipante()
+    {
+        NavigationManager.NavigateTo($"/programa/{ProgramaId}/participante/agregar");
+    }
+
+  private string ObtenerIniciales(string nombres, string apellidos)
+    {
+        var inicialesNombres = string.IsNullOrEmpty(nombres) ? "" : nombres.Trim()[0].ToString();
+        var inicialesApellidos = string.IsNullOrEmpty(apellidos) ? "" : apellidos.Trim()[0].ToString();
+        return $"{inicialesNombres}{inicialesApellidos}".ToUpper();
+    }
+
+    private int CalcularEdad(DateTime? fechaNacimiento)
+    {
+        if (!fechaNacimiento.HasValue) return 0;
+ 
+     var edad = DateTime.Today.Year - fechaNacimiento.Value.Year;
+        if (fechaNacimiento.Value.Date > DateTime.Today.AddYears(-edad)) edad--;
+      return edad;
+    }
+
+    private string ObtenerClaseEstadoParticipante(EstadoGeneral estado)
+    {
+        return estado switch
+        {
+    EstadoGeneral.Activo => "mythra-chip-activo",
+ EstadoGeneral.Inactivo => "mythra-chip-inactivo",
+            _ => ""
+        };
+    }
+
+    private string ObtenerClaseEstadoInscripcion(EstadoInscripcion estado)
+    {
+        return estado switch
+        {
+      EstadoInscripcion.Inscrito => "mythra-chip-inscrito",
+            EstadoInscripcion.Retirado => "mythra-chip-retirado",
+  _ => ""
+   };
+  }
+
+    private class ParticipantePrograma
+    {
+    public int ParticipanteId { get; set; }
+      public Participante Participante { get; set; } = null!;
+public EstadoInscripcion Estado { get; set; }
+    }
+}

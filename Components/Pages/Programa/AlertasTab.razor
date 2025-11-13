@@ -1,0 +1,433 @@
+﻿@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Motor
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
+@using Microsoft.EntityFrameworkCore
+@using MudBlazor
+
+@inject ApplicationDbContext DbContext
+@inject ILogger<AlertasTab> Logger
+@inject ISnackbar Snackbar
+
+<style>
+    .mythra-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-left: 4px solid #4D3935;
+    }
+
+    .mythra-toolbar {
+  background-color: #F7C484;
+    border-radius: 8px 8px 0 0;
+      padding: 1rem;
+    }
+
+    .mythra-chip-info {
+  background-color: #9FD996 !important;
+  color: #4D3935 !important;
+    font-weight: 600;
+  }
+
+    .mythra-chip-alta {
+        background-color: #F3C95A !important;
+        color: #4D3935 !important;
+        font-weight: 600;
+    }
+
+    .mythra-chip-critica {
+      background-color: #F7C484 !important;
+ color: #4D3935 !important;
+   font-weight: 600;
+    }
+
+    .mythra-chip-abierta {
+        background-color: #F3C95A !important;
+        color: #4D3935 !important;
+  font-weight: 600;
+}
+
+    .mythra-chip-resuelta {
+        background-color: #9FD996 !important;
+  color: #4D3935 !important;
+ font-weight: 600;
+}
+
+ .mythra-chip-descartada {
+      background-color: #6D534F !important;
+ color: #FEFEFD !important;
+        font-weight: 600;
+    }
+
+.mythra-button-success {
+      background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+      color: #4D3935 !important;
+   font-weight: 600 !important;
+    }
+
+    .mythra-button-warning {
+        background: linear-gradient(135deg, #F3C95A 0%, #E5BA45 100%) !important;
+    color: #4D3935 !important;
+   font-weight: 600 !important;
+    }
+
+    .alerta-card {
+        background-color: #FEFEFD;
+        border: 2px solid #F7C484;
+        border-radius: 8px;
+     padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+  .alerta-card:hover {
+   border-color: #F3C95A;
+        box-shadow: 0 4px 12px rgba(247, 196, 132, 0.3);
+    }
+</style>
+
+<MudPaper Class="mythra-card" Elevation="3">
+ <div class="mythra-toolbar">
+      <MudGrid>
+ <MudItem xs="12" md="3">
+    <MudSelect T="EstadoAlerta?" Label="Estado" @bind-Value="_filtroEstado" Clearable="true"
+ Style="background-color: #FEFEFD; border-radius: 4px;" @bind-Value:after="CargarAlertasAsync">
+ <MudSelectItem Value="@((EstadoAlerta?)EstadoAlerta.Abierta)">Abierta</MudSelectItem>
+    <MudSelectItem Value="@((EstadoAlerta?)EstadoAlerta.Resuelta)">Resuelta</MudSelectItem>
+   <MudSelectItem Value="@((EstadoAlerta?)EstadoAlerta.Descartada)">Descartada</MudSelectItem>
+            </MudSelect>
+   </MudItem>
+      <MudItem xs="12" md="3">
+ <MudSelect T="Severidad?" Label="Severidad" @bind-Value="_filtroSeveridad" Clearable="true"
+       Style="background-color: #FEFEFD; border-radius: 4px;" @bind-Value:after="CargarAlertasAsync">
+  <MudSelectItem Value="@((Severidad?)Severidad.Info)">Info</MudSelectItem>
+<MudSelectItem Value="@((Severidad?)Severidad.Alta)">Alta</MudSelectItem>
+      <MudSelectItem Value="@((Severidad?)Severidad.Critica)">Crítica</MudSelectItem>
+       </MudSelect>
+  </MudItem>
+      <MudItem xs="12" md="3">
+     <MudDatePicker Label="Desde" @bind-Date="_filtroDesde" 
+   Style="background-color: #FEFEFD; border-radius: 4px;"
+     DateFormat="dd/MM/yyyy" Clearable="true" />
+      </MudItem>
+      <MudItem xs="12" md="3">
+       <MudDatePicker Label="Hasta" @bind-Date="_filtroHasta" 
+     Style="background-color: #FEFEFD; border-radius: 4px;"
+DateFormat="dd/MM/yyyy" Clearable="true" />
+   </MudItem>
+     </MudGrid>
+    </div>
+
+    <!-- Contenido -->
+    <div style="padding: 2rem;">
+   <!-- Header con selector de vista -->
+<div class="d-flex justify-space-between align-center mb-4">
+    <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 600;">
+   <MudIcon Icon="@Icons.Material.Filled.Warning" Class="mr-2" />
+  Alertas Activas (@_alertas.Count(a => a.Estado == EstadoAlerta.Abierta))
+ </MudText>
+      <MudButtonGroup Size="Size.Small" Variant="Variant.Filled">
+      <MudButton OnClick="@CambiarAVistaCards"
+  Color="@(_vistaCards ? Color.Primary : Color.Default)"
+       StartIcon="@Icons.Material.Filled.ViewModule">
+        Cards
+      </MudButton>
+        <MudButton OnClick="@CambiarAVistaTabla"
+Color="@(!_vistaCards ? Color.Primary : Color.Default)"
+           StartIcon="@Icons.Material.Filled.TableChart">
+        Tabla
+    </MudButton>
+      </MudButtonGroup>
+        </div>
+
+     <!-- Contenido dinámico con @key -->
+    <div @key="_vistaCards">
+    @if (_vistaCards)
+  {
+     <!-- Vista Cards -->
+    @if (_cargando)
+   {
+     <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+     }
+   else if (!_alertas.Any())
+            {
+      <MudAlert Severity="Severity.Info">No hay alertas para mostrar</MudAlert>
+      }
+else
+     {
+   <MudGrid>
+   @foreach (var alerta in _alertas)
+          {
+<MudItem xs="12" md="6" lg="4">
+   <div class="alerta-card">
+  <div class="d-flex justify-space-between align-center mb-2">
+    <MudChip T="string" Size="Size.Small" Class="@ObtenerClaseSeveridad(alerta.Severidad)">
+ @ObtenerTextoSeveridad(alerta.Severidad)
+    </MudChip>
+  <MudChip T="string" Size="Size.Small" Class="@ObtenerClaseEstado(alerta.Estado)">
+   @ObtenerTextoEstado(alerta.Estado)
+      </MudChip>
+     </div>
+   <MudText Typo="Typo.body1" Class="mb-2" Style="color: #4D3935; font-weight: 600;">
+ @alerta.Mensaje
+      </MudText>
+     <MudText Typo="Typo.caption" Style="color: #6D534F;">
+    <MudIcon Icon="@Icons.Material.Filled.Schedule" Size="Size.Small" />
+     @alerta.GeneradaEn.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+         </MudText>
+   @if (!string.IsNullOrEmpty(alerta.Notas))
+           {
+      <MudText Typo="Typo.body2" Class="mt-2" Style="color: #6D534F;">
+    @alerta.Notas
+     </MudText>
+}
+@if (alerta.Estado == EstadoAlerta.Abierta)
+ {
+     <MudButtonGroup Class="mt-3" Size="Size.Small" Variant="Variant.Filled" FullWidth="true">
+     <MudButton Class="mythra-button-success"
+        StartIcon="@Icons.Material.Filled.CheckCircle"
+    OnClick="@(async () => await CambiarEstadoAlerta(alerta.AlertaId, EstadoAlerta.Resuelta, alerta.RowVersion))">
+   Resolver
+        </MudButton>
+      <MudButton Class="mythra-button-warning"
+  StartIcon="@Icons.Material.Filled.Cancel"
+  OnClick="@(async () => await CambiarEstadoAlerta(alerta.AlertaId, EstadoAlerta.Descartada, alerta.RowVersion))">
+      Descartar
+      </MudButton>
+         </MudButtonGroup>
+    }
+  </div>
+   </MudItem>
+    }
+  </MudGrid>
+  }
+    }
+    else
+    {
+    <!-- Vista Tabla -->
+        <MudTable Items="@_alertas" Dense="true" Hover="true" Loading="@_cargando" Elevation="0">
+   <HeaderContent>
+ <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Severidad</MudTh>
+    <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Mensaje</MudTh>
+         <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Generada</MudTh>
+    <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Estado</MudTh>
+ <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Acciones</MudTh>
+  </HeaderContent>
+  <RowTemplate>
+      <MudTd DataLabel="Severidad">
+      <MudChip T="string" Size="Size.Small" Class="@ObtenerClaseSeveridad(context.Severidad)">
+      @ObtenerTextoSeveridad(context.Severidad)
+  </MudChip>
+     </MudTd>
+  <MudTd DataLabel="Mensaje">@context.Mensaje</MudTd>
+  <MudTd DataLabel="Generada">
+     <MudText Typo="Typo.caption">@context.GeneradaEn.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</MudText>
+ </MudTd>
+<MudTd DataLabel="Estado">
+    <MudChip T="string" Size="Size.Small" Class="@ObtenerClaseEstado(context.Estado)">
+   @ObtenerTextoEstado(context.Estado)
+   </MudChip>
+    </MudTd>
+       <MudTd DataLabel="Acciones">
+   @if (context.Estado == EstadoAlerta.Abierta)
+    {
+     <MudButtonGroup Size="Size.Small" Variant="Variant.Filled">
+ <MudButton Class="mythra-button-success"
+    StartIcon="@Icons.Material.Filled.CheckCircle"
+  OnClick="@(async () => await CambiarEstadoAlerta(context.AlertaId, EstadoAlerta.Resuelta, context.RowVersion))">
+  Resolver
+  </MudButton>
+   <MudButton Class="mythra-button-warning"
+      StartIcon="@Icons.Material.Filled.Cancel"
+   OnClick="@(async () => await CambiarEstadoAlerta(context.AlertaId, EstadoAlerta.Descartada, context.RowVersion))">
+       Descartar
+   </MudButton>
+ </MudButtonGroup>
+}
+         </MudTd>
+   </RowTemplate>
+     <NoRecordsContent>
+   <MudText Class="pa-4" Style="color: #4D3935;">
+    <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
+    No hay alertas para mostrar
+      </MudText>
+  </NoRecordsContent>
+     </MudTable>
+}
+    </div>
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter] public int ProgramaId { get; set; }
+
+    private List<Alerta> _alertas = new();
+    private bool _cargando = true;
+  private bool _vistaCards = true;
+    private EstadoAlerta? _filtroEstado = EstadoAlerta.Abierta;
+  private Severidad? _filtroSeveridad = null;
+ private DateTime? _filtroDesde = null;
+    private DateTime? _filtroHasta = null;
+
+ protected override async Task OnInitializedAsync()
+    {
+ await CargarAlertasAsync();
+    }
+
+    private void CambiarAVistaCards()
+ {
+        _vistaCards = true;
+  StateHasChanged();
+    }
+
+    private void CambiarAVistaTabla()
+    {
+        _vistaCards = false;
+  StateHasChanged();
+    }
+
+    private async Task CargarAlertasAsync()
+ {
+ try
+     {
+      _cargando = true;
+
+      var query = DbContext.Alertas
+   .Include(a => a.Regla)
+    .Include(a => a.Actividad)
+     .Include(a => a.Participante)
+              .ThenInclude(p => p.Persona)
+   .Where(a => a.ProgramaId == ProgramaId && !a.IsDeleted)
+    .AsQueryable();
+
+     // Aplicar filtros
+ if (_filtroEstado.HasValue)
+      {
+             query = query.Where(a => a.Estado == _filtroEstado.Value);
+  }
+
+    if (_filtroSeveridad.HasValue)
+  {
+        query = query.Where(a => a.Severidad == _filtroSeveridad.Value);
+   }
+
+        if (_filtroDesde.HasValue)
+     {
+          query = query.Where(a => a.GeneradaEn >= _filtroDesde.Value);
+            }
+
+  if (_filtroHasta.HasValue)
+   {
+       var hasta = _filtroHasta.Value.AddDays(1);
+   query = query.Where(a => a.GeneradaEn < hasta);
+ }
+
+       _alertas = await query
+    .OrderByDescending(a => a.GeneradaEn)
+    .Take(100)
+          .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error al cargar alertas");
+      Snackbar.Add("Error al cargar alertas", Severity.Error);
+        }
+     finally
+        {
+      _cargando = false;
+}
+    }
+
+    private async Task CambiarEstadoAlerta(int alertaId, EstadoAlerta nuevoEstado, byte[] rowVersion)
+    {
+        try
+  {
+         var alerta = await DbContext.Alertas
+     .FirstOrDefaultAsync(a => a.AlertaId == alertaId && !a.IsDeleted);
+
+       if (alerta == null)
+    {
+       Snackbar.Add("Alerta no encontrada", Severity.Error);
+        return;
+   }
+
+   // Manejo de concurrencia optimista
+if (rowVersion != null && rowVersion.Length > 0)
+       {
+       DbContext.Entry(alerta).Property(a => a.RowVersion).OriginalValue = rowVersion;
+   }
+
+      alerta.Estado = nuevoEstado;
+  alerta.ActualizadoEn = DateTime.UtcNow;
+
+     if (nuevoEstado == EstadoAlerta.Resuelta)
+  {
+     alerta.ResueltaEn = DateTime.UtcNow;
+       alerta.Notas = "Resuelta desde el panel del programa";
+  }
+            else if (nuevoEstado == EstadoAlerta.Descartada)
+    {
+      alerta.Notas = "Descartada desde el panel del programa";
+}
+
+   try
+   {
+    await DbContext.SaveChangesAsync();
+     Snackbar.Add(nuevoEstado == EstadoAlerta.Resuelta ? "Alerta resuelta" : "Alerta descartada", Severity.Success);
+      await CargarAlertasAsync();
+ }
+  catch (DbUpdateConcurrencyException)
+     {
+       Snackbar.Add("La alerta fue modificada por otro usuario. Recargando...", Severity.Warning);
+     await CargarAlertasAsync();
+            }
+        }
+  catch (Exception ex)
+ {
+Logger.LogError(ex, "Error al cambiar estado de alerta");
+     Snackbar.Add("Error al cambiar estado de alerta", Severity.Error);
+   }
+    }
+
+    private string ObtenerClaseSeveridad(Severidad severidad)
+    {
+        return severidad switch
+  {
+       Severidad.Info => "mythra-chip-info",
+  Severidad.Alta => "mythra-chip-alta",
+   Severidad.Critica => "mythra-chip-critica",
+      _ => ""
+      };
+}
+
+    private string ObtenerTextoSeveridad(Severidad severidad)
+ {
+     return severidad switch
+        {
+      Severidad.Info => "Info",
+     Severidad.Alta => "Alta",
+       Severidad.Critica => "Crítica",
+_ => "Desconocida"
+ };
+    }
+
+    private string ObtenerClaseEstado(EstadoAlerta estado)
+    {
+        return estado switch
+        {
+   EstadoAlerta.Abierta => "mythra-chip-abierta",
+   EstadoAlerta.Resuelta => "mythra-chip-resuelta",
+   EstadoAlerta.Descartada => "mythra-chip-descartada",
+_ => ""
+        };
+    }
+
+    private string ObtenerTextoEstado(EstadoAlerta estado)
+    {
+        return estado switch
+    {
+            EstadoAlerta.Abierta => "Abierta",
+      EstadoAlerta.Resuelta => "Resuelta",
+ EstadoAlerta.Descartada => "Descartada",
+   _ => "Desconocido"
+  };
+    }
+}

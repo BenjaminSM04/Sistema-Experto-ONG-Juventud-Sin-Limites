@@ -1,0 +1,355 @@
+﻿@page "/programa/{ProgramaId:int}/actividad/{ActividadId:int}/evidencias"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Operacion
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
+@using Microsoft.EntityFrameworkCore
+@attribute [Authorize]
+
+@inject ApplicationDbContext DbContext
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject ILogger<EvidenciasActividad> Logger
+@inject IWebHostEnvironment Environment
+@inject IJSRuntime JS
+
+<PageTitle>Evidencias - @(_actividad?.Titulo ?? "Cargando...")</PageTitle>
+
+<style>
+    .mythra-header {
+        background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
+        color: #FEFEFD;
+  padding: 1.5rem;
+border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+
+    .mythra-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+  border-left: 4px solid #4D3935;
+    }
+
+    .mythra-button-primary {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+        color: #4D3935 !important;
+     font-weight: 600 !important;
+    }
+
+    .mythra-button-secondary {
+        background-color: transparent !important;
+        border: 2px solid #4D3935 !important;
+        color: #4D3935 !important;
+  font-weight: 600 !important;
+    }
+
+    .evidencia-card {
+        border: 1px solid #e0e0e0;
+  border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .evidencia-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+     transform: translateY(-2px);
+    }
+
+    .file-icon {
+    font-size: 3rem;
+        color: #4D3935;
+    }
+</style>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <div class="mythra-header">
+        <MudText Typo="Typo.h4">
+     <MudIcon Icon="@Icons.Material.Filled.Attachment" Class="mr-2" />
+     Evidencias de Actividad
+        </MudText>
+        <MudText Typo="Typo.body1" Class="mt-2" Style="opacity: 0.9;">
+            @if (_actividad != null)
+      {
+        @_actividad.Titulo
+     <span class="ml-3">(@_actividad.FechaInicio.ToString("dd/MM/yyyy"))</span>
+            }
+ </MudText>
+    </div>
+
+    @if (_cargando)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else
+    {
+        <MudPaper Class="mythra-card pa-6" Elevation="3">
+   @if (_evidencias.Any())
+            {
+      <MudText Typo="Typo.h6" Class="mb-4">
+         Archivos Disponibles (@_evidencias.Count)
+       </MudText>
+
+      <MudGrid>
+         @foreach (var evidencia in _evidencias)
+       {
+             <MudItem xs="12" sm="6" md="4">
+           <MudCard Class="evidencia-card">
+             <MudCardContent>
+       <div class="d-flex align-center justify-center mb-3">
+       <MudIcon Icon="@ObtenerIconoPorTipo(evidencia.Tipo, evidencia.ArchivoPath)" 
+  Class="file-icon" />
+  </div>
+       
+     <MudText Typo="Typo.subtitle1" Align="Align.Center" Class="mb-2">
+   <strong>@ObtenerNombreTipo(evidencia.Tipo)</strong>
+                 </MudText>
+                 
+ <MudText Typo="Typo.body2" Align="Align.Center" Class="mb-2">
+             @Path.GetFileName(evidencia.ArchivoPath)
+       </MudText>
+      
+    <MudText Typo="Typo.caption" Align="Align.Center" Color="Color.Secondary">
+ Subido: @evidencia.SubidoEn.ToString("dd/MM/yyyy HH:mm")
+          </MudText>
+     </MudCardContent>
+     
+                <MudCardActions Class="d-flex justify-center">
+                <MudButton Variant="Variant.Filled"
+      Color="Color.Primary"
+         StartIcon="@Icons.Material.Filled.Download"
+  OnClick="@(() => DescargarArchivo(evidencia))"
+ Size="Size.Small">
+  Descargar
+          </MudButton>
+   
+           @if (EsImagen(evidencia.ArchivoPath))
+     {
+            <MudButton Variant="Variant.Outlined"
+          Color="Color.Info"
+      StartIcon="@Icons.Material.Filled.Visibility"
+           OnClick="@(() => VisualizarArchivo(evidencia))"
+                   Size="Size.Small">
+                 Ver
+       </MudButton>
+       }
+      </MudCardActions>
+  </MudCard>
+</MudItem>
+      }
+        </MudGrid>
+            }
+            else
+      {
+       <MudAlert Severity="Severity.Info">
+                 <MudText Typo="Typo.body1">
+       No hay evidencias cargadas para esta actividad.
+          </MudText>
+     <MudText Typo="Typo.body2" Class="mt-2">
+      Puede subir evidencias desde el botón "Evidencias" en el programa.
+            </MudText>
+         </MudAlert>
+            }
+
+         <MudDivider Class="my-4" />
+
+      <div class="d-flex gap-3 justify-end">
+    <MudButton Variant="Variant.Outlined"
+Class="mythra-button-secondary"
+     OnClick="Volver"
+            StartIcon="@Icons.Material.Filled.ArrowBack">
+        Volver
+   </MudButton>
+    
+        <MudButton Variant="Variant.Filled"
+           Class="mythra-button-primary"
+        Href="@($"/programa/{ProgramaId}/evidencia/subir")"
+        StartIcon="@Icons.Material.Filled.Upload">
+     Subir Más Evidencias
+             </MudButton>
+  </div>
+        </MudPaper>
+    }
+</MudContainer>
+
+<!-- Diálogo para visualizar imágenes -->
+<MudDialog @bind-IsVisible="_mostrarVisualizador" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+       <MudIcon Icon="@Icons.Material.Filled.Image" Class="mr-2" />
+Vista Previa
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (_evidenciaActual != null)
+    {
+       <div class="d-flex justify-center">
+       <img src="@_evidenciaActual.ArchivoPath" 
+            alt="Evidencia" 
+    style="max-width: 100%; max-height: 70vh; object-fit: contain;" />
+            </div>
+      }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _mostrarVisualizador = false)">Cerrar</MudButton>
+     <MudButton Color="Color.Primary" 
+        StartIcon="@Icons.Material.Filled.Download"
+       OnClick="@(() => DescargarArchivo(_evidenciaActual!))">
+            Descargar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int ProgramaId { get; set; }
+    [Parameter] public int ActividadId { get; set; }
+
+    private Actividad? _actividad;
+    private List<EvidenciaActividad> _evidencias = new();
+    private bool _cargando = true;
+    private bool _mostrarVisualizador = false;
+ private EvidenciaActividad? _evidenciaActual;
+    
+    private DialogOptions _dialogOptions = new() 
+    { 
+        MaxWidth = MaxWidth.Large, 
+        FullWidth = true 
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+  _actividad = await DbContext.Actividades
+         .FirstOrDefaultAsync(a => a.ActividadId == ActividadId && !a.IsDeleted);
+
+       if (_actividad == null || _actividad.ProgramaId != ProgramaId)
+            {
+ Snackbar.Add("Actividad no encontrada", Severity.Error);
+       NavigationManager.NavigateTo($"/programa/academia/{ProgramaId}");
+        return;
+     }
+
+       await CargarEvidenciasAsync();
+        }
+        catch (Exception ex)
+    {
+     Logger.LogError(ex, "Error al cargar evidencias");
+      Snackbar.Add("Error al cargar evidencias", Severity.Error);
+    }
+        finally
+        {
+   _cargando = false;
+}
+    }
+
+    private async Task CargarEvidenciasAsync()
+    {
+     _evidencias = await DbContext.EvidenciaActividades
+            .Where(e => e.ActividadId == ActividadId && !e.IsDeleted)
+            .OrderByDescending(e => e.SubidoEn)
+      .ToListAsync();
+    }
+
+    private async Task DescargarArchivo(EvidenciaActividad evidencia)
+  {
+        try
+  {
+     if (Environment?.WebRootPath == null)
+          {
+     Snackbar.Add("Error: No se pudo acceder a la ruta de archivos", Severity.Error);
+     return;
+}
+
+var rutaCompleta = Path.Combine(Environment.WebRootPath, evidencia.ArchivoPath.TrimStart('/'));
+
+   if (!File.Exists(rutaCompleta))
+            {
+      Snackbar.Add("El archivo no existe en el servidor", Severity.Warning);
+      Logger.LogWarning($"Archivo no encontrado: {rutaCompleta}");
+       return;
+  }
+
+            var bytes = await File.ReadAllBytesAsync(rutaCompleta);
+   var base64 = Convert.ToBase64String(bytes);
+         var mimeType = ObtenerMimeType(evidencia.ArchivoPath);
+         var nombreArchivo = Path.GetFileName(evidencia.ArchivoPath);
+
+     // Descargar usando JavaScript mejorado
+            await JS.InvokeVoidAsync("downloadFileFromBase64", base64, nombreArchivo, mimeType);
+
+            Snackbar.Add("Archivo descargado correctamente", Severity.Success);
+  }
+ catch (Exception ex)
+    {
+   Logger.LogError(ex, "Error al descargar archivo");
+            Snackbar.Add("Error al descargar el archivo", Severity.Error);
+  }
+}
+
+    private void VisualizarArchivo(EvidenciaActividad evidencia)
+    {
+        _evidenciaActual = evidencia;
+        _mostrarVisualizador = true;
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo($"/programa/academia/{ProgramaId}");
+    }
+
+    private string ObtenerIconoPorTipo(TipoEvidencia tipo, string archivoPath)
+    {
+   var extension = Path.GetExtension(archivoPath).ToLowerInvariant();
+
+        return extension switch
+        {
+   ".jpg" or ".jpeg" or ".png" or ".gif" => Icons.Material.Filled.Image,
+ ".pdf" => Icons.Material.Filled.PictureAsPdf,
+          ".doc" or ".docx" => Icons.Material.Filled.Description,
+            ".xls" or ".xlsx" => Icons.Material.Filled.TableChart,
+   ".mp4" or ".avi" or ".mov" => Icons.Material.Filled.VideoLibrary,
+".zip" or ".rar" => Icons.Material.Filled.Archive,
+       _ => Icons.Material.Filled.InsertDriveFile
+  };
+    }
+
+    private string ObtenerNombreTipo(TipoEvidencia tipo)
+    {
+     return tipo switch
+        {
+ TipoEvidencia.Foto => "📸 Fotografía",
+            TipoEvidencia.Acta => "📄 Acta",
+    TipoEvidencia.Lista => "📋 Lista de Asistencia",
+            TipoEvidencia.Video => "🎥 Video",
+            TipoEvidencia.Otro => "📎 Otro",
+  _ => "📎 Archivo"
+        };
+    }
+
+    private bool EsImagen(string archivoPath)
+    {
+        var extension = Path.GetExtension(archivoPath).ToLowerInvariant();
+        return extension is ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp";
+    }
+
+    private string ObtenerMimeType(string archivoPath)
+    {
+      var extension = Path.GetExtension(archivoPath).ToLowerInvariant();
+        
+        return extension switch
+        {
+          ".jpg" or ".jpeg" => "image/jpeg",
+ ".png" => "image/png",
+    ".gif" => "image/gif",
+            ".pdf" => "application/pdf",
+            ".doc" => "application/msword",
+            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+   ".xls" => "application/vnd.ms-excel",
+     ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          ".mp4" => "video/mp4",
+          ".zip" => "application/zip",
+        _ => "application/octet-stream"
+        };
+    }
+}

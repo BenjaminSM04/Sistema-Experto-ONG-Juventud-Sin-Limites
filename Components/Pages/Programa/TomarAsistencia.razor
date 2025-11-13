@@ -1,0 +1,292 @@
+﻿@page "/programa/{ProgramaId:int}/asistencia/tomar"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Operacion
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
+@using Microsoft.EntityFrameworkCore
+@attribute [Authorize]
+
+@inject ApplicationDbContext DbContext
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject ILogger<TomarAsistencia> Logger
+
+<PageTitle>Tomar Asistencia</PageTitle>
+
+<style>
+    .mythra-header {
+        background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
+     color: #FEFEFD;
+        padding: 1.5rem;
+   border-radius: 8px;
+ margin-bottom: 2rem;
+    }
+
+    .mythra-card {
+  background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+  border-left: 4px solid #4D3935;
+ }
+
+  .mythra-button-primary {
+   background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+  color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+.mythra-button-secondary {
+ background-color: transparent !important;
+        border: 2px solid #4D3935 !important;
+        color: #4D3935 !important;
+    font-weight: 600 !important;
+    }
+</style>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <div class="mythra-header">
+    <MudText Typo="Typo.h4">
+   <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="mr-2" />
+   Tomar Asistencia
+        </MudText>
+ <MudText Typo="Typo.body1" Class="mt-2" Style="opacity: 0.9;">
+            Programa: @(_programa?.Nombre ?? "Cargando...")
+ </MudText>
+    </div>
+
+  @if (_cargando)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else
+    {
+  <MudPaper Class="mythra-card pa-6" Elevation="3">
+      <MudGrid>
+    <MudItem xs="12" md="6">
+        <MudDatePicker @bind-Date="_fechaAsistencia"
+     Label="Fecha de Asistencia"
+        Required="true"
+ Variant="Variant.Outlined"
+        DateFormat="dd/MM/yyyy" />
+       </MudItem>
+
+       <MudItem xs="12" md="6">
+       <MudSelect @bind-Value="_actividadSeleccionada"
+              Label="Actividad"
+            Required="true"
+       T="Actividad"
+ ToStringFunc="@(a => a?.Titulo ?? "")"
+        Variant="Variant.Outlined"
+      @bind-Value:after="CargarParticipantesAsync">
+  @foreach (var act in _actividades)
+         {
+       <MudSelectItem Value="@act">@act.Titulo (@act.FechaInicio.ToString("dd/MM/yyyy"))</MudSelectItem>
+       }
+   </MudSelect>
+    </MudItem>
+
+  @if (_actividadSeleccionada != null)
+            {
+     <MudItem xs="12" Class="mt-4">
+  <MudText Typo="Typo.h6" Class="mb-3">
+     <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-2" />
+      Participantes (@_registros.Count)
+        </MudText>
+   <MudDivider />
+      </MudItem>
+
+            @foreach (var registro in _registros)
+    {
+     <MudItem xs="12">
+     <MudPaper Class="pa-4 mb-2" Elevation="2">
+   <MudGrid>
+       <MudItem xs="12" md="4">
+     <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">
+    @registro.NombreCompleto
+          </MudText>
+    </MudItem>
+   <MudItem xs="12" md="4">
+    <MudSelect @bind-Value="registro.Estado"
+             Label="Estado"
+    T="EstadoAsistencia"
+           Dense="true"
+      Variant="Variant.Outlined">
+   <MudSelectItem Value="@EstadoAsistencia.Presente">✅ Presente</MudSelectItem>
+    <MudSelectItem Value="@EstadoAsistencia.Ausente">❌ Ausente</MudSelectItem>
+           <MudSelectItem Value="@EstadoAsistencia.Tarde">⏰ Tarde</MudSelectItem>
+     <MudSelectItem Value="@EstadoAsistencia.Justificado">📝 Justificado</MudSelectItem>
+            </MudSelect>
+  </MudItem>
+  <MudItem xs="12" md="4">
+   <MudTextField @bind-Value="registro.Observacion"
+    Label="Observación"
+  Dense="true"
+    MaxLength="300"
+   Variant="Variant.Outlined" />
+   </MudItem>
+            </MudGrid>
+ </MudPaper>
+           </MudItem>
+   }
+
+     <MudItem xs="12" Class="d-flex gap-3 justify-end mt-4">
+  <MudButton Variant="Variant.Outlined"
+        Class="mythra-button-secondary"
+OnClick="Cancelar"
+    StartIcon="@Icons.Material.Filled.ArrowBack">
+     Cancelar
+    </MudButton>
+        <MudButton Variant="Variant.Filled"
+    Class="mythra-button-primary"
+         OnClick="Guardar"
+   Disabled="@(_actividadSeleccionada == null || _guardando)"
+    StartIcon="@Icons.Material.Filled.Save">
+    @if (_guardando)
+    {
+   <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+        <span>Guardando...</span>
+       }
+   else
+      {
+        <span>Guardar Asistencia</span>
+            }
+       </MudButton>
+    </MudItem>
+            }
+   </MudGrid>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public int ProgramaId { get; set; }
+
+    private Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas.Programa? _programa;
+    private bool _cargando = true;
+    private bool _guardando = false;
+    private DateTime? _fechaAsistencia = DateTime.Today;
+    private Actividad? _actividadSeleccionada;
+    private List<Actividad> _actividades = new();
+    private List<RegistroAsistencia> _registros = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+    try
+{
+       _programa = await DbContext.Programas
+      .FirstOrDefaultAsync(p => p.ProgramaId == ProgramaId && !p.IsDeleted);
+
+   if (_programa == null)
+  {
+      Snackbar.Add("Programa no encontrado", Severity.Error);
+    NavigationManager.NavigateTo("/programas");
+          return;
+            }
+
+ await CargarActividadesAsync();
+        }
+        catch (Exception ex)
+        {
+  Logger.LogError(ex, "Error al cargar datos");
+    Snackbar.Add("Error al cargar datos", Severity.Error);
+        }
+        finally
+        {
+      _cargando = false;
+   }
+    }
+
+    private async Task CargarActividadesAsync()
+    {
+        _actividades = await DbContext.Actividades
+            .Where(a => a.ProgramaId == ProgramaId &&
+ !a.IsDeleted &&
+    a.Estado != EstadoActividad.Cancelada)
+     .OrderByDescending(a => a.FechaInicio)
+          .Take(20)
+          .ToListAsync();
+
+        // Si hay actividades, cargar participantes de la primera automáticamente
+        if (_actividades.Any())
+        {
+_actividadSeleccionada = _actividades.First();
+            await CargarParticipantesAsync();
+        }
+ }
+
+    private async Task CargarParticipantesAsync()
+    {
+        if (_actividadSeleccionada == null) return;
+
+        var participantes = await DbContext.ActividadParticipantes
+            .Include(ap => ap.Participante)
+       .ThenInclude(p => p.Persona)
+ .Where(ap => ap.ActividadId == _actividadSeleccionada.ActividadId &&
+      !ap.IsDeleted &&
+ ap.Estado == EstadoInscripcion.Inscrito)
+            .Select(ap => new RegistroAsistencia
+            {
+ ParticipanteId = ap.ParticipanteId,
+         NombreCompleto = ap.Participante.Persona.Nombres + " " + ap.Participante.Persona.Apellidos,
+         Estado = EstadoAsistencia.Presente
+     })
+    .ToListAsync();
+
+        _registros = participantes;
+    }
+
+    private async Task Guardar()
+    {
+        if (_actividadSeleccionada == null || _fechaAsistencia == null)
+   {
+            Snackbar.Add("Seleccione una actividad y fecha", Severity.Warning);
+ return;
+        }
+
+        _guardando = true;
+
+        try
+        {
+   foreach (var registro in _registros)
+      {
+     var asistencia = new Asistencia
+    {
+     ActividadId = _actividadSeleccionada.ActividadId,
+    ParticipanteId = registro.ParticipanteId,
+   Fecha = _fechaAsistencia.Value,
+     Estado = registro.Estado,
+             Observacion = registro.Observacion,
+                    CreadoEn = DateTime.UtcNow
+                };
+
+  DbContext.Asistencias.Add(asistencia);
+     }
+
+            await DbContext.SaveChangesAsync();
+  Snackbar.Add($"Asistencia registrada para {_registros.Count} participantes", Severity.Success);
+   NavigationManager.NavigateTo($"/programa/academia/{ProgramaId}");
+  }
+   catch (Exception ex)
+      {
+            Logger.LogError(ex, "Error al guardar asistencia");
+      Snackbar.Add($"Error al guardar asistencia: {ex.Message}", Severity.Error);
+     }
+      finally
+        {
+            _guardando = false;
+    }
+    }
+
+    private void Cancelar()
+    {
+        NavigationManager.NavigateTo($"/programa/academia/{ProgramaId}");
+    }
+
+    private class RegistroAsistencia
+    {
+        public int ParticipanteId { get; set; }
+  public string NombreCompleto { get; set; } = "";
+        public EstadoAsistencia Estado { get; set; }
+        public string? Observacion { get; set; }
+    }
+}

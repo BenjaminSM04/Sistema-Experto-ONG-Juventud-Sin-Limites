@@ -40,7 +40,10 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
             // Servicio de Permisos
             builder.Services.AddScoped<IPermissionProvider, PermissionProvider>();
 
-            // MudBlazor
+            // Servicio de Reportes
+            builder.Services.AddScoped<Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.ReportesProgramaService>();
+
+         // MudBlazor
             builder.Services.AddMudServices();
 
             // Configurar HttpClient para llamadas a la API desde Blazor

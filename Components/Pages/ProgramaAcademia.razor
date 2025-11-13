@@ -1,0 +1,820 @@
+﻿@page "/programa/academia/{ProgramaId:int}"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Operacion
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.BI
+@using Microsoft.EntityFrameworkCore
+@using MudBlazor
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Pages.Programa
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services
+@attribute [Authorize]
+
+@inject ApplicationDbContext DbContext
+@inject ILogger<ProgramaAcademia> Logger
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject ReportesProgramaService ReportesService
+@inject IJSRuntime JS
+
+<PageTitle>Academia - @(_programa?.Nombre ?? "Cargando...")</PageTitle>
+
+<style>
+   .mythra-header {
+        background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
+   color: #FEFEFD;
+        padding: 1.5rem;
+   border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+
+ .mythra-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-left: 4px solid #4D3935;
+    }
+
+    .mythra-toolbar {
+ background-color: #F7C484;
+        border-radius: 8px 8px 0 0;
+        padding: 1rem;
+    }
+
+    .mythra-button-primary {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+        color: #4D3935 !important;
+   font-weight: 600 !important;
+    }
+
+    .mythra-button-primary:hover {
+        background: linear-gradient(135deg, #85C97C 0%, #9FD996 100%) !important;
+        transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(159, 217, 150, 0.4) !important;
+    }
+
+    .mythra-kpi-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-left: 4px solid #9FD996;
+        padding: 1.5rem;
+        border-radius: 8px;
+    }
+
+    .mythra-chip-success {
+     background-color: #9FD996 !important;
+ color: #4D3935 !important;
+        font-weight: 600;
+    }
+
+    .mythra-chip-warning {
+        background-color: #F3C95A !important;
+    color: #4D3935 !important;
+        font-weight: 600;
+    }
+
+    .mythra-chip-error {
+        background-color: #F7C484 !important;
+        color: #4D3935 !important;
+      font-weight: 600;
+    }
+
+    .kpi-value {
+     font-size: 2.5rem;
+        font-weight: 700;
+        color: #4D3935;
+   line-height: 1;
+    } 
+
+    .kpi-label {
+        font-size: 0.875rem;
+        color: #6D534F;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+</style>
+
+@if (_cargando)
+{
+    <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    </MudContainer>
+}
+else if (_programa == null)
+{
+    <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudAlert Severity="Severity.Error">Programa no encontrado</MudAlert>
+    </MudContainer>
+}
+else
+{
+    <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+        <!-- Encabezado -->
+        <div class="mythra-header">
+     <MudGrid>
+    <MudItem xs="12" md="8">
+  <MudText Typo="Typo.h4" Class="mb-2">
+            <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Class="mr-2" />
+        @_programa.Nombre
+    </MudText>
+     <MudText Typo="Typo.body2" Style="opacity: 0.9;">
+    @_programa.Descripcion
+               </MudText>
+    <div class="mt-3">
+              <MudChip T="string" Size="Size.Small" Class="mythra-chip-success">@_programa.Clave</MudChip>
+              <MudChip T="string" Size="Size.Small" Class="@(_programa.Estado == EstadoGeneral.Activo ? "mythra-chip-success" : "mythra-chip-error")">
+ @_programa.Estado.ToString()
+       </MudChip>
+             <MudChip T="string" Size="Size.Small" Class="@(_programa.InferenciaActiva ? "mythra-chip-success" : "mythra-chip-error")">
+         Inferencia: @(_programa.InferenciaActiva ? "Activa" : "Inactiva")
+        </MudChip>
+                 </div>
+        </MudItem>
+           <MudItem xs="12" md="4" Class="d-flex align-end justify-end">
+   <MudButtonGroup Variant="Variant.Filled" Size="Size.Large">
+  <MudButton Class="mythra-button-primary" 
+    StartIcon="@Icons.Material.Filled.Add" 
+         Href="@($"/programa/{ProgramaId}/actividad/crear")">
+        Actividad
+        </MudButton>
+    <MudButton Class="mythra-button-primary" 
+   StartIcon="@Icons.Material.Filled.CheckCircle" 
+           Href="@($"/programa/{ProgramaId}/asistencia/tomar")">
+       Asistencia
+    </MudButton>
+ <MudButton Class="mythra-button-primary" 
+            StartIcon="@Icons.Material.Filled.Upload" 
+        Href="@($"/programa/{ProgramaId}/evidencia/subir")">
+   Evidencias
+ </MudButton>
+         </MudButtonGroup>
+      </MudItem>
+       </MudGrid>
+        </div>
+
+        <!-- Filtros Persistentes -->
+    <MudPaper Class="mythra-card mb-4" Elevation="3">
+    <div class="mythra-toolbar">
+     <MudGrid>
+         <MudItem xs="12" md="3">
+  <MudSelect T="int" Label="Año" @bind-Value="_filtroAnio" Style="background-color: #FEFEFD; border-radius: 4px;" @bind-Value:after="OnFiltrosChanged">
+    <MudSelectItem Value="2025">2025</MudSelectItem>
+  <MudSelectItem Value="2024">2024</MudSelectItem>
+       <MudSelectItem Value="2023">2023</MudSelectItem>
+    </MudSelect>
+     </MudItem>
+      <MudItem xs="12" md="3">
+  <MudSelect T="int?" Label="Mes" @bind-Value="_filtroMes" Clearable="true" Style="background-color: #FEFEFD; border-radius: 4px;" @bind-Value:after="OnFiltrosChanged">
+@for (int i = 1; i <= 12; i++)
+    {
+       int mesActual = i; // Variable local para evitar problemas de closure
+        <MudSelectItem Value="@((int?)mesActual)">@ObtenerNombreMes(mesActual)</MudSelectItem>
+     }
+  </MudSelect>
+   </MudItem>
+      <MudItem xs="12" md="3">
+      <MudSelect T="TipoActividad?" Label="Tipo de Actividad" @bind-Value="_filtroTipo" Clearable="true" Style="background-color: #FEFEFD; border-radius: 4px;" @bind-Value:after="OnFiltrosChanged">
+<MudSelectItem Value="@((TipoActividad?)TipoActividad.Taller)">Taller</MudSelectItem>
+    <MudSelectItem Value="@((TipoActividad?)TipoActividad.Capacitacion)">Capacitación</MudSelectItem>
+      <MudSelectItem Value="@((TipoActividad?)TipoActividad.Evento)">Evento</MudSelectItem>
+       </MudSelect>
+  </MudItem>
+          <MudItem xs="12" md="3">
+      <MudSelect T="EstadoActividad?" Label="Estado" @bind-Value="_filtroEstado" Clearable="true" Style="background-color: #FEFEFD; border-radius: 4px;" @bind-Value:after="OnFiltrosChanged">
+  <MudSelectItem Value="@((EstadoActividad?)EstadoActividad.Planificada)">Planificada</MudSelectItem>
+         <MudSelectItem Value="@((EstadoActividad?)EstadoActividad.Realizada)">Realizada</MudSelectItem>
+ <MudSelectItem Value="@((EstadoActividad?)EstadoActividad.Cancelada)">Cancelada</MudSelectItem>
+       </MudSelect>
+          </MudItem>
+      </MudGrid>
+       </div>
+        </MudPaper>
+
+   <!-- Tabs Principales -->
+        <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+        <!-- Dashboard Tab -->
+    <MudTabPanel Text="Dashboard" Icon="@Icons.Material.Filled.Dashboard">
+     @* KPIs *@
+        <MudGrid Class="mb-4">
+    <MudItem xs="12" sm="6" md="3">
+             <div class="mythra-kpi-card">
+    <div class="kpi-label mb-2">Planificadas vs Ejecutadas</div>
+              <div class="kpi-value">@_kpis.Planificadas / @_kpis.Ejecutadas</div>
+         <MudProgressLinear Value="@(_kpis.Planificadas > 0 ? (_kpis.Ejecutadas * 100.0 / _kpis.Planificadas) : 0)" Color="Color.Success" Class="mt-2" />
+              </div>
+        </MudItem>
+           <MudItem xs="12" sm="6" md="3">
+           <div class="mythra-kpi-card">
+     <div class="kpi-label mb-2">% Cumplimiento</div>
+       <div class="kpi-value">@_kpis.PorcentajeCumplimiento.ToString("F1")%</div>
+       <MudProgressLinear Value="@_kpis.PorcentajeCumplimiento" Color="Color.Primary" Class="mt-2" />
+       </div>
+       </MudItem>
+             <MudItem xs="12" sm="6" md="3">
+      <div class="mythra-kpi-card">
+<div class="kpi-label mb-2">% Asistencia Promedio</div>
+       <div class="kpi-value">@_kpis.AsistenciaPromedio.ToString("F1")%</div>
+  <MudProgressLinear Value="@_kpis.AsistenciaPromedio" Color="Color.Info" Class="mt-2" />
+       </div>
+   </MudItem>
+   <MudItem xs="12" sm="6" md="3">
+   <div class="mythra-kpi-card">
+     <div class="kpi-label mb-2">Retraso Promedio (días)</div>
+         <div class="kpi-value">@_kpis.RetrasoPromedio.ToString("F1")</div>
+                 <MudProgressLinear Value="@Math.Min(_kpis.RetrasoPromedio * 10, 100)" Color="Color.Warning" Class="mt-2" />
+             </div>
+    </MudItem>
+           </MudGrid>
+
+        @* Gráficas MudChart *@
+  <MudGrid>
+      <MudItem xs="12" md="6">
+            <MudPaper Class="mythra-card pa-4" Elevation="3">
+    <MudText Typo="Typo.h6" Class="mb-3" Style="color: #4D3935;">Serie Temporal - 12 Meses</MudText>
+              <MudChart ChartType="ChartType.Line" 
+ ChartSeries="@_series12Meses" 
+   XAxisLabels="@_xAxisLabels12Meses"
+  Width="100%" Height="300px"
+        ChartOptions="@_mudChartOptions" />
+    </MudPaper>
+      </MudItem>
+
+    <MudItem xs="12" md="6">
+           <MudPaper Class="mythra-card pa-4" Elevation="3">
+  <MudText Typo="Typo.h6" Class="mb-3" Style="color: #4D3935;">Ejecución por Tipo</MudText>
+     <MudChart ChartType="ChartType.Bar" 
+            ChartSeries="@_seriesTipos" 
+      XAxisLabels="@_xAxisLabelsTipos"
+      Width="100%" Height="300px"
+      ChartOptions="@_mudChartOptions" />
+         </MudPaper>
+        </MudItem>
+             </MudGrid>
+      </MudTabPanel>
+
+ <!-- Actividades Tab -->
+     <MudTabPanel Text="Actividades" Icon="@Icons.Material.Filled.Event">
+  <MudPaper Class="mythra-card" Elevation="3">
+         <div class="mythra-toolbar">
+      <MudGrid>
+   <MudItem xs="12" md="10">
+   <MudTextField @bind-Value="_searchString" Placeholder="Buscar actividades..."
+ Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+    Style="background-color: #FEFEFD; border-radius: 4px;" Immediate="true" DebounceInterval="300" @bind-Value:after="OnBusquedaChanged"/>
+         </MudItem>
+       <MudItem xs="12" md="2">
+   <MudButton Color="Color.Error" 
+  Variant="Variant.Filled" 
+            FullWidth="true"
+      StartIcon="@Icons.Material.Filled.PictureAsPdf"
+  OnClick="ExportarReportePDF"
+        Disabled="@_generandoPDF">
+      @if (_generandoPDF)
+            {
+          <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" />
+            }
+     Exportar PDF
+            </MudButton>
+      </MudItem>
+            </MudGrid>
+   </div>
+  <MudTable Items="@ActividadesFiltradas" Dense="true" Hover="true" Loading="@_cargandoActividades" Elevation="0">
+       <HeaderContent>
+    <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Título</MudTh>
+    <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Fecha</MudTh>
+    <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Tipo</MudTh>
+   <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Estado</MudTh>
+    <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Asistencia %</MudTh>
+    <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Registros</MudTh>
+        <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Acciones</MudTh>
+</HeaderContent>
+        <RowTemplate>
+   <MudTd DataLabel="Título">@context.Titulo</MudTd>
+       <MudTd DataLabel="Fecha">@context.FechaInicio.ToString("dd/MM/yyyy")</MudTd>
+       <MudTd DataLabel="Tipo"><MudChip T="string" Size="Size.Small" Class="mythra-chip-success">@context.Tipo.ToString()</MudChip></MudTd>
+      <MudTd DataLabel="Estado"><MudChip T="string" Size="Size.Small" Class="mythra-chip-warning">@context.Estado.ToString()</MudChip></MudTd>
+    <MudTd DataLabel="Asistencia %">@ObtenerPorcentajeAsistencia(context.ActividadId)</MudTd>
+            <MudTd DataLabel="Registros">
+    <MudButton Size="Size.Small" 
+  Variant="Variant.Outlined" 
+Color="Color.Info"
+  StartIcon="@Icons.Material.Filled.Folder"
+    Href="@($"/programa/{ProgramaId}/actividad/{context.ActividadId}/evidencias")">
+      Ver Archivos @ObtenerContadorEvidencias(context.ActividadId)
+      </MudButton>
+          </MudTd>
+            <MudTd DataLabel="Acciones">
+     <MudButtonGroup Size="Size.Small" Variant="Variant.Text">
+ <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+   Color="Color.Primary"
+       Href="@($"/programa/{ProgramaId}/actividad/{context.ActividadId}/editar")"
+    Size="Size.Small"
+Title="Editar actividad" />
+        </MudButtonGroup>
+</MudTd>
+</RowTemplate>
+        </MudTable>
+    </MudPaper>
+  </MudTabPanel>
+
+        <!-- Participantes Tab -->
+            <MudTabPanel Text="Participantes" Icon="@Icons.Material.Filled.People">
+  <ParticipantesTab ProgramaId="@ProgramaId" />
+ </MudTabPanel>
+
+  <!-- Alertas Tab -->
+     <MudTabPanel Text="Alertas" Icon="@Icons.Material.Filled.Warning">
+      <AlertasTab ProgramaId="@ProgramaId" />
+      </MudTabPanel>
+
+    @* ========================================
+       AUDITORÍA TAB - DESHABILITADO TEMPORALMENTE
+       Para habilitar, descomente el siguiente bloque
+       ======================================== *@
+       
+    @* <MudTabPanel Text="Auditoría" Icon="@Icons.Material.Filled.History">
+     <AuditoriaTab ProgramaId="@ProgramaId" />
+    </MudTabPanel> *@
+        </MudTabs>
+    </MudContainer>
+}
+
+@code {
+    [Parameter] public int ProgramaId { get; set; }
+
+    private Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas.Programa? _programa;
+    private bool _cargando = true;
+    private bool _cargandoActividades = false;
+    private bool _generandoPDF = false;
+
+    // Filtros
+    private int _filtroAnio = DateTime.Now.Year;
+ private int? _filtroMes = DateTime.Now.Month;
+    private TipoActividad? _filtroTipo;
+ private EstadoActividad? _filtroEstado;
+    private string _searchString = "";
+
+ // KPIs
+    private KPIsModel _kpis = new();
+
+    // Datos para MudChart
+    private List<ChartSeries> _series12Meses = new();
+private string[] _xAxisLabels12Meses = Array.Empty<string>();
+private List<ChartSeries> _seriesTipos = new();
+    private string[] _xAxisLabelsTipos = Array.Empty<string>();
+    private ChartOptions _mudChartOptions = new();
+
+    // Actividades
+  private List<Actividad> _actividades = new();
+    private Dictionary<int, double> _porcentajesAsistencia = new();
+    private Dictionary<int, int> _contadorEvidencias = new();
+
+    private IEnumerable<Actividad> ActividadesFiltradas
+  {
+        get
+{
+    if (string.IsNullOrWhiteSpace(_searchString))
+   return _actividades;
+
+          return _actividades.Where(a => 
+a.Titulo.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
+      (a.Descripcion != null && a.Descripcion.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            );
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        ConfigurarOpcionesGraficas();
+        await CargarProgramaAsync();
+ await CargarKPIsAsync();
+ await CargarDatosGraficasAsync();
+      await CargarActividadesAsync();
+}
+
+  private async Task OnFiltrosChanged()
+    {
+  await CargarKPIsAsync();
+await CargarDatosGraficasAsync();
+   await CargarActividadesAsync();
+  StateHasChanged();
+    }
+
+    private async Task OnBusquedaChanged()
+    {
+ await Task.CompletedTask;
+   StateHasChanged();
+    }
+
+    private void ConfigurarOpcionesGraficas()
+    {
+        _mudChartOptions = new ChartOptions
+        {
+    YAxisTicks = 5,
+      MaxNumYAxisTicks = 10,
+  YAxisLines = true,
+   XAxisLines = false,
+   LineStrokeWidth = 3,
+            ChartPalette = new[] { "#9FD996", "#F7C484", "#F3C95A" }
+        };
+    }
+
+    private async Task CargarProgramaAsync()
+    {
+        try
+        {
+        _programa = await DbContext.Programas
+            .FirstOrDefaultAsync(p => p.ProgramaId == ProgramaId && !p.IsDeleted);
+
+   if (_programa == null)
+  {
+    Snackbar.Add("Programa no encontrado", Severity.Error);
+  }
+        }
+        catch (Exception ex)
+     {
+            Logger.LogError(ex, "Error al cargar programa");
+            Snackbar.Add("Error al cargar programa", Severity.Error);
+        }
+        finally
+        {
+  _cargando = false;
+        }
+    }
+
+    private async Task CargarKPIsAsync()
+    {
+        try
+ {
+         var anioMes = $"{_filtroAnio:0000}-{(_filtroMes ?? DateTime.Now.Month):00}";
+    
+       // Cargar métricas desde la base de datos
+    var metricas = await DbContext.MetricasProgramaMes
+        .Where(m => m.ProgramaId == ProgramaId && m.AnioMes == anioMes && !m.IsDeleted)
+    .FirstOrDefaultAsync();
+
+   if (metricas != null)
+ {
+      _kpis = new KPIsModel
+        {
+    Planificadas = metricas.ActividadesPlanificadas,
+      Ejecutadas = metricas.ActividadesEjecutadas,
+            PorcentajeCumplimiento = (double)metricas.PorcCumplimiento,
+            AsistenciaPromedio = (double)metricas.PorcAsistenciaProm,
+  RetrasoPromedio = (double)metricas.RetrasoPromedioDias
+    };
+        }
+     else
+ {
+      // Si no hay métricas, calcular desde actividades directamente
+    var actividades = await DbContext.Actividades
+               .Where(a => a.ProgramaId == ProgramaId && 
+   !a.IsDeleted &&
+   a.FechaInicio.Year == _filtroAnio &&
+       (!_filtroMes.HasValue || a.FechaInicio.Month == _filtroMes.Value))
+      .ToListAsync();
+
+    var planificadas = actividades.Count;
+      var ejecutadas = actividades.Count(a => a.Estado == EstadoActividad.Realizada);
+     var cumplimiento = planificadas > 0 ? (ejecutadas * 100.0 / planificadas) : 0;
+
+ // Calcular asistencia promedio
+ var asistencias = await DbContext.Asistencias
+          .Include(a => a.Actividad)
+   .Where(a => a.Actividad.ProgramaId == ProgramaId &&
+           !a.IsDeleted &&
+        a.Fecha.Year == _filtroAnio &&
+          (!_filtroMes.HasValue || a.Fecha.Month == _filtroMes.Value))
+    .ToListAsync();
+
+ var totalAsistencias = asistencias.Count;
+            var presentes = asistencias.Count(a => a.Estado == EstadoAsistencia.Presente || a.Estado == EstadoAsistencia.Tarde);
+ var porcAsistencia = totalAsistencias > 0 ? (presentes * 100.0 / totalAsistencias) : 0;
+
+                // Calcular retraso promedio
+    var actividadesRetrasadas = actividades
+     .Where(a => a.Estado == EstadoActividad.Planificada && a.FechaInicio < DateTime.Now)
+            .ToList();
+
+     var retrasoPromedio = actividadesRetrasadas.Any() 
+ ? actividadesRetrasadas.Average(a => (DateTime.Now - a.FechaInicio).TotalDays) 
+   : 0;
+
+   _kpis = new KPIsModel
+{
+      Planificadas = planificadas,
+         Ejecutadas = ejecutadas,
+      PorcentajeCumplimiento = cumplimiento,
+    AsistenciaPromedio = porcAsistencia,
+   RetrasoPromedio = retrasoPromedio
+     };
+       }
+        }
+        catch (Exception ex)
+      {
+   Logger.LogError(ex, "Error al cargar KPIs");
+            Snackbar.Add("Error al cargar KPIs", Severity.Error);
+   }
+    }
+
+    private async Task CargarDatosGraficasAsync()
+    {
+    try
+      {
+ // Serie temporal de 12 meses
+  var anioActual = _filtroAnio;
+            var mesesData = new List<(string Nombre, int Mes, int Planificadas, int Ejecutadas)>();
+      
+            for (int mes = 1; mes <= 12; mes++)
+            {
+     var anioMes = $"{anioActual:0000}-{mes:00}";
+       
+       // Intentar obtener de métricas
+      var metricas = await DbContext.MetricasProgramaMes
+          .Where(m => m.ProgramaId == ProgramaId && m.AnioMes == anioMes && !m.IsDeleted)
+            .FirstOrDefaultAsync();
+
+       if (metricas != null)
+       {
+        mesesData.Add((
+        ObtenerNombreMesCorto(mes),
+   mes,
+        metricas.ActividadesPlanificadas,
+      metricas.ActividadesEjecutadas
+             ));
+       }
+                else
+  {
+         // Calcular desde actividades
+             var actividades = await DbContext.Actividades
+      .Where(a => a.ProgramaId == ProgramaId &&
+       !a.IsDeleted &&
+          a.FechaInicio.Year == anioActual &&
+      a.FechaInicio.Month == mes)
+      .ToListAsync();
+
+  mesesData.Add((
+ ObtenerNombreMesCorto(mes),
+     mes,
+         actividades.Count,
+        actividades.Count(a => a.Estado == EstadoActividad.Realizada)
+      ));
+         }
+            }
+
+            _xAxisLabels12Meses = mesesData.Select(m => m.Nombre).ToArray();
+            _series12Meses = new List<ChartSeries>
+            {
+  new ChartSeries 
+       { 
+ Name = "Planificadas", 
+      Data = mesesData.Select(m => (double)m.Planificadas).ToArray() 
+     },
+       new ChartSeries 
+         { 
+             Name = "Ejecutadas", 
+          Data = mesesData.Select(m => (double)m.Ejecutadas).ToArray() 
+  }
+            };
+
+    // Gráfica por tipo de actividad
+    var tiposActividad = await DbContext.Actividades
+   .Where(a => a.ProgramaId == ProgramaId &&
+    !a.IsDeleted &&
+                a.FechaInicio.Year == _filtroAnio &&
+           (!_filtroMes.HasValue || a.FechaInicio.Month == _filtroMes.Value))
+      .GroupBy(a => a.Tipo)
+    .Select(g => new { Tipo = g.Key, Cantidad = g.Count() })
+    .ToListAsync();
+
+         if (tiposActividad.Any())
+    {
+     _xAxisLabelsTipos = tiposActividad.Select(t => t.Tipo.ToString()).ToArray();
+            _seriesTipos = new List<ChartSeries>
+  {
+         new ChartSeries 
+       { 
+         Name = "Actividades", 
+    Data = tiposActividad.Select(t => (double)t.Cantidad).ToArray() 
+           }
+       };
+            }
+         else
+            {
+        // Valores por defecto si no hay datos
+   _xAxisLabelsTipos = new[] { "Taller", "Capacitación", "Evento", "Reunión" };
+            _seriesTipos = new List<ChartSeries>
+           {
+ new ChartSeries { Name = "Actividades", Data = new double[] { 0, 0, 0, 0 } }
+                };
+            }
+        }
+        catch (Exception ex)
+{
+  Logger.LogError(ex, "Error al cargar datos de gráficas");
+    Snackbar.Add("Error al cargar datos de gráficas", Severity.Error);
+        }
+    }
+
+    private string ObtenerNombreMesCorto(int mes)
+    {
+        return mes switch
+        {
+     1 => "Ene",
+        2 => "Feb",
+            3 => "Mar",
+   4 => "Abr",
+      5 => "May",
+      6 => "Jun",
+            7 => "Jul",
+            8 => "Ago",
+    9 => "Sep",
+            10 => "Oct",
+   11 => "Nov",
+     12 => "Dic",
+      _ => ""
+        };
+    }
+
+    private async Task CargarActividadesAsync()
+  {
+   try
+    {
+     _cargandoActividades = true;
+
+       var query = DbContext.Actividades
+  .Where(a => a.ProgramaId == ProgramaId && !a.IsDeleted);
+
+  // Aplicar filtros
+  if (_filtroMes.HasValue)
+ {
+     query = query.Where(a => a.FechaInicio.Month == _filtroMes.Value);
+  }
+
+ query = query.Where(a => a.FechaInicio.Year == _filtroAnio);
+
+      if (_filtroTipo.HasValue)
+  {
+   query = query.Where(a => a.Tipo == _filtroTipo.Value);
+       }
+
+   if (_filtroEstado.HasValue)
+   {
+    query = query.Where(a => a.Estado == _filtroEstado.Value);
+      }
+
+    _actividades = await query
+    .OrderByDescending(a => a.FechaInicio)
+   .Take(50)
+        .ToListAsync();
+
+        // Calcular porcentajes de asistencia
+        await CalcularPorcentajesAsistenciaAsync();
+   
+        // Calcular contador de evidencias
+      await CalcularContadorEvidenciasAsync();
+  }
+        catch (Exception ex)
+        {
+   Logger.LogError(ex, "Error al cargar actividades");
+ Snackbar.Add("Error al cargar actividades", Severity.Error);
+     }
+        finally
+    {
+_cargandoActividades = false;
+}
+    }
+
+    private async Task CalcularPorcentajesAsistenciaAsync()
+    {
+    _porcentajesAsistencia.Clear();
+
+        var actividadIds = _actividades.Select(a => a.ActividadId).ToList();
+
+        var asistenciasPorActividad = await DbContext.Asistencias
+      .Where(a => actividadIds.Contains(a.ActividadId) && !a.IsDeleted)
+         .GroupBy(a => a.ActividadId)
+            .Select(g => new
+         {
+    ActividadId = g.Key,
+        Total = g.Count(),
+    Presentes = g.Count(a => a.Estado == EstadoAsistencia.Presente || a.Estado == EstadoAsistencia.Tarde)
+          })
+ .ToListAsync();
+
+        foreach (var asistencia in asistenciasPorActividad)
+        {
+   if (asistencia.Total > 0)
+         {
+ var porcentaje = (asistencia.Presentes * 100.0) / asistencia.Total;
+        _porcentajesAsistencia[asistencia.ActividadId] = porcentaje;
+ }
+        }
+    }
+
+    private async Task CalcularContadorEvidenciasAsync()
+    {
+      _contadorEvidencias.Clear();
+
+        var actividadIds = _actividades.Select(a => a.ActividadId).ToList();
+
+   var evidenciasPorActividad = await DbContext.EvidenciaActividades
+    .Where(e => actividadIds.Contains(e.ActividadId) && !e.IsDeleted)
+        .GroupBy(e => e.ActividadId)
+            .Select(g => new
+   {
+     ActividadId = g.Key,
+ Cantidad = g.Count()
+      })
+  .ToListAsync();
+
+      foreach (var evidencia in evidenciasPorActividad)
+   {
+            _contadorEvidencias[evidencia.ActividadId] = evidencia.Cantidad;
+   }
+    }
+
+    private string ObtenerPorcentajeAsistencia(int actividadId)
+  {
+        if (_porcentajesAsistencia.TryGetValue(actividadId, out var porcentaje))
+    {
+      return $"{porcentaje:F1}%";
+     }
+return "N/A";
+    }
+
+    private string ObtenerContadorEvidencias(int actividadId)
+ {
+        if (_contadorEvidencias.TryGetValue(actividadId, out var cantidad))
+ {
+    return cantidad > 0 ? $"({cantidad})" : "";
+    }
+   return "";
+    }
+
+  // ========================================
+ // MANEJADORES DE DIÁLOGOS
+    // ========================================
+
+
+    private async Task ExportarReportePDF()
+    {
+    if (_generandoPDF) return;
+
+     try
+     {
+        _generandoPDF = true;
+ StateHasChanged();
+
+ Snackbar.Add("Generando reporte PDF...", Severity.Info);
+
+  var htmlReporte = await ReportesService.GenerarReporteHtmlAsync(ProgramaId, _filtroAnio);
+         
+       // Generar nombre de archivo
+    var nombreArchivo = $"Reporte_{_programa?.Clave}_{_filtroAnio}_{DateTime.Now:yyyyMMddHHmmss}.html";
+     
+    // Descargar el HTML (que se puede convertir a PDF en el navegador con Ctrl+P)
+await JS.InvokeVoidAsync("downloadFile", nombreArchivo, htmlReporte, "text/html");
+     
+       Snackbar.Add("Reporte HTML generado. Use Ctrl+P en su navegador para imprimir/guardar como PDF", Severity.Success);
+  }
+    catch (Exception ex)
+     {
+  Logger.LogError(ex, "Error al generar reporte");
+Snackbar.Add("Error al generar el reporte", Severity.Error);
+  }
+        finally
+      {
+   _generandoPDF = false;
+     StateHasChanged();
+      }
+    }
+
+ private string ObtenerNombreMes(int mes)
+ {
+   return mes switch
+ {
+     1 => "Enero",
+   2 => "Febrero",
+          3 => "Marzo",
+       4 => "Abril",
+    5 => "Mayo",
+    6 => "Junio",
+   7 => "Julio",
+  8 => "Agosto",
+         9 => "Septiembre",
+   10 => "Octubre",
+ 11 => "Noviembre",
+        12 => "Diciembre",
+       _ => ""
+ };
+    }
+
+    private class KPIsModel
+  {
+   public int Planificadas { get; set; }
+        public int Ejecutadas { get; set; }
+      public double PorcentajeCumplimiento { get; set; }
+  public double AsistenciaPromedio { get; set; }
+   public double RetrasoPromedio { get; set; }
+    }
+}

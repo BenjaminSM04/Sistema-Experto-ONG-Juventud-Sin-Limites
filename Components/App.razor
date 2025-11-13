@@ -24,14 +24,17 @@
             circuit: {
      reconnectionOptions: {
 maxRetries: 3,  // Máximo 3 intentos de reconexión
-          retryIntervalMilliseconds: 3000  // 3 segundos entre intentos
-        }
+      retryIntervalMilliseconds: 3000  // 3 segundos entre intentos
+      }
   }
         });
     </script>
     
     <!-- JS opcional de MudBlazor (solo si usas algunos componentes que lo requieren) -->
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    
+    <!-- JS personalizado para descargas y utilidades -->
+    <script src="js/app.js"></script>
 </body>
 
 </html>

@@ -1,0 +1,269 @@
+﻿@page "/programa/{ProgramaId:int}/actividad/crear"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Operacion
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
+@using Microsoft.EntityFrameworkCore
+@attribute [Authorize]
+
+@inject ApplicationDbContext DbContext
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject ILogger<CrearActividad> Logger
+
+<PageTitle>Crear Actividad</PageTitle>
+
+<style>
+    .mythra-header {
+        background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
+        color: #FEFEFD;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+
+ .mythra-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+ border-left: 4px solid #4D3935;
+    }
+
+    .mythra-button-primary {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .mythra-button-secondary {
+        background-color: transparent !important;
+        border: 2px solid #4D3935 !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+</style>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <div class="mythra-header">
+        <MudText Typo="Typo.h4">
+       <MudIcon Icon="@Icons.Material.Filled.EventNote" Class="mr-2" />
+            Crear Nueva Actividad
+        </MudText>
+ <MudText Typo="Typo.body1" Class="mt-2" Style="opacity: 0.9;">
+            Programa: @(_programa?.Nombre ?? "Cargando...")
+     </MudText>
+    </div>
+
+    @if (_cargando)
+    {
+ <MudProgressCircular Indeterminate="true" />
+    }
+    else
+    {
+        <MudPaper Class="mythra-card pa-6" Elevation="3">
+            <MudForm @ref="_form" @bind-IsValid="@_isValid">
+                <MudGrid>
+   <MudItem xs="12">
+      <MudTextField @bind-Value="_model.Titulo"
+    Label="Título de la Actividad"
+    Required="true"
+       RequiredError="El título es requerido"
+   MaxLength="120"
+        Variant="Variant.Outlined" />
+         </MudItem>
+
+       <MudItem xs="12">
+            <MudTextField @bind-Value="_model.Descripcion"
+   Label="Descripción"
+        Lines="3"
+      MaxLength="1000"
+          Variant="Variant.Outlined" />
+       </MudItem>
+
+   <MudItem xs="12" md="6">
+     <MudDatePicker @bind-Date="_model.FechaInicio"
+        Label="Fecha de Inicio"
+              Required="true"
+    Editable="true"
+         Variant="Variant.Outlined"
+  DateFormat="dd/MM/yyyy" />
+    </MudItem>
+
+        <MudItem xs="12" md="6">
+              <MudTimePicker @bind-Time="_model.HoraInicio"
+                  Label="Hora de Inicio"
+        AmPm="true"
+      Variant="Variant.Outlined" />
+            </MudItem>
+
+    <MudItem xs="12" md="6">
+    <MudDatePicker @bind-Date="_model.FechaFin"
+     Label="Fecha de Fin"
+    Editable="true"
+     Variant="Variant.Outlined"
+               DateFormat="dd/MM/yyyy" />
+      </MudItem>
+
+       <MudItem xs="12" md="6">
+             <MudTimePicker @bind-Time="_model.HoraFin"
+  Label="Hora de Fin"
+   AmPm="true"
+             Variant="Variant.Outlined" />
+        </MudItem>
+
+       <MudItem xs="12">
+                    <MudTextField @bind-Value="_model.Lugar"
+                Label="Lugar"
+      MaxLength="120"
+       Variant="Variant.Outlined" />
+         </MudItem>
+
+             <MudItem xs="12" md="6">
+    <MudSelect @bind-Value="_model.Tipo"
+            Label="Tipo de Actividad"
+    Required="true"
+    Variant="Variant.Outlined">
+    <MudSelectItem Value="@TipoActividad.Taller">Taller</MudSelectItem>
+                <MudSelectItem Value="@TipoActividad.Capacitacion">Capacitación</MudSelectItem>
+          <MudSelectItem Value="@TipoActividad.Evento">Evento</MudSelectItem>
+         <MudSelectItem Value="@TipoActividad.Reunion">Reunión</MudSelectItem>
+     <MudSelectItem Value="@TipoActividad.Otro">Otro</MudSelectItem>
+         </MudSelect>
+          </MudItem>
+
+              <MudItem xs="12" md="6">
+     <MudSelect @bind-Value="_model.Estado"
+       Label="Estado"
+        Required="true"
+   Variant="Variant.Outlined">
+     <MudSelectItem Value="@EstadoActividad.Planificada">Planificada</MudSelectItem>
+         <MudSelectItem Value="@EstadoActividad.Realizada">Realizada</MudSelectItem>
+     <MudSelectItem Value="@EstadoActividad.Cancelada">Cancelada</MudSelectItem>
+     </MudSelect>
+         </MudItem>
+
+<MudItem xs="12" Class="d-flex gap-3 justify-end mt-4">
+       <MudButton Variant="Variant.Outlined"
+        Class="mythra-button-secondary"
+        OnClick="Cancelar"
+    StartIcon="@Icons.Material.Filled.ArrowBack">
+         Cancelar
+          </MudButton>
+        <MudButton Variant="Variant.Filled"
+     Class="mythra-button-primary"
+                   OnClick="Guardar"
+    Disabled="@(!_isValid || _guardando)"
+     StartIcon="@Icons.Material.Filled.Save">
+     @if (_guardando)
+      {
+  <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+      <span>Guardando...</span>
+    }
+         else
+        {
+     <span>Guardar Actividad</span>
+           }
+   </MudButton>
+         </MudItem>
+     </MudGrid>
+  </MudForm>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public int ProgramaId { get; set; }
+
+    private Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas.Programa? _programa;
+    private MudForm? _form;
+    private bool _isValid;
+    private bool _cargando = true;
+    private bool _guardando = false;
+    private ActividadModel _model = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+ _programa = await DbContext.Programas
+     .FirstOrDefaultAsync(p => p.ProgramaId == ProgramaId && !p.IsDeleted);
+
+  if (_programa == null)
+          {
+ Snackbar.Add("Programa no encontrado", Severity.Error);
+          NavigationManager.NavigateTo("/programas");
+    return;
+            }
+
+    _model.Tipo = TipoActividad.Taller;
+       _model.Estado = EstadoActividad.Planificada;
+       _model.FechaInicio = DateTime.Today;
+   _model.HoraInicio = new TimeSpan(18, 0, 0); // 6:00 PM
+ }
+   catch (Exception ex)
+        {
+     Logger.LogError(ex, "Error al cargar programa");
+      Snackbar.Add("Error al cargar el programa", Severity.Error);
+        }
+     finally
+     {
+            _cargando = false;
+      }
+    }
+
+ private async Task Guardar()
+    {
+      if (!_isValid || _guardando) return;
+
+        _guardando = true;
+
+        try
+      {
+            var actividad = new Actividad
+      {
+ ProgramaId = ProgramaId,
+           Titulo = _model.Titulo!,
+   Descripcion = _model.Descripcion,
+FechaInicio = _model.FechaInicio!.Value.Date.Add(_model.HoraInicio ?? TimeSpan.Zero),
+     FechaFin = _model.FechaFin?.Date.Add(_model.HoraFin ?? TimeSpan.Zero),
+                Lugar = _model.Lugar,
+             Tipo = _model.Tipo,
+          Estado = _model.Estado,
+CreadoEn = DateTime.UtcNow
+  };
+
+  DbContext.Actividades.Add(actividad);
+ await DbContext.SaveChangesAsync();
+
+            Snackbar.Add("Actividad creada exitosamente", Severity.Success);
+            NavigationManager.NavigateTo($"/programa/academia/{ProgramaId}");
+   }
+        catch (Exception ex)
+   {
+          Logger.LogError(ex, "Error al crear actividad");
+            Snackbar.Add("Error al crear la actividad", Severity.Error);
+        }
+        finally
+        {
+            _guardando = false;
+  }
+    }
+
+    private void Cancelar()
+    {
+        NavigationManager.NavigateTo($"/programa/academia/{ProgramaId}");
+    }
+
+    private class ActividadModel
+    {
+    public string? Titulo { get; set; }
+        public string? Descripcion { get; set; }
+  public DateTime? FechaInicio { get; set; }
+        public TimeSpan? HoraInicio { get; set; }
+        public DateTime? FechaFin { get; set; }
+   public TimeSpan? HoraFin { get; set; }
+        public string? Lugar { get; set; }
+      public TipoActividad Tipo { get; set; }
+public EstadoActividad Estado { get; set; }
+    }
+}

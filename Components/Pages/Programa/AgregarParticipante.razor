@@ -1,0 +1,356 @@
+﻿@page "/programa/{ProgramaId:int}/participante/agregar"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Operacion
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
+@using Microsoft.EntityFrameworkCore
+@attribute [Authorize]
+
+@inject ApplicationDbContext DbContext
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject ILogger<AgregarParticipante> Logger
+
+<PageTitle>Agregar Participante</PageTitle>
+
+<style>
+    .mythra-header {
+background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
+        color: #FEFEFD;
+    padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+
+ .mythra-card {
+     background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-left: 4px solid #4D3935;
+    }
+
+ .mythra-button-primary {
+     background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+        color: #4D3935 !important;
+     font-weight: 600 !important;
+    }
+
+    .mythra-button-secondary {
+    background-color: transparent !important;
+ border: 2px solid #4D3935 !important;
+   color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .participante-preview {
+  background-color: #F7F7F7;
+        border-left: 4px solid #9FD996;
+        padding: 1rem;
+ border-radius: 4px;
+        margin-top: 1rem;
+    }
+</style>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+<div class="mythra-header">
+        <MudText Typo="Typo.h4">
+   <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Class="mr-2" />
+       Agregar Participante al Programa
+        </MudText>
+<MudText Typo="Typo.body1" Class="mt-2" Style="opacity: 0.9;">
+@(_programa?.Nombre ?? "Cargando...")
+    </MudText>
+    </div>
+
+    @if (_cargando)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else
+  {
+        <MudPaper Class="mythra-card pa-6" Elevation="3">
+  <MudForm @ref="_form" @bind-IsValid="@_isValid">
+   <MudGrid>
+        <!-- Buscador de participantes existentes -->
+       <MudItem xs="12">
+        <MudText Typo="Typo.h6" Class="mb-3">Buscar Participante</MudText>
+<MudAutocomplete T="Participante"
+      Label="Buscar por nombre"
+     @bind-Value="_participanteSeleccionado"
+        SearchFunc="@BuscarParticipantes"
+        ToStringFunc="@(p => p == null ? "" : $"{p.Persona.Nombres} {p.Persona.Apellidos}")"
+     Variant="Variant.Outlined"
+     AdornmentIcon="@Icons.Material.Filled.Search"
+    Adornment="Adornment.Start"
+Clearable="true"
+        Dense="true"
+          MaxItems="20"
+          DebounceInterval="300"
+     OnClearButtonClick="LimpiarSeleccion">
+          <ItemTemplate Context="participante">
+       <div class="d-flex align-center gap-2">
+      <MudIcon Icon="@Icons.Material.Filled.Person" />
+    <div>
+ <MudText Typo="Typo.body2">@participante.Persona.Nombres @participante.Persona.Apellidos</MudText>
+         <MudText Typo="Typo.caption" Style="color: #6D534F;">
+   Teléfono: @(participante.Persona.Telefono ?? "N/A")
+  </MudText>
+  </div>
+         </div>
+   </ItemTemplate>
+       </MudAutocomplete>
+  </MudItem>
+
+        <!-- Preview del participante seleccionado -->
+  @if (_participanteSeleccionado != null)
+      {
+        <MudItem xs="12">
+         <div class="participante-preview">
+       <MudText Typo="Typo.h6" Class="mb-2">
+      <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+       Participante Seleccionado
+        </MudText>
+ <MudGrid>
+       <MudItem xs="12" md="6">
+ <MudText Typo="Typo.body2"><strong>Nombre:</strong> @_participanteSeleccionado.Persona.Nombres @_participanteSeleccionado.Persona.Apellidos</MudText>
+    </MudItem>
+       <MudItem xs="12" md="6">
+       <MudText Typo="Typo.body2"><strong>Teléfono:</strong> @(_participanteSeleccionado.Persona.Telefono ?? "N/A")</MudText>
+   </MudItem>
+       </MudGrid>
+   </div>
+  </MudItem>
+
+    <MudItem xs="12" md="6">
+         <MudSelect @bind-Value="_actividadSeleccionada"
+             Label="Actividad (Opcional)"
+      Variant="Variant.Outlined"
+      Clearable="true"
+        T="Actividad">
+         @foreach (var actividad in _actividades)
+      {
+       <MudSelectItem Value="@actividad">
+@actividad.Titulo (@actividad.FechaInicio.ToString("dd/MM/yyyy"))
+       </MudSelectItem>
+       }
+        </MudSelect>
+    <MudText Typo="Typo.caption" Class="mt-1">
+   Si selecciona una actividad, el participante se inscribirá directamente en ella.
+ </MudText>
+ </MudItem>
+
+         <MudItem xs="12" md="6">
+      <MudSelect @bind-Value="_estadoInscripcion"
+            Label="Estado de Inscripción"
+     Variant="Variant.Outlined"
+         Required="true"
+         T="EstadoInscripcion">
+  <MudSelectItem Value="@EstadoInscripcion.Inscrito">Inscrito</MudSelectItem>
+        <MudSelectItem Value="@EstadoInscripcion.Retirado">Retirado</MudSelectItem>
+   </MudSelect>
+  </MudItem>
+        }
+
+       <MudItem xs="12" Class="d-flex gap-3 justify-end mt-4">
+       <MudButton Variant="Variant.Outlined"
+      Class="mythra-button-secondary"
+       OnClick="Cancelar"
+       StartIcon="@Icons.Material.Filled.ArrowBack"
+          Disabled="@_procesando">
+           Cancelar
+          </MudButton>
+  <MudButton Variant="Variant.Filled"
+           Class="mythra-button-primary"
+        OnClick="Guardar"
+  Disabled="@(_participanteSeleccionado == null || _procesando)"
+        StartIcon="@Icons.Material.Filled.Save">
+     @if (_procesando)
+        {
+           <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+   <span>Guardando...</span>
+    }
+       else
+   {
+    <span>Agregar Participante</span>
+     }
+      </MudButton>
+       </MudItem>
+            </MudGrid>
+    </MudForm>
+  </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public int ProgramaId { get; set; }
+
+    private Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas.Programa? _programa;
+  private MudForm? _form;
+    private bool _isValid;
+    private bool _cargando = true;
+ private bool _procesando = false;
+
+    private Participante? _participanteSeleccionado;
+    private Actividad? _actividadSeleccionada;
+    private EstadoInscripcion _estadoInscripcion = EstadoInscripcion.Inscrito;
+    private List<Actividad> _actividades = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+ {
+ _programa = await DbContext.Programas
+   .FirstOrDefaultAsync(p => p.ProgramaId == ProgramaId && !p.IsDeleted);
+
+            if (_programa == null)
+   {
+          Snackbar.Add("Programa no encontrado", Severity.Error);
+     NavigationManager.NavigateTo("/programas");
+       return;
+       }
+
+     // Cargar actividades del programa
+       _actividades = await DbContext.Actividades
+  .Where(a => a.ProgramaId == ProgramaId && 
+      !a.IsDeleted &&
+  a.Estado != EstadoActividad.Cancelada)
+        .OrderByDescending(a => a.FechaInicio)
+       .ToListAsync();
+ }
+   catch (Exception ex)
+     {
+            Logger.LogError(ex, "Error al cargar datos");
+       Snackbar.Add("Error al cargar datos", Severity.Error);
+   }
+   finally
+    {
+      _cargando = false;
+        }
+    }
+
+    private async Task<IEnumerable<Participante>> BuscarParticipantes(string search, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(search) || search.Length < 2)
+         return Enumerable.Empty<Participante>();
+
+        try
+        {
+   var searchLower = search.ToLower();
+
+       // Buscar participantes que no estén ya en el programa
+   var participantesEnPrograma = await DbContext.ActividadParticipantes
+    .Where(ap => ap.Actividad.ProgramaId == ProgramaId && !ap.IsDeleted)
+    .Select(ap => ap.ParticipanteId)
+ .Distinct()
+    .ToListAsync(cancellationToken);
+
+  var participantes = await DbContext.Participantes
+.Include(p => p.Persona)
+     .Where(p => !p.IsDeleted && 
+     !p.Persona.IsDeleted &&
+   p.Estado == EstadoGeneral.Activo &&
+!participantesEnPrograma.Contains(p.ParticipanteId) &&
+   (p.Persona.Nombres.ToLower().Contains(searchLower) ||
+   p.Persona.Apellidos.ToLower().Contains(searchLower)))
+   .OrderBy(p => p.Persona.Apellidos)
+     .ThenBy(p => p.Persona.Nombres)
+.Take(20)
+    .ToListAsync(cancellationToken);
+
+     return participantes;
+   }
+ catch (Exception ex)
+        {
+    Logger.LogError(ex, "Error al buscar participantes");
+      return Enumerable.Empty<Participante>();
+        }
+    }
+
+    private void LimpiarSeleccion()
+    {
+  _participanteSeleccionado = null;
+  StateHasChanged();
+    }
+
+  private async Task Guardar()
+    {
+   if (_participanteSeleccionado == null || _procesando) return;
+
+   _procesando = true;
+
+     try
+        {
+     if (_actividadSeleccionada == null)
+     {
+            // Si no hay actividad seleccionada, agregar a todas las actividades activas
+  var actividadesActivas = _actividades
+  .Where(a => a.Estado != EstadoActividad.Cancelada)
+    .ToList();
+
+     if (!actividadesActivas.Any())
+      {
+     Snackbar.Add("No hay actividades disponibles en este programa", Severity.Warning);
+              return;
+    }
+
+        foreach (var actividad in actividadesActivas)
+            {
+  var actividadParticipante = new ActividadParticipante
+   {
+      ActividadId = actividad.ActividadId,
+      ParticipanteId = _participanteSeleccionado.ParticipanteId,
+  Estado = _estadoInscripcion,
+        CreadoEn = DateTime.UtcNow
+       };
+
+     DbContext.ActividadParticipantes.Add(actividadParticipante);
+          }
+
+                Snackbar.Add($"Participante agregado a {actividadesActivas.Count} actividades", Severity.Success);
+   }
+ else
+     {
+ // Verificar que no exista ya
+     var yaExiste = await DbContext.ActividadParticipantes
+      .AnyAsync(ap => ap.ActividadId == _actividadSeleccionada.ActividadId &&
+         ap.ParticipanteId == _participanteSeleccionado.ParticipanteId &&
+        !ap.IsDeleted);
+
+  if (yaExiste)
+           {
+      Snackbar.Add("El participante ya está inscrito en esta actividad", Severity.Warning);
+    return;
+           }
+
+       var actividadParticipante = new ActividadParticipante
+         {
+              ActividadId = _actividadSeleccionada.ActividadId,
+        ParticipanteId = _participanteSeleccionado.ParticipanteId,
+    Estado = _estadoInscripcion,
+     CreadoEn = DateTime.UtcNow
+ };
+
+         DbContext.ActividadParticipantes.Add(actividadParticipante);
+   Snackbar.Add("Participante agregado exitosamente", Severity.Success);
+         }
+
+await DbContext.SaveChangesAsync();
+
+      NavigationManager.NavigateTo($"/programa/academia/{ProgramaId}");
+        }
+  catch (Exception ex)
+        {
+          Logger.LogError(ex, "Error al agregar participante");
+  Snackbar.Add("Error al agregar el participante", Severity.Error);
+  }
+   finally
+        {
+   _procesando = false;
+     }
+    }
+
+    private void Cancelar()
+    {
+        NavigationManager.NavigateTo($"/programa/academia/{ProgramaId}");
+    }
+}

@@ -1,0 +1,323 @@
+﻿@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Audit
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security
+@using Microsoft.EntityFrameworkCore
+@using MudBlazor
+
+@inject ApplicationDbContext DbContext
+@inject ILogger<AuditoriaTab> Logger
+
+<style>
+ .mythra-card {
+background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-left: 4px solid #4D3935;
+  }
+
+ .mythra-toolbar {
+      background-color: #F7C484;
+  border-radius: 8px 8px 0 0;
+    padding: 1rem;
+}
+
+    .mythra-chip-insert {
+background-color: #9FD996 !important;
+      color: #4D3935 !important;
+ font-weight: 600;
+    }
+
+    .mythra-chip-update {
+        background-color: #F3C95A !important;
+      color: #4D3935 !important;
+        font-weight: 600;
+    }
+
+    .mythra-chip-delete {
+        background-color: #F7C484 !important;
+        color: #4D3935 !important;
+        font-weight: 600;
+    }
+
+    .timeline-item {
+        border-left: 3px solid #4D3935;
+    padding-left: 1.5rem;
+     margin-bottom: 1.5rem;
+        position: relative;
+    }
+
+.timeline-item::before {
+    content: '';
+  position: absolute;
+        left: -8px;
+   top: 0;
+        width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background-color: #9FD996;
+    border: 3px solid #4D3935;
+  }
+
+    .timeline-date {
+        color: #6D534F;
+   font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .timeline-content {
+        background-color: #FEFEFD;
+  padding: 1rem;
+border-radius: 8px;
+margin-top: 0.5rem;
+    }
+</style>
+
+<MudPaper Class="mythra-card" Elevation="3">
+ <div class="mythra-toolbar">
+        <MudGrid>
+  <MudItem xs="12" md="4">
+   <MudDateRangePicker Label="Rango de Fechas" @bind-DateRange="_rangoFechas" 
+      Style="background-color: #FEFEFD; border-radius: 4px;"
+ DateFormat="dd/MM/yyyy" />
+      </MudItem>
+    <MudItem xs="12" md="4">
+      <MudSelect T="string" Label="Tipo de Operación" @bind-Value="_filtroOperacion" Clearable="true"
+        Style="background-color: #FEFEFD; border-radius: 4px;">
+    <MudSelectItem Value="@("INSERT")">Creación</MudSelectItem>
+       <MudSelectItem Value="@("UPDATE")">Actualización</MudSelectItem>
+ <MudSelectItem Value="@("DELETE")">Eliminación</MudSelectItem>
+  </MudSelect>
+      </MudItem>
+   <MudItem xs="12" md="4">
+      <MudSelect T="string" Label="Tabla" @bind-Value="_filtroTabla" Clearable="true"
+    Style="background-color: #FEFEFD; border-radius: 4px;">
+     <MudSelectItem Value="@("Actividad")">Actividades</MudSelectItem>
+       <MudSelectItem Value="@("Participante")">Participantes</MudSelectItem>
+       <MudSelectItem Value="@("Asistencia")">Asistencias</MudSelectItem>
+  <MudSelectItem Value="@("Programa")">Programa</MudSelectItem>
+      </MudSelect>
+  </MudItem>
+        </MudGrid>
+    </div>
+
+    <!-- Contenido -->
+    <div style="padding: 2rem;">
+        <!-- Header con selector de vista -->
+  <div class="d-flex justify-space-between align-center mb-4">
+   <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 600;">
+  <MudIcon Icon="@Icons.Material.Filled.Timeline" Class="mr-2" />
+ Línea de Tiempo
+ </MudText>
+      <MudButtonGroup Size="Size.Small" Variant="Variant.Filled">
+ <MudButton OnClick="@CambiarAVistaTimeline"
+ Color="@(_vistaTimeline ? Color.Primary : Color.Default)"
+  StartIcon="@Icons.Material.Filled.Timeline">
+    Timeline
+    </MudButton>
+     <MudButton OnClick="@CambiarAVistaTabla"
+    Color="@(!_vistaTimeline ? Color.Primary : Color.Default)"
+   StartIcon="@Icons.Material.Filled.TableChart">
+   Tabla
+     </MudButton>
+</MudButtonGroup>
+ </div>
+
+    <!-- Contenido dinámico con @key -->
+ <div @key="_vistaTimeline">
+ @if (_vistaTimeline)
+  {
+    <!-- Vista Timeline -->
+    @if (_cargando)
+    {
+     <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+     }
+     else if (!_logs.Any())
+   {
+    <MudAlert Severity="Severity.Info">No hay registros de auditoría para mostrar</MudAlert>
+         }
+    else
+     {
+      <div style="max-height: 600px; overflow-y: auto;">
+@foreach (var log in _logs)
+     {
+  <div class="timeline-item">
+<div class="timeline-date">
+ <MudIcon Icon="@Icons.Material.Filled.Schedule" Size="Size.Small" Class="mr-1" />
+@log.FechaEventoUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")
+     </div>
+     <div class="timeline-content">
+ <div class="d-flex justify-space-between align-center mb-2">
+     <div>
+    <MudChip T="string" Size="Size.Small" Class="@ObtenerClaseOperacion(log.Operacion)">
+    @log.Operacion
+  </MudChip>
+   <MudChip T="string" Size="Size.Small" Color="Color.Default">
+      @log.Tabla
+</MudChip>
+     </div>
+   <MudText Typo="Typo.caption" Style="color: #6D534F;">
+   Por: @(log.UsuarioActor?.UserName ?? "Sistema")
+   </MudText>
+   </div>
+   <MudText Typo="Typo.body2" Style="color: #4D3935;">
+    <strong>Registro:</strong> @log.ClavePrimaria
+  </MudText>
+   @if (!string.IsNullOrEmpty(log.Comentario))
+  {
+      <MudText Typo="Typo.body2" Class="mt-2" Style="color: #6D534F;">
+          @log.Comentario
+  </MudText>
+    }
+    </div>
+ </div>
+         }
+      </div>
+     }
+    }
+    else
+    {
+    <!-- Vista Tabla -->
+ <MudTable Items="@_logs" Dense="true" Hover="true" Loading="@_cargando" Elevation="0">
+  <HeaderContent>
+    <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Fecha/Hora</MudTh>
+     <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Operación</MudTh>
+  <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Tabla</MudTh>
+<MudTh Style="background-color: #4D3935; color: #FEFEFD;">Registro</MudTh>
+ <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Usuario</MudTh>
+   <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Comentario</MudTh>
+  </HeaderContent>
+      <RowTemplate>
+    <MudTd DataLabel="Fecha/Hora">
+   <MudText Typo="Typo.caption">@context.FechaEventoUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</MudText>
+   </MudTd>
+      <MudTd DataLabel="Operación">
+       <MudChip T="string" Size="Size.Small" Class="@ObtenerClaseOperacion(context.Operacion)">
+ @context.Operacion
+    </MudChip>
+    </MudTd>
+   <MudTd DataLabel="Tabla">@context.Tabla</MudTd>
+        <MudTd DataLabel="Registro">@context.ClavePrimaria</MudTd>
+  <MudTd DataLabel="Usuario">@(context.UsuarioActor?.UserName ?? "Sistema")</MudTd>
+  <MudTd DataLabel="Comentario">@context.Comentario</MudTd>
+ </RowTemplate>
+      <NoRecordsContent>
+ <MudText Class="pa-4" Style="color: #4D3935;">
+    <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
+   No hay registros de auditoría para mostrar
+ </MudText>
+   </NoRecordsContent>
+        </MudTable>
+    }
+ </div>
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter] public int ProgramaId { get; set; }
+
+    private List<Log> _logs = new();
+    private bool _cargando = true;
+    private bool _vistaTimeline = true;
+    private DateRange? _rangoFechas = null;
+    private string? _filtroOperacion = null;
+    private string? _filtroTabla = null;
+
+    protected override async Task OnInitializedAsync()
+ {
+        await CargarLogsAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+ await CargarLogsAsync();
+    }
+
+    private void CambiarAVistaTimeline()
+    {
+     _vistaTimeline = true;
+StateHasChanged();
+    }
+
+    private void CambiarAVistaTabla()
+    {
+        _vistaTimeline = false;
+  StateHasChanged();
+    }
+
+    private async Task CargarLogsAsync()
+  {
+try
+        {
+      _cargando = true;
+
+  // Cargar actividades del programa para obtener sus IDs
+      var actividadesIds = await DbContext.Actividades
+       .Where(a => a.ProgramaId == ProgramaId && !a.IsDeleted)
+            .Select(a => a.ActividadId)
+     .ToListAsync();
+
+  var query = DbContext.Logs
+ .Include(l => l.UsuarioActor)
+   .Where(l => 
+    // Logs del programa
+                (l.Tabla == "Programa" && l.ClavePrimaria == ProgramaId.ToString()) ||
+             // Logs de actividades del programa
+      (l.Tabla == "Actividad" && actividadesIds.Contains(int.Parse(l.ClavePrimaria))) ||
+     // Logs de asistencias (podemos mejorar el filtro si es necesario)
+     (l.Tabla == "Asistencia") ||
+     // Logs de participantes
+          (l.Tabla == "Participante") ||
+           // Logs de evidencias
+ (l.Tabla == "EvidenciaActividad")
+   )
+   .AsQueryable();
+
+       // Aplicar filtros
+     if (_rangoFechas?.Start != null)
+          {
+  var inicio = _rangoFechas.Start.Value.Date;
+    query = query.Where(l => l.FechaEventoUtc >= inicio);
+   }
+
+     if (_rangoFechas?.End != null)
+     {
+        var fin = _rangoFechas.End.Value.Date.AddDays(1);
+    query = query.Where(l => l.FechaEventoUtc < fin);
+      }
+
+   if (!string.IsNullOrEmpty(_filtroOperacion))
+     {
+query = query.Where(l => l.Operacion == _filtroOperacion);
+     }
+
+     if (!string.IsNullOrEmpty(_filtroTabla))
+      {
+   query = query.Where(l => l.Tabla == _filtroTabla);
+    }
+
+  _logs = await query
+   .OrderByDescending(l => l.FechaEventoUtc)
+    .Take(100)
+     .ToListAsync();
+   }
+ catch (Exception ex)
+      {
+          Logger.LogError(ex, "Error al cargar logs de auditoría");
+        }
+        finally
+   {
+      _cargando = false;
+   }
+    }
+
+    private string ObtenerClaseOperacion(string operacion)
+    {
+    return operacion switch
+        {
+   "INSERT" => "mythra-chip-insert",
+"UPDATE" => "mythra-chip-update",
+  "DELETE" => "mythra-chip-delete",
+_ => ""
+ };
+    }
+}
