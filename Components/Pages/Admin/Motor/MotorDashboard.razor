@@ -1,0 +1,75 @@
+﻿@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Pages.Admin.Motor
+@inject ILogger<MotorDashboard> Logger
+
+<MudGrid Class="mb-4">
+    <MudItem xs="12" sm="6" md="3">
+        <div class="mythra-kpi-card">
+            <div class="kpi-label mb-2">Total Alertas</div>
+            <div class="kpi-value">@Estadisticas.TotalAlertas</div>
+            <MudProgressLinear Value="100" Color="Color.Info" Class="mt-2" />
+        </div>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <div class="mythra-kpi-card" style="border-left-color: #F3C95A;">
+            <div class="kpi-label mb-2">Alertas Abiertas</div>
+            <div class="kpi-value">@Estadisticas.AlertasAbiertas</div>
+            <MudProgressLinear Value="@GetPorcentaje(Estadisticas.AlertasAbiertas, Estadisticas.TotalAlertas)" 
+                              Color="Color.Warning" Class="mt-2" />
+        </div>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <div class="mythra-kpi-card">
+            <div class="kpi-label mb-2">Alertas Resueltas</div>
+            <div class="kpi-value">@Estadisticas.AlertasResueltas</div>
+            <MudProgressLinear Value="@GetPorcentaje(Estadisticas.AlertasResueltas, Estadisticas.TotalAlertas)" 
+                              Color="Color.Success" Class="mt-2" />
+        </div>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <div class="mythra-kpi-card" style="border-left-color: #F7C484;">
+            <div class="kpi-label mb-2">Alertas Críticas</div>
+            <div class="kpi-value">@Estadisticas.AlertasCriticas</div>
+            <MudProgressLinear Value="@GetPorcentaje(Estadisticas.AlertasCriticas, Estadisticas.TotalAlertas)" 
+                              Color="Color.Error" Class="mt-2" />
+        </div>
+    </MudItem>
+</MudGrid>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="mythra-card pa-4" Elevation="3">
+            <MudText Typo="Typo.h6" Class="mb-3" Style="color: #4D3935;">Distribución por Severidad</MudText>
+            <MudChart ChartType="ChartType.Donut" 
+                     InputData="@SeveridadData" 
+                     InputLabels="@SeveridadLabels"
+                     Width="100%" Height="300px"
+                     ChartOptions="@ChartOptions" />
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Class="mythra-card pa-4" Elevation="3">
+            <MudText Typo="Typo.h6" Class="mb-3" Style="color: #4D3935;">Distribución por Estado</MudText>
+            <MudChart ChartType="ChartType.Pie" 
+                     InputData="@EstadoData" 
+                     InputLabels="@EstadoLabels"
+                     Width="100%" Height="300px"
+                     ChartOptions="@ChartOptions" />
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter] public MotorDashboardData Estadisticas { get; set; } = new();
+    [Parameter] public double[] SeveridadData { get; set; } = Array.Empty<double>();
+    [Parameter] public string[] SeveridadLabels { get; set; } = Array.Empty<string>();
+    [Parameter] public double[] EstadoData { get; set; } = Array.Empty<double>();
+    [Parameter] public string[] EstadoLabels { get; set; } = Array.Empty<string>();
+    [Parameter] public ChartOptions? ChartOptions { get; set; }
+
+    private double GetPorcentaje(int valor, int total)
+    {
+        return total > 0 ? (valor * 100.0 / total) : 0;
+    }
+}

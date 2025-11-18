@@ -42,6 +42,13 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
 
             // Servicio de Reportes
             builder.Services.AddScoped<Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.ReportesProgramaService>();
+            builder.Services.AddScoped<Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.ReportesMotorService>();
+
+            // Servicio del Motor
+            builder.Services.AddScoped<Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.MotorService>();
+
+            // Servicio del Clima
+            builder.Services.AddScoped<Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.WeatherService>();
 
          // MudBlazor
             builder.Services.AddMudServices();

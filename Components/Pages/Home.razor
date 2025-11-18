@@ -3,229 +3,511 @@
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security
 @using Microsoft.EntityFrameworkCore
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
- 
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services
+@implements IDisposable
+
 @inject UserManager<Usuario> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ApplicationDbContext DbContext
 @inject NavigationManager Navigation
- 
+@inject WeatherService WeatherService
+@inject ILogger<Home> Logger
+
 <PageTitle>Inicio - ONG Juventud Sin Límites</PageTitle>
- 
+
+<style>
+    .mythra-welcome-header {
+        background: linear-gradient(135deg, #4D3935 0%, #6D534F 50%, #4D3935 100%);
+        color: #FEFEFD;
+        padding: 3rem 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 32px rgba(77, 57, 53, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .mythra-welcome-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(159, 217, 150, 0.1) 0%, transparent 70%);
+        animation: pulse 15s ease-in-out infinite;
+    }
+
+    @@keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.1); opacity: 0.3; }
+    }
+
+    .weather-widget {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%);
+        border-radius: 16px;
+        padding: 1.5rem;
+        color: #4D3935;
+        box-shadow: 0 4px 16px rgba(159, 217, 150, 0.3);
+        transition: transform 0.3s ease;
+    }
+
+    .weather-widget:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px rgba(159, 217, 150, 0.4);
+    }
+
+    .clock-widget {
+        background: linear-gradient(135deg, #F7C484 0%, #F3C95A 100%);
+        border-radius: 16px;
+        padding: 1.5rem;
+        color: #4D3935;
+        box-shadow: 0 4px 16px rgba(247, 196, 132, 0.3);
+        transition: transform 0.3s ease;
+    }
+
+    .clock-widget:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px rgba(247, 196, 132, 0.4);
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-left: 4px solid #9FD996;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 16px rgba(159, 217, 150, 0.2);
+    }
+
+    .action-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+        cursor: pointer;
+        height: 100%;
+    }
+
+    .action-card:hover {
+        transform: translateY(-8px);
+        border-color: #9FD996;
+        box-shadow: 0 12px 24px rgba(159, 217, 150, 0.3);
+    }
+
+    .action-card-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .greeting-text {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .temperature-display {
+        font-size: 3.5rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .clock-display {
+        font-size: 3rem;
+        font-weight: 700;
+        font-family: 'Courier New', monospace;
+        line-height: 1;
+    }
+
+    .date-display {
+        font-size: 1.2rem;
+        opacity: 0.9;
+    }
+
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        color: #4D3935;
+        font-weight: 700;
+        box-shadow: 0 4px 16px rgba(159, 217, 150, 0.3);
+    }
+
+    @@media (max-width: 768px) {
+        .greeting-text {
+            font-size: 1.8rem;
+        }
+        .temperature-display, .clock-display {
+            font-size: 2.5rem;
+        }
+    }
+</style>
+
 <AuthorizeView>
-<Authorized>
-<div class="container-fluid">
-<div class="row mt-4">
-<div class="col-12">
-<div class="card shadow-sm">
-<div class="card-body">
-<h1 class="display-4" style="font-family: Teko; color: #231709">
-<i class="fas fa-home me-3"></i>¡Bienvenido(a), @nombreCompleto!
-</h1>
-<p class="lead text-muted">Sistema Experto - ONG Juventud Sin Límites</p>
-<hr class="my-4" />
-     @if (usuario != null)
-{
-<div class="row">
-<div class="col-md-6">
-<div class="card mb-3" style="border-color: #F3C95A">
-<div class="card-header text-white" style="background-color: #F3C95A">
-<h5 class="mb-0"><i class="fas fa-user me-2"></i>Información Personal</h5>
-</div>
-<div class="card-body">
-<dl class="row mb-0">
-<dt class="col-sm-4">Nombre Completo:</dt>
-<dd class="col-sm-8">@nombreCompleto</dd>
-<dt class="col-sm-4">Email:</dt>
-<dd class="col-sm-8">@usuario.Email</dd>
-     @if (persona != null)
-  {
-            @if (persona.Telefono != null)
-{
-<dt class="col-sm-4">Teléfono:</dt>
-<dd class="col-sm-8">@persona.Telefono</dd>
-      }
-     @if (persona.FechaNacimiento.HasValue)
-  {
-<dt class="col-sm-4">Fecha de Nacimiento:</dt>
-<dd class="col-sm-8">@persona.FechaNacimiento.Value.ToString("dd/MM/yyyy")</dd>
-<dt class="col-sm-4">Edad:</dt>
-<dd class="col-sm-8">@CalcularEdad(persona.FechaNacimiento.Value) años</dd>
-      }
-       }
-</dl>
-</div>
-</div>
-</div>
-<div class="col-md-6">
-<div class="card mb-3" style="border-color: #9FD996">
-<div class="card-header text-white"  style="background-color: #9FD996">
-<h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Información de Cuenta</h5>
-</div>
-<div class="card-body">
-<dl class="row mb-0">
-<dt class="col-sm-4">Rol(es):</dt>
-<dd class="col-sm-8">
-  @if (roles != null && roles.Any())
-        {
-<span class="badge bg-primary me-1">@string.Join(", ", roles)</span>
-      }
-        else
-     {
-<span class="text-muted">Sin roles asignados</span>
-    }
-</dd>
-<dt class="col-sm-4">Estado:</dt>
-<dd class="col-sm-8">
-<span class="badge bg-success">@usuario.Estado</span>
-</dd>
-<dt class="col-sm-4">Email Confirmado:</dt>
-<dd class="col-sm-8">
-        @if (usuario.EmailConfirmed)
-{
-<i class="fas fa-check-circle text-success"></i> <span class="text-success">Sí</span>
-    }
-  else
-   {
-<i class="fas fa-times-circle text-danger"></i> <span class="text-danger">No</span>
-        }
-</dd>
-<dt class="col-sm-4">Cuenta Creada:</dt>
-<dd class="col-sm-8">@usuario.CreadoEn.ToString("dd/MM/yyyy HH:mm")</dd>
-      @if (programas != null && programas.Any())
-  {
-<dt class="col-sm-4">Programas:</dt>
-<dd class="col-sm-8">
-   @foreach (var programa in programas)
-    {
-<span class="badge bg-info me-1">@programa.Nombre</span>
-          }
-</dd>
-        }
-</dl>
-</div>
-</div>
-</div>
-</div>
-<div class="row mt-4">
-<div class="col-12">
-<div class="card" style="border-color: #4D3935">
-<div class="card-header text-white" style="background-color: #4D3935">
-<h5 class="mb-0"><i class="fas fa-rocket me-2"></i>Acceso Rápido</h5>
-</div>
-<div class="card-body">
-<div class="row">
-      @if (context != null && context.User.IsInRole("Administrador") || (context != null && context.User.IsInRole("Coordinador")))
-      {
-<div class="col-md-3 mb-3">
-<a href="/Admin/Motor" class="btn btn-lg w-100" style="background-color: #F7C484; color:white" >
-<i class="fas fa-cogs d-block fs-1 mb-2"></i>
-      Motor de Inferencia
-</a>
-</div>
-     }
-<div class="col-md-3 mb-3">
-<a href="/Account/Manage" class="btn btn-lg w-100" style="background-color: #9FD996; color: white">
-<i class="fas fa-user-cog d-block fs-1 mb-2"></i>
-      Mi Perfil
-</a>
-</div>
-  @if (context != null && context.User.IsInRole("Administrador"))
-   {
-<div class="col-md-3 mb-3">
-<a href="/Admin/Usuarios" class="btn btn-lg w-100" style="background-color: #F3C95A; color: white">
-<i class="fas fa-users d-block fs-1 mb-2"></i>
-   Gestión de Usuarios
-</a>
-</div>
-    }
-<div class="col-md-3 mb-3">
-<a href="/Account/Logout" class="btn btn-lg w-100" style="background-color: #4D3935; color: white">
-<i class="fas fa-sign-out-alt d-block fs-1 mb-2"></i>
-      Cerrar Sesión
-</a>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-   }
-     else
-{
-<div class="alert alert-warning">
-<i class="fas fa-exclamation-triangle me-2"></i>
-       No se pudo cargar la información del usuario.
-</div>
-       }
-</div>
-</div>
-</div>
-</div>
-</div>
-</Authorized>
-<NotAuthorized>
-<div class="container">
-<div class="row justify-content-center mt-5">
-<div class="col-md-6">
-<div class="card shadow">
-<div class="card-body text-center">
-<i class="fas fa-lock fs-1 text-muted mb-3"></i>
-<h3>Acceso Restringido</h3>
-<p class="text-muted">Debes iniciar sesión para acceder a esta página.</p>
-<a href="/Account/Login" class="btn btn-primary btn-lg">
-<i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
-</a>
-</div>
-</div>
-</div>
-</div>
-</div>
-</NotAuthorized>
+    <Authorized>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+            <!-- Header de Bienvenida -->
+            <div class="mythra-welcome-header">
+                <MudGrid>
+                    <MudItem xs="12" md="8">
+                        <div class="d-flex align-center">
+                            <div class="profile-avatar me-4">
+                                @GetIniciales()
+                            </div>
+                            <div>
+                                <div class="greeting-text">
+                                    @ObtenerSaludo(), @nombreCompleto!
+                                </div>
+                                <MudText Typo="Typo.h6" Style="opacity: 0.9; position: relative; z-index: 1;">
+                                    Sistema Experto - ONG Juventud Sin Límites
+                                </MudText>
+                                @if (roles != null && roles.Any())
+                                {
+                                    <div class="mt-2" style="position: relative, z-index: 1; display: flex; flex-wrap: wrap;">
+                                        @foreach (var rol in roles)
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Style="background-color: #9FD996; color: #4D3935; font-weight: 600; margin-right: 0.5rem; margin-bottom: 0.5rem;">
+                                                @rol
+                                            </MudChip>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudGrid>
+                            <MudItem xs="12" sm="6" md="12" Class="mb-2">
+                                <div class="weather-widget">
+                                    @if (_clima != null)
+                                    {
+                                        <div class="d-flex align-center justify-space-between">
+                                            <div>
+                                                <div class="temperature-display">@_clima.Temperatura°</div>
+                                                <MudText Typo="Typo.body1" Style="font-weight: 600;">@_clima.Descripcion</MudText>
+                                                <MudText Typo="Typo.caption">
+                                                    <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" /> @_clima.Ciudad
+                                                </MudText>
+                                            </div>
+                                            <img src="@_clima.IconoUrl" alt="clima" style="width: 80px; height: 80px;" />
+                                        </div>
+                                        <MudDivider Class="my-2" />
+                                        <div class="d-flex justify-space-between">
+                                            <MudText Typo="Typo.caption">
+                                                <MudIcon Icon="@Icons.Material.Filled.Thermostat" Size="Size.Small" /> Sensación: @_clima.SensacionTermica°
+                                            </MudText>
+                                            <MudText Typo="Typo.caption">
+                                                <MudIcon Icon="@Icons.Material.Filled.Water" Size="Size.Small" /> @_clima.Humedad%
+                                            </MudText>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-center">
+                                            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                            <MudText Typo="Typo.caption" Class="mt-2">Cargando clima...</MudText>
+                                        </div>
+                                    }
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" sm="6" md="12">
+                                <div class="clock-widget">
+                                    <div class="clock-display">@_horaActual</div>
+                                    <div class="date-display mt-2">@_fechaActual</div>
+                                </div>
+                            </MudItem>
+                        </MudGrid>
+                    </MudItem>
+                </MudGrid>
+            </div>
+
+            <!-- Estadísticas Rápidas -->
+            @if (usuario != null)
+            {
+                <MudGrid Class="mb-4">
+                    <MudItem xs="12" sm="6" md="3">
+                        <div class="stat-card">
+                            <div class="d-flex align-center justify-space-between">
+                                <div>
+                                    <MudText Typo="Typo.caption" Style="color: #6D534F; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        Programas Asignados
+                                    </MudText>
+                                    <MudText Typo="Typo.h4" Style="color: #4D3935; font-weight: 700;">
+                                        @(programas?.Count ?? 0)
+                                    </MudText>
+                                </div>
+                                <MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Large" Style="color: #9FD996;" />
+                            </div>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <div class="stat-card" style="border-left-color: #F7C484;">
+                            <div class="d-flex align-center justify-space-between">
+                                <div>
+                                    <MudText Typo="Typo.caption" Style="color: #6D534F; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        Roles Activos
+                                    </MudText>
+                                    <MudText Typo="Typo.h4" Style="color: #4D3935; font-weight: 700;">
+                                        @(roles?.Count ?? 0)
+                                    </MudText>
+                                </div>
+                                <MudIcon Icon="@Icons.Material.Filled.Shield" Size="Size.Large" Style="color: #F7C484;" />
+                            </div>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <div class="stat-card" style="border-left-color: #F3C95A;">
+                            <div class="d-flex align-center justify-space-between">
+                                <div>
+                                    <MudText Typo="Typo.caption" Style="color: #6D534F; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        Estado de Cuenta
+                                    </MudText>
+                                    <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 700;">
+                                        @usuario.Estado
+                                    </MudText>
+                                </div>
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Large" Style="color: #9FD996;" />
+                            </div>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <div class="stat-card" style="border-left-color: #4D3935;">
+                            <div class="d-flex align-center justify-space-between">
+                                <div>
+                                    <MudText Typo="Typo.caption" Style="color: #6D534F; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        Miembro Desde
+                                    </MudText>
+                                    <MudText Typo="Typo.body2" Style="color: #4D3935; font-weight: 600;">
+                                        @usuario.CreadoEn.ToString("MMM yyyy")
+                                    </MudText>
+                                </div>
+                                <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Large" Style="color: #4D3935;" />
+                            </div>
+                        </div>
+                    </MudItem>
+                </MudGrid>
+
+                <!-- Accesos Rápidos -->
+                <MudText Typo="Typo.h5" Style="color: #4D3935; font-weight: 700; margin-bottom: 1.5rem;">
+                    <MudIcon Icon="@Icons.Material.Filled.Dashboard" Class="mr-2" />
+                    Accesos Rápidos
+                </MudText>
+
+                <MudGrid>
+                    @if (context != null && (context.User.IsInRole("Administrador") || context.User.IsInRole("Coordinador")))
+                    {
+                        <MudItem xs="12" sm="6" md="3">
+                            <a href="/admin/motor" style="text-decoration: none; color: inherit;">
+                                <div class="action-card">
+                                    <div class="action-card-icon">
+                                        <MudIcon Icon="@Icons.Material.Filled.Psychology" />
+                                    </div>
+                                    <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 600;">
+                                        Motor de Inferencia
+                                    </MudText>
+                                    <MudText Typo="Typo.caption" Style="color: #6D534F;">
+                                        Gestionar alertas y reglas
+                                    </MudText>
+                                </div>
+                            </a>
+                        </MudItem>
+                    }
+                    @if (context != null && context.User.IsInRole("Administrador"))
+                    {
+                        <MudItem xs="12" sm="6" md="3">
+                            <a href="/admin/usuarios" style="text-decoration: none; color: inherit;">
+                                <div class="action-card">
+                                    <div class="action-card-icon">
+                                        <MudIcon Icon="@Icons.Material.Filled.People" />
+                                    </div>
+                                    <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 600;">
+                                        Gestión de Usuarios
+                                    </MudText>
+                                    <MudText Typo="Typo.caption" Style="color: #6D534F;">
+                                        Administrar usuarios y roles
+                                    </MudText>
+                                </div>
+                            </a>
+                        </MudItem>
+                    }
+                    <MudItem xs="12" sm="6" md="3">
+                        <a href="/programas" style="text-decoration: none; color: inherit;">
+                            <div class="action-card">
+                                <div class="action-card-icon">
+                                    <MudIcon Icon="@Icons.Material.Filled.Folder" />
+                                </div>
+                                <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 600;">
+                                    Programas
+                                </MudText>
+                                <MudText Typo="Typo.caption" Style="color: #6D534F;">
+                                    Ver y gestionar programas
+                                </MudText>
+                            </div>
+                        </a>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <a href="/Account/Manage" style="text-decoration: none; color: inherit;">
+                            <div class="action-card">
+                                <div class="action-card-icon">
+                                    <MudIcon Icon="@Icons.Material.Filled.AccountCircle" />
+                                </div>
+                                <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 600;">
+                                    Mi Perfil
+                                </MudText>
+                                <MudText Typo="Typo.caption" Style="color: #6D534F;">
+                                    Configuración de cuenta
+                                </MudText>
+                            </div>
+                        </a>
+                    </MudItem>
+                </MudGrid>
+            }
+        </MudContainer>
+    </Authorized>
+    <NotAuthorized>
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
+            <MudPaper Class="pa-8" Elevation="4" Style="border-radius: 16px; text-align: center;">
+                <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Large" Style="font-size: 5rem; color: #4D3935; margin-bottom: 2rem;" />
+                <MudText Typo="Typo.h4" Style="color: #4D3935; font-weight: 700; margin-bottom: 1rem;">
+                    Acceso Restringido
+                </MudText>
+                <MudText Typo="Typo.body1" Style="color: #6D534F; margin-bottom: 2rem;">
+                    Debes iniciar sesión para acceder al sistema
+                </MudText>
+                <MudButton Href="/Account/Login" 
+                          Variant="Variant.Filled" 
+                          Size="Size.Large"
+                          StartIcon="@Icons.Material.Filled.Login"
+                          Style="background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%); color: #4D3935; font-weight: 600; padding: 1rem 3rem;">
+                    Iniciar Sesión
+                </MudButton>
+            </MudPaper>
+        </MudContainer>
+    </NotAuthorized>
 </AuthorizeView>
- 
+
 @code {
     [CascadingParameter]
     private HttpContext? context { get; set; }
+    
     private Usuario? usuario;
     private Persona? persona;
     private string nombreCompleto = "Usuario";
     private List<string>? roles;
     private List<Domain.Programas.Programa>? programas;
- 
+    private WeatherData? _clima;
+    private string _horaActual = "";
+    private string _fechaActual = "";
+    private System.Threading.Timer? _timer;
+
     protected override async Task OnInitializedAsync()
     {
-  var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-     var user = authState.User;
- 
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
         if (user.Identity?.IsAuthenticated == true)
-{
-  usuario = await UserManager.GetUserAsync(user);
-    if (usuario != null)
-  {
-    // Cargar persona
-  persona = await DbContext.Personas
-          .Where(p => p.PersonaId == usuario.PersonaId && !p.IsDeleted)
-               .FirstOrDefaultAsync();
-     if (persona != null)
+        {
+            usuario = await UserManager.GetUserAsync(user);
+            if (usuario != null)
+            {
+                // Cargar persona
+                persona = await DbContext.Personas
+                    .Where(p => p.PersonaId == usuario.PersonaId && !p.IsDeleted)
+                    .FirstOrDefaultAsync();
+                
+                if (persona != null)
+                {
+                    nombreCompleto = $"{persona.Nombres} {persona.Apellidos}";
+                }
+                
+                // Cargar roles
+                roles = (await UserManager.GetRolesAsync(usuario)).ToList();
+                
+                // Cargar programas asignados
+                programas = await DbContext.UsuarioProgramas
+                    .Where(up => up.UsuarioId == usuario.Id && !up.IsDeleted)
+                    .Include(up => up.Programa)
+                    .Select(up => up.Programa)
+                    .ToListAsync();
+            }
+        }
+
+        // Cargar clima
+        _ = CargarClimaAsync();
+
+        // Iniciar reloj
+        ActualizarHora();
+        _timer = new System.Threading.Timer(async _ =>
+        {
+            ActualizarHora();
+            await InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+    }
+
+    private async Task CargarClimaAsync()
     {
-     nombreCompleto = $"{persona.Nombres} {persona.Apellidos}";
-     }
-            // Cargar roles
-     roles = (await UserManager.GetRolesAsync(usuario)).ToList();
-        // Cargar programas asignados
-          programas = await DbContext.UsuarioProgramas
-        .Where(up => up.UsuarioId == usuario.Id && !up.IsDeleted)
-         .Include(up => up.Programa)
-        .Select(up => up.Programa)
-         .ToListAsync();
-     }
+        try
+        {
+            _clima = await WeatherService.ObtenerClimaAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error al cargar el clima");
         }
     }
-private int CalcularEdad(DateTime fechaNacimiento)
+
+    private void ActualizarHora()
     {
-    var hoy = DateTime.Today;
-        var edad = hoy.Year - fechaNacimiento.Year;
-   if (fechaNacimiento.Date > hoy.AddYears(-edad)) edad--;
-        return edad;
+        var ahora = DateTime.Now;
+        _horaActual = ahora.ToString("HH:mm:ss");
+        _fechaActual = ahora.ToString("dddd, dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"));
+    }
+
+    private string ObtenerSaludo()
+    {
+        var hora = DateTime.Now.Hour;
+        if (hora < 12) return "Buenos días";
+        if (hora < 19) return "Buenas tardes";
+        return "Buenas noches";
+    }
+
+    private string GetIniciales()
+    {
+        if (persona != null)
+        {
+            var nombres = persona.Nombres?.Split(' ');
+            var apellidos = persona.Apellidos?.Split(' ');
+            
+            var inicial1 = nombres?.Length > 0 ? nombres[0].Substring(0, 1) : "";
+            var inicial2 = apellidos?.Length > 0 ? apellidos[0].Substring(0, 1) : "";
+            
+            return (inicial1 + inicial2).ToUpper();
+        }
+        return "U";
+    }
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
     }
 }

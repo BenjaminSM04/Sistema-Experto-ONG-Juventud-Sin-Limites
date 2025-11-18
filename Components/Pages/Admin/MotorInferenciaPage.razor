@@ -1,0 +1,589 @@
+@page "/admin/motor"
+@rendermode InteractiveServer
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Api.Models
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Inference
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security
+@using Microsoft.EntityFrameworkCore
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Pages.Admin.Motor
+@attribute [Authorize(Roles = "Administrador,Coordinador")]
+@inject NavigationManager Navigation
+@inject IMotorInferencia MotorInferencia
+@inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILogger<MotorInferenciaPage> Logger
+@inject ReportesMotorService ReportesService
+@inject MotorService MotorService
+@inject IJSRuntime JS
+
+<PageTitle>Motor de Inferencia</PageTitle>
+
+<style>
+    .mythra-header {
+        background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
+        color: #FEFEFD;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+
+    .mythra-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-left: 4px solid #4D3935;
+    }
+
+    .mythra-panel {
+        background-color: #F7C484;
+        border-radius: 8px;
+        padding: 1.5rem;
+    }
+
+    .mythra-button-primary {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .mythra-button-primary:hover {
+        background: linear-gradient(135deg, #85C97C 0%, #9FD996 100%) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(159, 217, 150, 0.4) !important;
+    }
+
+    .mythra-button-success {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+        border: none !important;
+    }
+
+    .mythra-button-success:hover {
+        background: linear-gradient(135deg, #85C97C 0%, #9FD996 100%) !important;
+    }
+
+    .mythra-button-warning {
+        background: linear-gradient(135deg, #F3C95A 0%, #E5BA45 100%) !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+        border: none !important;
+    }
+
+    .mythra-button-warning:hover {
+        background: linear-gradient(135deg, #E5BA45 0%, #F3C95A 100%) !important;
+    }
+
+    .mythra-kpi-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-left: 4px solid #9FD996;
+        padding: 1.5rem;
+        border-radius: 8px;
+    }
+
+    .kpi-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #4D3935;
+        line-height: 1;
+    }
+
+    .kpi-label {
+        font-size: 0.875rem;
+        color: #6D534F;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .mythra-table-header {
+        background-color: #4D3935 !important;
+        color: #FEFEFD !important;
+        font-weight: 600;
+    }
+
+    .mythra-table-row:hover {
+        background-color: #F7C48420 !important;
+    }
+
+    .mythra-alert-success {
+        background: linear-gradient(135deg, #9FD996 0%, #B5E3AD 100%);
+        color: #4D3935;
+        border-left: 4px solid #4D3935;
+    }
+
+    .mythra-alert-error {
+        background: linear-gradient(135deg, #F3C95A 0%, #F7C484 100%);
+        color: #4D3935;
+        border-left: 4px solid #4D3935;
+    }
+
+    .mythra-chip-info {
+        background-color: #9FD996 !important;
+        color: #4D3935 !important;
+        font-weight: 600;
+    }
+
+    .mythra-chip-warning {
+        background-color: #F3C95A !important;
+        color: #4D3935 !important;
+        font-weight: 600;
+    }
+
+    .mythra-chip-error {
+        background-color: #F7C484 !important;
+        color: #4D3935 !important;
+        font-weight: 600;
+    }
+
+    .mythra-chip-success {
+        background-color: #9FD996 !important;
+        color: #4D3935 !important;
+        font-weight: 600;
+    }
+
+    .mythra-chip-secondary {
+        background-color: #4D3935 !important;
+        color: #FEFEFD !important;
+        font-weight: 600;
+    }
+
+    .mythra-chip-open {
+        background-color: #F3C95A !important;
+        color: #4D3935 !important;
+        font-weight: 600;
+    }
+</style>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <!-- Título -->
+    <div class="mythra-header">
+        <MudText Typo="Typo.h4">
+            <MudIcon Icon="@Icons.Material.Filled.Psychology" Class="mr-2" />
+            Motor de Inferencia
+        </MudText>
+        <MudText Typo="Typo.body1" Class="mt-2" Style="opacity: 0.9;">
+            Ejecuta el motor de inferencia para detectar alertas y riesgos en los programas
+            @if (_esCoordinador)
+            {
+                <span> (Limitado a tus programas asignados)</span>
+            }
+        </MudText>
+    </div>
+
+    <!-- Mensajes de Error y Éxito -->
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <MudPaper Class="mythra-alert-error mb-4" Elevation="2">
+            <div class="d-flex align-center justify-space-between" style="padding: 1rem;">
+                <div>
+                    <MudIcon Icon="@Icons.Material.Filled.Error" Class="mr-2" />
+                    <span>@_error</span>
+                </div>
+                <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="@(() => _error = null)" Style="color: #4D3935;" />
+            </div>
+        </MudPaper>
+    }
+
+    @if (!string.IsNullOrEmpty(_successMessage))
+    {
+        <MudPaper Class="mythra-alert-success mb-4" Elevation="2">
+            <div class="d-flex align-center justify-space-between" style="padding: 1rem;">
+                <div>
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="mr-2" />
+                    <span>@_successMessage</span>
+                </div>
+                <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="@(() => _successMessage = null)" Style="color: #4D3935;" />
+            </div>
+        </MudPaper>
+    }
+
+    <!-- Tabs Principales -->
+    <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-0" @bind-ActivePanelIndex="_tabActivo">
+        
+        <!-- TAB 1: Dashboard -->
+        <MudTabPanel Text="Dashboard" Icon="@Icons.Material.Filled.Dashboard">
+            <MotorDashboard 
+                Estadisticas="_dashboardEstadisticas"
+                SeveridadData="_severidadData"
+                SeveridadLabels="_severidadLabels"
+                EstadoData="_estadoData"
+                EstadoLabels="_estadoLabels"
+                ChartOptions="_mudChartOptions" />
+        </MudTabPanel>
+
+        <!-- TAB 2: Ejecutar Motor -->
+        <MudTabPanel Text="Ejecutar Motor" Icon="@Icons.Material.Filled.PlayArrow">
+            <MotorEjecutar 
+                @bind-FechaCorte="_fechaCorte"
+                @bind-ProgramaId="_programaId"
+                Ejecutando="_ejecutando"
+                LimpiandoDuplicados="_limpiandoDuplicados"
+                EsCoordinador="_esCoordinador"
+                ProgramasDisponibles="_programasDisponibles"
+                Resumen="_resumen"
+                OnEjecutar="HandleEjecutarClick"
+                OnLimpiarDuplicados="HandleLimpiarDuplicadosClick" />
+        </MudTabPanel>
+
+        <!-- TAB 3: Alertas -->
+        <MudTabPanel Text="Alertas" Icon="@Icons.Material.Filled.Warning">
+            <MotorAlertas 
+                Alertas="_alertas"
+                ProgramasDisponibles="_programasDisponibles"
+                Cargando="_cargando"
+                GenerandoPDF="_generandoPDF"
+                OnExportarPDF="ExportarReportePDF"
+                OnCambiarEstado="HandleCambiarEstado" />
+        </MudTabPanel>
+    </MudTabs>
+</MudContainer>
+
+@code {
+    private DateTime? _fechaCorte = DateTime.Now;
+    private int? _programaId;
+    private bool _ejecutando = false;
+    private bool _cargando = false;
+    private bool _generandoPDF = false;
+    private bool _limpiandoDuplicados = false;
+    private int _tabActivo = 0;
+    private ResumenEjecucion? _resumen;
+    private List<AlertaDto> _alertas = new();
+    private string? _error;
+    private string? _successMessage;
+    private bool _esCoordinador = false;
+    private List<ProgramaInfo> _programasDisponibles = new();
+    private Usuario? _usuarioActual;
+
+    // Dashboard
+    private MotorDashboardData _dashboardEstadisticas = new();
+    private double[] _severidadData = Array.Empty<double>();
+    private string[] _severidadLabels = Array.Empty<string>();
+    private double[] _estadoData = Array.Empty<double>();
+    private string[] _estadoLabels = Array.Empty<string>();
+    private ChartOptions _mudChartOptions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Logger.LogInformation("?? Motor.razor inicializado");
+        
+        ConfigurarOpcionesGraficas();
+        await CargarUsuarioYProgramasAsync();
+        await CargarDashboardAsync();
+    }
+
+    private void ConfigurarOpcionesGraficas()
+    {
+        _mudChartOptions = new ChartOptions
+        {
+            ChartPalette = new[] { "#F7C484", "#F3C95A", "#9FD996", "#4D3935" }
+        };
+    }
+
+    private async Task CargarUsuarioYProgramasAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user?.Identity?.IsAuthenticated == true)
+        {
+            _esCoordinador = user.IsInRole("Coordinador");
+            
+            _usuarioActual = await DbContext.Users
+                .Include(u => u.UsuarioProgramas)
+                .ThenInclude(up => up.Programa)
+                .FirstOrDefaultAsync(u => u.Email == user.Identity.Name);
+
+            if (_usuarioActual != null)
+            {
+                if (_esCoordinador)
+                {
+                    _programasDisponibles = _usuarioActual.UsuarioProgramas
+                        .Where(up => !up.IsDeleted && !up.Programa.IsDeleted)
+                        .Select(up => new ProgramaInfo { Id = up.ProgramaId, Nombre = up.Programa.Nombre })
+                        .ToList();
+
+                    Logger.LogInformation("?? Coordinador {Email} tiene acceso a {Count} programas", 
+                        _usuarioActual.Email, _programasDisponibles.Count);
+                }
+                else
+                {
+                    _programasDisponibles = await DbContext.Programas
+                        .Where(p => !p.IsDeleted)
+                        .Select(p => new ProgramaInfo { Id = p.ProgramaId, Nombre = p.Nombre })
+                        .ToListAsync();
+                }
+            }
+        }
+    }
+
+    private async Task CargarDashboardAsync()
+    {
+        try
+        {
+            var estadisticas = await MotorService.ObtenerEstadisticasAsync(_usuarioActual, _esCoordinador);
+
+            _dashboardEstadisticas = new MotorDashboardData
+            {
+                TotalAlertas = estadisticas.TotalAlertas,
+                AlertasAbiertas = estadisticas.AlertasAbiertas,
+                AlertasResueltas = estadisticas.AlertasResueltas,
+                AlertasCriticas = estadisticas.AlertasCriticas
+            };
+
+            _severidadData = new double[] { estadisticas.SeveridadInfo, estadisticas.SeveridadAlta, estadisticas.SeveridadCritica };
+            _severidadLabels = new[] { "Info", "Alta", "Crítica" };
+
+            _estadoData = new double[] { estadisticas.EstadoAbiertas, estadisticas.EstadoResueltas, estadisticas.EstadoDescartadas };
+            _estadoLabels = new[] { "Abiertas", "Resueltas", "Descartadas" };
+
+            await CargarAlertasAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "? Error al cargar dashboard");
+            _error = "Error al cargar el dashboard";
+        }
+    }
+
+    private async Task CargarAlertasAsync()
+    {
+        var queryAlertas = DbContext.Alertas.Where(a => !a.IsDeleted);
+
+        if (_esCoordinador && _usuarioActual != null)
+        {
+            var programasIds = _usuarioActual.UsuarioProgramas
+                .Where(up => !up.IsDeleted)
+                .Select(up => up.ProgramaId)
+                .ToList();
+
+            queryAlertas = queryAlertas.Where(a => a.ProgramaId.HasValue && programasIds.Contains(a.ProgramaId.Value));
+        }
+
+        _alertas = await queryAlertas
+            .OrderByDescending(a => a.AlertaId)
+            .Take(100)
+            .Select(a => new AlertaDto(
+                a.AlertaId,
+                a.Mensaje,
+                (byte)a.Severidad,
+                (byte)a.Estado,
+                a.GeneradaEn,
+                a.ReglaId,
+                a.ProgramaId,
+                a.ActividadId,
+                a.ParticipanteId,
+                a.RowVersion
+            ))
+            .ToListAsync();
+    }
+
+    private async Task ExportarReportePDF()
+    {
+        if (_generandoPDF) return;
+
+        try
+        {
+            _generandoPDF = true;
+            StateHasChanged();
+
+            Logger.LogInformation("?? Generando reporte PDF del motor");
+
+            var fechaCorteOnly = _fechaCorte.HasValue 
+                ? DateOnly.FromDateTime(_fechaCorte.Value) 
+                : DateOnly.FromDateTime(DateTime.Now);
+
+            var pdfBytes = await ReportesService.GenerarReportePdfAsync(fechaCorteOnly, _programaId);
+
+            var nombreArchivo = $"Reporte_Motor_{fechaCorteOnly:yyyyMMdd}_{DateTime.Now:HHmmss}.pdf";
+            var base64 = Convert.ToBase64String(pdfBytes);
+
+            await JS.InvokeVoidAsync("downloadFileFromBase64", base64, nombreArchivo, "application/pdf");
+
+            _successMessage = "Reporte PDF generado correctamente";
+            Logger.LogInformation("? Reporte PDF generado: {Archivo}", nombreArchivo);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "? Error al generar reporte PDF");
+            _error = $"Error al generar el reporte: {ex.Message}";
+        }
+        finally
+        {
+            _generandoPDF = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleEjecutarClick()
+    {
+        Logger.LogInformation("?? HandleEjecutarClick llamado");
+        
+        if (_esCoordinador && !_programaId.HasValue)
+        {
+            _error = "Por favor, selecciona un programa antes de ejecutar el motor.";
+            return;
+        }
+
+        await EjecutarMotor();
+    }
+
+    private async Task HandleLimpiarDuplicadosClick()
+    {
+        Logger.LogInformation("?? HandleLimpiarDuplicadosClick llamado");
+        
+        _limpiandoDuplicados = true;
+        _error = null;
+        _successMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var totalEliminados = await MotorService.LimpiarAlertasDuplicadasAsync(_programaId);
+            
+            if (totalEliminados > 0)
+            {
+                _successMessage = $"Se eliminaron {totalEliminados} alertas duplicadas";
+                await CargarDashboardAsync();
+            }
+            else
+            {
+                _successMessage = "No se encontraron alertas duplicadas";
+            }
+
+            Logger.LogInformation("? Limpieza completada: {Total} alertas eliminadas", totalEliminados);
+        }
+        catch (Exception ex)
+        {
+            _error = $"Error al limpiar duplicados: {ex.Message}";
+            Logger.LogError(ex, "? Error al limpiar duplicados");
+        }
+        finally
+        {
+            _limpiandoDuplicados = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task EjecutarMotor()
+    {
+        Logger.LogInformation("?? EjecutarMotor() llamado");
+        
+        _ejecutando = true;
+        _error = null;
+        _successMessage = null;
+        _resumen = null;
+        _alertas.Clear();
+        StateHasChanged();
+
+        try
+        {
+            var fechaCorteOnly = _fechaCorte.HasValue 
+                ? DateOnly.FromDateTime(_fechaCorte.Value) 
+                : DateOnly.FromDateTime(DateTime.Now);
+
+            Logger.LogInformation("?? Ejecutando motor: FechaCorte={FechaCorte}, ProgramaId={ProgramaId}", 
+                fechaCorteOnly, _programaId);
+            
+            var resumen = await MotorInferencia.EjecutarAsync(fechaCorteOnly, _programaId, CancellationToken.None);
+
+            Logger.LogInformation("? Motor ejecutado: Reglas={Reglas}, Alertas={Alertas}, Errores={Errores}",
+                resumen.ReglasEjecutadas, resumen.AlertasGeneradas, resumen.Errores);
+
+            _resumen = new ResumenEjecucion(
+                resumen.ReglasEjecutadas,
+                resumen.AlertasGeneradas,
+                resumen.Errores
+            );
+
+            _successMessage = $"Motor ejecutado exitosamente. {_resumen.AlertasGeneradas} alertas generadas.";
+
+            await CargarDashboardAsync();
+            _tabActivo = 2;
+        }
+        catch (Exception ex)
+        {
+            _error = $"Error inesperado: {ex.Message}";
+            Logger.LogError(ex, "? Error ejecutando motor");
+        }
+        finally
+        {
+            _ejecutando = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleCambiarEstado(CambioEstadoArgs args)
+    {
+        Logger.LogInformation("?? Cambiando estado de alerta {AlertaId} a {Estado}", args.AlertaId, args.NuevoEstado);
+
+        try
+        {
+            var alerta = await DbContext.Alertas
+                .Where(a => a.AlertaId == args.AlertaId && !a.IsDeleted)
+                .FirstOrDefaultAsync();
+
+            if (alerta == null)
+            {
+                Logger.LogWarning("?? Alerta {AlertaId} no encontrada", args.AlertaId);
+                _error = "Alerta no encontrada.";
+                _alertas.RemoveAll(a => a.AlertaId == args.AlertaId);
+                StateHasChanged();
+                return;
+            }
+
+            if (args.RowVersion != null && args.RowVersion.Length > 0)
+            {
+                DbContext.Entry(alerta).Property(a => a.RowVersion).OriginalValue = args.RowVersion;
+            }
+
+            var comentario = args.NuevoEstado == EstadoAlerta.Resuelta 
+                ? "Alerta resuelta desde el panel del motor" 
+                : "Alerta descartada desde el panel del motor";
+
+            alerta.Estado = args.NuevoEstado;
+            if (!string.IsNullOrWhiteSpace(comentario))
+            {
+                alerta.Notas = comentario;
+            }
+            alerta.ActualizadoEn = DateTime.UtcNow;
+
+            if (args.NuevoEstado == EstadoAlerta.Resuelta)
+            {
+                alerta.ResueltaEn = DateTime.UtcNow;
+            }
+
+            try
+            {
+                await DbContext.SaveChangesAsync();
+
+                var alertaDto = _alertas.FirstOrDefault(a => a.AlertaId == args.AlertaId);
+                if (alertaDto != null)
+                {
+                    var index = _alertas.IndexOf(alertaDto);
+                    _alertas[index] = alertaDto with { Estado = (byte)args.NuevoEstado };
+                }
+
+                var mensaje = args.NuevoEstado == EstadoAlerta.Resuelta ? "Alerta resuelta" : "Alerta descartada";
+                Logger.LogInformation("? {Mensaje}", mensaje);
+                _successMessage = mensaje;
+
+                await CargarDashboardAsync();
+                StateHasChanged();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                var errorMsg = "La alerta fue modificada por otro usuario. Por favor, recargue la página.";
+                Logger.LogWarning("?? {Error}", errorMsg);
+                _error = errorMsg;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "? Error en CambiarEstadoAlerta");
+            _error = $"Error inesperado: {ex.Message}";
+        }
+    }
+}
+

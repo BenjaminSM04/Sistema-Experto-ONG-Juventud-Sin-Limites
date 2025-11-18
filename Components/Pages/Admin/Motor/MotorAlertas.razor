@@ -1,0 +1,179 @@
+﻿@using Sistema_Experto_ONG_Juventud_Sin_Limites.Api.Models
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Pages.Admin.Motor
+@inject ILogger<MotorAlertas> Logger
+
+<MudPaper Class="mythra-card" Elevation="3">
+    <div style="background-color: #F7C484; border-radius: 8px 8px 0 0; padding: 1rem;">
+        <MudGrid>
+            <MudItem xs="12" md="10">
+                <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 600;">
+                    <MudIcon Icon="@Icons.Material.Filled.Warning" Class="mr-2" />
+                    Alertas Generadas (@Alertas.Count)
+                </MudText>
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudButton Color="Color.Error" 
+                          Variant="Variant.Filled" 
+                          FullWidth="true"
+                          StartIcon="@Icons.Material.Filled.PictureAsPdf"
+                          OnClick="OnExportarPDF"
+                          Disabled="@GenerandoPDF">
+                    @if (GenerandoPDF)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" />
+                    }
+                    PDF
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </div>
+    <MudTable 
+        Items="@Alertas" 
+        Dense="true" 
+        Hover="true" 
+        Loading="@Cargando"
+        LoadingProgressColor="Color.Primary"
+        Breakpoint="Breakpoint.Sm"
+        Elevation="0"
+        Class="mythra-table">
+        <HeaderContent>
+            <MudTh Style="background-color: #4D3935; color: #FEFEFD;">ID</MudTh>
+            <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Severidad</MudTh>
+            <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Mensaje</MudTh>
+            <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Programa</MudTh>
+            <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Actividad</MudTh>
+            <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Participante</MudTh>
+            <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Generada</MudTh>
+            <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Estado</MudTh>
+            <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Acciones</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="ID">
+                <MudText Typo="Typo.body2" Style="color: #4D3935; font-weight: 500;">@context.AlertaId</MudText>
+            </MudTd>
+            <MudTd DataLabel="Severidad">
+                <MudChip T="string" Size="Size.Small" Class="@ObtenerClaseSeveridad(context.Severidad)">
+                    @ObtenerTextoSeveridad(context.Severidad)
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Mensaje">
+                <MudText Typo="Typo.body2" Style="color: #4D3935;">@context.Mensaje</MudText>
+            </MudTd>
+            <MudTd DataLabel="Programa">
+                @{
+                    var nombrePrograma = context.ProgramaId.HasValue 
+                        ? ProgramasDisponibles.FirstOrDefault(p => p.Id == context.ProgramaId.Value)?.Nombre ?? context.ProgramaId.Value.ToString() 
+                        : "-";
+                }
+                <MudText Typo="Typo.body2" Style="color: #4D3935;">@nombrePrograma</MudText>
+            </MudTd>
+            <MudTd DataLabel="Actividad">
+                <MudText Typo="Typo.body2" Style="color: #4D3935;">@(context.ActividadId?.ToString() ?? "-")</MudText>
+            </MudTd>
+            <MudTd DataLabel="Participante">
+                <MudText Typo="Typo.body2" Style="color: #4D3935;">@(context.ParticipanteId?.ToString() ?? "-")</MudText>
+            </MudTd>
+            <MudTd DataLabel="Generada">
+                <MudText Typo="Typo.caption" Style="color: #4D3935;">
+                    @context.GeneradaEn.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                </MudText>
+            </MudTd>
+            <MudTd DataLabel="Estado">
+                <MudChip T="string" Size="Size.Small" Class="@ObtenerClaseEstado(context.Estado)">
+                    @ObtenerTextoEstado(context.Estado)
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Acciones">
+                @if (context.Estado == (byte)EstadoAlerta.Abierta)
+                {
+                    <MudButtonGroup Size="Size.Small" Variant="Variant.Filled">
+                        <MudButton 
+                            Class="mythra-button-success"
+                            StartIcon="@Icons.Material.Filled.CheckCircle" 
+                            Size="Size.Small"
+                            OnClick="@(() => OnCambiarEstado.InvokeAsync(new CambioEstadoArgs(context.AlertaId, EstadoAlerta.Resuelta, context.RowVersion)))">
+                            Resolver
+                        </MudButton>
+                        <MudButton 
+                            Class="mythra-button-warning"
+                            StartIcon="@Icons.Material.Filled.Cancel" 
+                            Size="Size.Small"
+                            OnClick="@(() => OnCambiarEstado.InvokeAsync(new CambioEstadoArgs(context.AlertaId, EstadoAlerta.Descartada, context.RowVersion)))">
+                            Descartar
+                        </MudButton>
+                    </MudButtonGroup>
+                }
+                else
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">-</MudText>
+                }
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Class="pa-4" Style="color: #4D3935;">
+                <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
+                No hay alertas para mostrar. Ejecute el motor para generar alertas.
+            </MudText>
+        </NoRecordsContent>
+        <LoadingContent>
+            <MudText Class="pa-4" Style="color: #4D3935;">
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                Cargando alertas...
+            </MudText>
+        </LoadingContent>
+    </MudTable>
+</MudPaper>
+
+@code {
+    [Parameter] public List<AlertaDto> Alertas { get; set; } = new();
+    [Parameter] public List<ProgramaInfo> ProgramasDisponibles { get; set; } = new();
+    [Parameter] public bool Cargando { get; set; }
+    [Parameter] public bool GenerandoPDF { get; set; }
+    [Parameter] public EventCallback OnExportarPDF { get; set; }
+    [Parameter] public EventCallback<CambioEstadoArgs> OnCambiarEstado { get; set; }
+
+    private string ObtenerClaseSeveridad(byte severidad)
+    {
+        return severidad switch
+        {
+            1 => "mythra-chip-info",
+            2 => "mythra-chip-warning",
+            3 => "mythra-chip-error",
+            _ => "mythra-chip-info"
+        };
+    }
+
+    private string ObtenerTextoSeveridad(byte severidad)
+    {
+        return severidad switch
+        {
+            1 => "Info",
+            2 => "Alta",
+            3 => "Crítica",
+            _ => "Desconocida"
+        };
+    }
+
+    private string ObtenerClaseEstado(byte estado)
+    {
+        return estado switch
+        {
+            1 => "mythra-chip-open",
+            2 => "mythra-chip-success",
+            3 => "mythra-chip-secondary",
+            _ => "mythra-chip-info"
+        };
+    }
+
+    private string ObtenerTextoEstado(byte estado)
+    {
+        return estado switch
+        {
+            1 => "Abierta",
+            2 => "Resuelta",
+            3 => "Descartada",
+            _ => "Desconocido"
+        };
+    }
+}

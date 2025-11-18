@@ -26,17 +26,17 @@ public class ReportesProgramaService
      .FirstOrDefaultAsync(p => p.ProgramaId == programaId && !p.IsDeleted);
 
         if (programa == null)
-      throw new InvalidOperationException("Programa no encontrado");
+            throw new InvalidOperationException("Programa no encontrado");
 
         var actividades = await _context.Actividades
-     .Where(a => a.ProgramaId == programaId && 
-           !a.IsDeleted && 
+     .Where(a => a.ProgramaId == programaId &&
+           !a.IsDeleted &&
       a.FechaInicio.Year == anio)
    .OrderBy(a => a.FechaInicio)
     .ToListAsync();
 
         var metricas = await _context.MetricasProgramaMes
-        .Where(m => m.ProgramaId == programaId && 
+        .Where(m => m.ProgramaId == programaId &&
              !m.IsDeleted &&
      m.AnioMes.StartsWith(anio.ToString()))
          .OrderBy(m => m.AnioMes)
@@ -51,8 +51,8 @@ public class ReportesProgramaService
          .ToListAsync();
 
         var html = new StringBuilder();
-        
-// Estilos CSS
+
+        // Estilos CSS
         html.AppendLine(@"
 <!DOCTYPE html>
 <html>
@@ -197,7 +197,7 @@ border: 1px solid #e0e0e0;
         var totalPlanificadas = metricas.Sum(m => m.ActividadesPlanificadas);
         var totalEjecutadas = metricas.Sum(m => m.ActividadesEjecutadas);
         var cumplimientoPromedio = metricas.Any() ? metricas.Average(m => (double)m.PorcCumplimiento) : 0;
- var asistenciaPromedio = metricas.Any() ? metricas.Average(m => (double)m.PorcAsistenciaProm) : 0;
+        var asistenciaPromedio = metricas.Any() ? metricas.Average(m => (double)m.PorcAsistenciaProm) : 0;
 
         html.AppendLine($@"
     <div class='section'>
@@ -243,17 +243,17 @@ border: 1px solid #e0e0e0;
    <tbody>
 ");
 
-    foreach (var actividad in actividades)
-     {
-       var badgeClass = actividad.Estado switch
+        foreach (var actividad in actividades)
+        {
+            var badgeClass = actividad.Estado switch
             {
-        EstadoActividad.Realizada => "badge-success",
-     EstadoActividad.Planificada => "badge-warning",
-            EstadoActividad.Cancelada => "badge-error",
-            _ => "badge-info"
+                EstadoActividad.Realizada => "badge-success",
+                EstadoActividad.Planificada => "badge-warning",
+                EstadoActividad.Cancelada => "badge-error",
+                _ => "badge-info"
             };
 
-   html.AppendLine($@"
+            html.AppendLine($@"
         <tr>
   <td><strong>{actividad.Titulo}</strong></td>
                    <td>{actividad.FechaInicio:dd/MM/yyyy HH:mm}</td>
@@ -262,7 +262,7 @@ border: 1px solid #e0e0e0;
         <td>{actividad.Lugar ?? "N/A"}</td>
           </tr>
 ");
-      }
+        }
 
         html.AppendLine(@"
 </tbody>
@@ -271,8 +271,8 @@ border: 1px solid #e0e0e0;
     </div>
 ");
 
-  // Métricas Mensuales
-     html.AppendLine($@"
+        // Métricas Mensuales
+        html.AppendLine($@"
     <div class='section'>
       <div class='section-title'>Métricas Mensuales</div>
     <div class='section-content'>
@@ -290,9 +290,9 @@ border: 1px solid #e0e0e0;
           <tbody>
 ");
 
-   foreach (var metrica in metricas)
+        foreach (var metrica in metricas)
         {
-  html.AppendLine($@"
+            html.AppendLine($@"
           <tr>
        <td><strong>{metrica.AnioMes}</strong></td>
      <td>{metrica.ActividadesPlanificadas}</td>
@@ -304,14 +304,14 @@ border: 1px solid #e0e0e0;
 ");
         }
 
-      html.AppendLine(@"
+        html.AppendLine(@"
                 </tbody>
             </table>
         </div>
     </div>
 ");
 
-   // Alertas
+        // Alertas
         html.AppendLine($@"
     <div class='section'>
         <div class='section-title'>Alertas Generadas ({alertas.Count})</div>
@@ -332,20 +332,20 @@ border: 1px solid #e0e0e0;
         foreach (var alerta in alertas.Take(50)) // Primeras 50
         {
             var severidadClass = alerta.Severidad switch
-         {
-    Domain.Common.Severidad.Critica => "badge-error",
-      Domain.Common.Severidad.Alta => "badge-warning",
-        _ => "badge-info"
-      };
-
-var estadoClass = alerta.Estado switch
             {
-                Domain.Common.EstadoAlerta.Abierta => "badge-error",
-          Domain.Common.EstadoAlerta.Resuelta => "badge-success",
-       _ => "badge-warning"
+                Domain.Common.Severidad.Critica => "badge-error",
+                Domain.Common.Severidad.Alta => "badge-warning",
+                _ => "badge-info"
             };
 
-  html.AppendLine($@"
+            var estadoClass = alerta.Estado switch
+            {
+                Domain.Common.EstadoAlerta.Abierta => "badge-error",
+                Domain.Common.EstadoAlerta.Resuelta => "badge-success",
+                _ => "badge-warning"
+            };
+
+            html.AppendLine($@"
         <tr>
          <td>{alerta.GeneradaEn:dd/MM/yyyy}</td>
               <td><span class='badge {severidadClass}'>{alerta.Severidad}</span></td>
@@ -356,14 +356,14 @@ var estadoClass = alerta.Estado switch
 ");
         }
 
-   html.AppendLine(@"
+        html.AppendLine(@"
         </tbody>
     </table>
      </div>
     </div>
 ");
 
-      // Footer
+        // Footer
         html.AppendLine($@"
     <div class='footer'>
         <p>Reporte generado el {DateTime.Now:dd/MM/yyyy HH:mm}</p>
@@ -373,6 +373,6 @@ var estadoClass = alerta.Estado switch
 </html>
 ");
 
-   return html.ToString();
+        return html.ToString();
     }
 }

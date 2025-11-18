@@ -1,0 +1,149 @@
+﻿@using Sistema_Experto_ONG_Juventud_Sin_Limites.Api.Models
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Pages.Admin.Motor
+@inject ILogger<MotorEjecutar> Logger
+
+<MudPaper Class="mythra-card mb-4" Elevation="3">
+    <div class="mythra-panel">
+        <MudGrid>
+            <MudItem xs="12" md="3">
+                <MudDatePicker 
+                    Label="Fecha de Corte" 
+                    Date="FechaCorte"
+                    DateChanged="OnFechaCorteChanged"
+                    DateFormat="dd/MM/yyyy"
+                    Editable="true"
+                    HelperText="Fecha hasta la cual se evaluarán las reglas"
+                    Style="background-color: #FEFEFD; border-radius: 4px;"
+                    Placeholder="Seleccione una fecha"
+                    AdornmentIcon="@Icons.Material.Filled.CalendarToday"
+                    Adornment="Adornment.End" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudSelect T="int?" 
+                    Label="Programa" 
+                    Value="ProgramaId"
+                    ValueChanged="OnProgramaChanged"
+                    Clearable="true"
+                    HelperText="@(EsCoordinador ? "Selecciona uno de tus programas asignados" : "Dejar vacío para evaluar todos los programas")"
+                    Style="background-color: #FEFEFD; border-radius: 4px;"
+                    AdornmentIcon="@Icons.Material.Filled.Folder"
+                    Adornment="Adornment.Start">
+                    @foreach (var programa in ProgramasDisponibles)
+                    {
+                        <MudSelectItem Value="@((int?)programa.Id)">@programa.Nombre</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="3" Class="d-flex align-end">
+                <MudButton 
+                    Variant="Variant.Filled" 
+                    Class="mythra-button-primary"
+                    StartIcon="@Icons.Material.Filled.PlayArrow" 
+                    OnClick="OnEjecutarClick"
+                    Disabled="@Ejecutando"
+                    FullWidth="true"
+                    Size="Size.Large">
+                    @if (Ejecutando)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        <span>Ejecutando...</span>
+                    }
+                    else
+                    {
+                        <span>Ejecutar Ahora</span>
+                    }
+                </MudButton>
+            </MudItem>
+            <MudItem xs="12" md="3" Class="d-flex align-end">
+                <MudButton 
+                    Variant="Variant.Filled" 
+                    Color="Color.Error"
+                    StartIcon="@Icons.Material.Filled.DeleteSweep" 
+                    OnClick="OnLimpiarDuplicadosClick"
+                    Disabled="@LimpiandoDuplicados"
+                    FullWidth="true"
+                    Size="Size.Large">
+                    @if (LimpiandoDuplicados)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        <span>Limpiando...</span>
+                    }
+                    else
+                    {
+                        <span>Limpiar Duplicados</span>
+                    }
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </div>
+</MudPaper>
+
+@if (Resumen != null)
+{
+    <MudPaper Class="mythra-alert-success mb-4" Elevation="2">
+        <div style="padding: 1rem;">
+            <MudText Typo="Typo.body1" Class="mb-2" Style="font-weight: 600;">
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="mr-2" />
+                Ejecución Completada
+            </MudText>
+            <MudGrid>
+                <MudItem xs="12" sm="4">
+                    <MudText Typo="Typo.body2">
+                        <strong>Reglas Ejecutadas:</strong> @Resumen.ReglasEjecutadas
+                    </MudText>
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudText Typo="Typo.body2">
+                        <strong>Alertas Generadas:</strong> @Resumen.AlertasGeneradas
+                    </MudText>
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudText Typo="Typo.body2">
+                        <strong>Errores:</strong> @Resumen.Errores
+                    </MudText>
+                </MudItem>
+            </MudGrid>
+        </div>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public DateTime? FechaCorte { get; set; } = DateTime.Now;
+    [Parameter] public EventCallback<DateTime?> FechaCorteChanged { get; set; }
+    
+    [Parameter] public int? ProgramaId { get; set; }
+    [Parameter] public EventCallback<int?> ProgramaIdChanged { get; set; }
+    
+    [Parameter] public bool Ejecutando { get; set; }
+    [Parameter] public bool LimpiandoDuplicados { get; set; }
+    [Parameter] public bool EsCoordinador { get; set; }
+    
+    [Parameter] public List<ProgramaInfo> ProgramasDisponibles { get; set; } = new();
+    [Parameter] public ResumenEjecucion? Resumen { get; set; }
+    
+    [Parameter] public EventCallback OnEjecutar { get; set; }
+    [Parameter] public EventCallback OnLimpiarDuplicados { get; set; }
+
+    private async Task OnEjecutarClick()
+    {
+        Logger.LogInformation("▶️ Ejecutar motor - ProgramaId seleccionado: {ProgramaId}", ProgramaId);
+        await OnEjecutar.InvokeAsync();
+    }
+
+    private async Task OnLimpiarDuplicadosClick()
+    {
+        Logger.LogInformation("🧹 Limpiar duplicados - ProgramaId seleccionado: {ProgramaId}", ProgramaId);
+        await OnLimpiarDuplicados.InvokeAsync();
+    }
+
+    private async Task OnProgramaChanged(int? value)
+    {
+        Logger.LogInformation("📝 Programa seleccionado cambiado a: {ProgramaId}", value);
+        await ProgramaIdChanged.InvokeAsync(value);
+    }
+
+    private async Task OnFechaCorteChanged(DateTime? value)
+    {
+        await FechaCorteChanged.InvokeAsync(value);
+    }
+}
