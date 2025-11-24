@@ -31,7 +31,6 @@
   </ItemGroup>
     <ItemGroup>
     <Folder Include="Components\Pages\Programa\Dialogs\" />
-    <Folder Include="Tests\" />
   </ItemGroup>
 
   <!-- Excluir carpeta Tests del build del proyecto principal -->
@@ -40,14 +39,11 @@
     <Compile Remove="Pages\**" />
     <Compile Remove="Tests\**" />
     <Content Remove="Infrastructure\Migrations\**" />
-    <Content Remove="Pages\**" />
-    <Content Remove="Tests\**" />
+    <Content Remove="Pages\**" /> 
     <EmbeddedResource Remove="Infrastructure\Migrations\**" />
     <EmbeddedResource Remove="Pages\**" />
-    <EmbeddedResource Remove="Tests\**" />
     <None Remove="Infrastructure\Migrations\**" />
     <None Remove="Pages\**" />
-    <None Remove="Tests\**" />
   </ItemGroup>
   <ItemGroup>
     <Content Remove="wwwroot\images\Academias.png" />

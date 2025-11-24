@@ -119,8 +119,8 @@ public class HtmlSanitizerService
         // CSS properties permitidas (ninguna por defecto)
         _sanitizer.AllowedCssProperties.Clear();
 
-        // Remover tags no permitidos completamente
-        _sanitizer.KeepChildNodes = true;
+        // Remover tags no permitidos completamente (incluyendo su contenido para tags peligrosos)
+        _sanitizer.KeepChildNodes = false;
     }
 
     private void ConfigureStrictSanitizer()
@@ -130,7 +130,7 @@ public class HtmlSanitizerService
         _strictSanitizer.AllowedAttributes.Clear();
         _strictSanitizer.AllowedSchemes.Clear();
         _strictSanitizer.AllowedCssProperties.Clear();
-        _strictSanitizer.KeepChildNodes = false;
+        _strictSanitizer.KeepChildNodes = true; // Remover completamente tags peligrosos con su contenido
     }
 }
 
