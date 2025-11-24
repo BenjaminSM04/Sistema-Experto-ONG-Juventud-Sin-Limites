@@ -1,0 +1,420 @@
+﻿@using Sistema_Experto_ONG_Juventud_Sin_Limites.Api.Models
+@inject ISnackbar Snackbar
+
+<MudPaper Class="mythra-card" Elevation="3">
+    <div style="padding: 2rem;">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="Clave" 
+                             Label="Clave" 
+                             Variant="Variant.Outlined"
+                             Required="true"
+                             HelperText="Identificador único (ej: INASISTENCIA_CONSECUTIVA)"
+                             MaxLength="80"
+                             ReadOnly="@(ReglaId.HasValue)"
+                             Style="background-color: #FEFEFD;" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="Nombre" 
+                             Label="Nombre" 
+                             Variant="Variant.Outlined"
+                             Required="true"
+                             HelperText="Nombre descriptivo de la regla"
+                             MaxLength="200"
+                             Style="background-color: #FEFEFD;" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="Descripcion" 
+                             Label="Descripción" 
+                             Variant="Variant.Outlined"
+                             Lines="3"
+                             HelperText="Descripción detallada (opcional)"
+                             MaxLength="500"
+                             Style="background-color: #FEFEFD;" />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudSelect @bind-Value="Objetivo" 
+                          Label="Objetivo" 
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          HelperText="Entidad sobre la que actúa la regla"
+                          Style="background-color: #FEFEFD;">
+                    <MudSelectItem Value="@((byte)1)">Participante</MudSelectItem>
+                    <MudSelectItem Value="@((byte)2)">Actividad</MudSelectItem>
+                    <MudSelectItem Value="@((byte)3)">Programa</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudSelect @bind-Value="Severidad" 
+                          Label="Severidad" 
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          HelperText="Nivel de importancia de la alerta"
+                          Style="background-color: #FEFEFD;">
+                    <MudSelectItem Value="@((byte)1)">Info</MudSelectItem>
+                    <MudSelectItem Value="@((byte)2)">Alta</MudSelectItem>
+                    <MudSelectItem Value="@((byte)3)">Crítica</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudNumericField @bind-Value="Prioridad" 
+                                Label="Prioridad" 
+                                Variant="Variant.Outlined"
+                                Required="true"
+                                Min="1"
+                                Max="999"
+                                HelperText="Orden de ejecución (menor = primero)"
+                                Style="background-color: #FEFEFD;" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudSwitch @bind-Value="Activa" 
+                          Label="Regla Activa" 
+                          Color="Color.Success"
+                          UnCheckedColor="Color.Default" />
+            </MudItem>
+
+            <!-- Sección de Parámetros -->
+            <MudItem xs="12" Class="mt-4">
+                <MudDivider />
+                <MudGrid>
+                    <MudItem xs="12" md="8">
+                        <MudText Typo="Typo.h6" Class="mt-4 mb-2" Style="color: #4D3935;">
+                            <MudIcon Icon="@Icons.Material.Filled.Settings" Class="mr-2" />
+                            Parámetros de la Regla
+                        </MudText>
+                    </MudItem>
+                    <MudItem xs="12" md="4" Class="d-flex align-end justify-end">
+                        <MudSwitch @bind-Value="_modoAvanzado" 
+                                  Label="Modo Avanzado" 
+                                  Color="Color.Primary"
+                                  Size="Size.Small" />
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+
+            @if (!_modoAvanzado)
+            {
+                <!-- Modo Simple: Parámetros Predefinidos -->
+                @foreach (var param in _parametrosEditable)
+                {
+                    <MudItem xs="12">
+                        <MudPaper Class="pa-3" Style="background-color: #F7F7F7; border-left: 4px solid #9FD996;">
+                            <MudGrid>
+                                <MudItem xs="12" md="4">
+                                    <MudSelect @bind-Value="param.Nombre" 
+                                              Label="Parámetro" 
+                                              Variant="Variant.Outlined"
+                                              Required="true"
+                                              HelperText="Selecciona el parámetro"
+                                              Style="background-color: #FEFEFD;">
+                                        <MudSelectItem Value="@("UMBRAL_AUSENCIAS")">Umbral Ausencias</MudSelectItem>
+                                        <MudSelectItem Value="@("UMBRAL_PCT")">Umbral Porcentaje</MudSelectItem>
+                                        <MudSelectItem Value="@("MIN_INSCRITOS")">Mínimo Inscritos</MudSelectItem>
+                                        <MudSelectItem Value="@("DIAS_RETRASO")">Días Retraso</MudSelectItem>
+                                        <MudSelectItem Value="@("MAX_AUSENCIAS")">Máximo Ausencias</MudSelectItem>
+                                        <MudSelectItem Value="@("DIAS_VENTANA")">Días Ventana</MudSelectItem>
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="12" md="3">
+                                    <MudSelect @bind-Value="param.Tipo" 
+                                              Label="Tipo" 
+                                              Variant="Variant.Outlined"
+                                              Required="true"
+                                              Disabled="true"
+                                              Style="background-color: #F0F0F0;">
+                                        <MudSelectItem Value="@((byte)1)">Entero</MudSelectItem>
+                                        <MudSelectItem Value="@((byte)2)">Decimal</MudSelectItem>
+                                        <MudSelectItem Value="@((byte)3)">Bool</MudSelectItem>
+                                        <MudSelectItem Value="@((byte)4)">Texto</MudSelectItem>
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    @if (param.Tipo == 1)
+                                    {
+                                        <MudNumericField Value="@ObtenerValorEntero(param)" 
+                                                        ValueChanged="@((int v) => ActualizarValor(param, v))"
+                                                        Label="Valor" 
+                                                        Variant="Variant.Outlined"
+                                                        Required="true"
+                                                        Min="0"
+                                                        Max="999"
+                                                        HelperText="@ObtenerHelperText(param.Nombre)"
+                                                        Style="background-color: #FEFEFD;" />
+                                    }
+                                    else if (param.Tipo == 2)
+                                    {
+                                        <MudNumericField Value="@ObtenerValorDecimal(param)" 
+                                                        ValueChanged="@((decimal v) => ActualizarValor(param, v))"
+                                                        Label="Valor" 
+                                                        Variant="Variant.Outlined"
+                                                        Required="true"
+                                                        Min="0"
+                                                        Max="100"
+                                                        Format="N2"
+                                                        HelperText="@ObtenerHelperText(param.Nombre)"
+                                                        Style="background-color: #FEFEFD;" />
+                                    }
+                                    else if (param.Tipo == 3)
+                                    {
+                                        <MudSwitch Value="@ObtenerValorBool(param)" 
+                                                  ValueChanged="@((bool v) => ActualizarValor(param, v))"
+                                                  Label="Valor" 
+                                                  Color="Color.Success" />
+                                    }
+                                    else
+                                    {
+                                        <MudTextField @bind-Value="param.Valor" 
+                                                     Label="Valor" 
+                                                     Variant="Variant.Outlined"
+                                                     Required="true"
+                                                     MaxLength="400"
+                                                     Style="background-color: #FEFEFD;" />
+                                    }
+                                </MudItem>
+                                <MudItem xs="12" md="1" Class="d-flex align-center justify-center">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                                 Color="Color.Error"
+                                                 Size="Size.Small"
+                                                 OnClick="@(() => EliminarParametro(param))" />
+                                </MudItem>
+                            </MudGrid>
+                        </MudPaper>
+                    </MudItem>
+                }
+            }
+            else
+            {
+                <!-- Modo Avanzado: Campos Libres -->
+                @foreach (var param in _parametrosEditable)
+                {
+                    <MudItem xs="12">
+                        <MudPaper Class="pa-3" Style="background-color: #F7F7F7; border-left: 4px solid #F7C484;">
+                            <MudGrid>
+                                <MudItem xs="12" md="4">
+                                    <MudTextField @bind-Value="param.Nombre" 
+                                                 Label="Nombre Parámetro" 
+                                                 Variant="Variant.Outlined"
+                                                 Required="true"
+                                                 MaxLength="80"
+                                                 HelperText="Nombre técnico del parámetro"
+                                                 Style="background-color: #FEFEFD;" />
+                                </MudItem>
+                                <MudItem xs="12" md="3">
+                                    <MudSelect @bind-Value="param.Tipo" 
+                                              Label="Tipo" 
+                                              Variant="Variant.Outlined"
+                                              Required="true"
+                                              Style="background-color: #FEFEFD;">
+                                        <MudSelectItem Value="@((byte)1)">Entero</MudSelectItem>
+                                        <MudSelectItem Value="@((byte)2)">Decimal</MudSelectItem>
+                                        <MudSelectItem Value="@((byte)3)">Bool</MudSelectItem>
+                                        <MudSelectItem Value="@((byte)4)">Texto</MudSelectItem>
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <MudTextField @bind-Value="param.Valor" 
+                                                 Label="Valor" 
+                                                 Variant="Variant.Outlined"
+                                                 Required="true"
+                                                 MaxLength="400"
+                                                 HelperText="Valor del parámetro (como texto)"
+                                                 Style="background-color: #FEFEFD;" />
+                                </MudItem>
+                                <MudItem xs="12" md="1" Class="d-flex align-center justify-center">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                                 Color="Color.Error"
+                                                 Size="Size.Small"
+                                                 OnClick="@(() => EliminarParametro(param))" />
+                                </MudItem>
+                            </MudGrid>
+                        </MudPaper>
+                    </MudItem>
+                }
+            }
+
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Outlined" 
+                          StartIcon="@Icons.Material.Filled.Add"
+                          OnClick="AgregarParametro"
+                          Color="Color.Primary">
+                    Agregar Parámetro
+                </MudButton>
+                @if (_modoAvanzado)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Warning" Class="mt-2">
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="mr-1" />
+                        Modo Avanzado: Asegúrate de conocer la estructura de parámetros del motor
+                    </MudText>
+                }
+            </MudItem>
+
+            <!-- Botones de acción -->
+            <MudItem xs="12" Class="mt-4">
+                <MudDivider />
+                <div Class="d-flex justify-end gap-2 mt-4">
+                    <MudButton Variant="Variant.Outlined" 
+                              OnClick="OnCancelar"
+                              StartIcon="@Icons.Material.Filled.Cancel">
+                        Cancelar
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled" 
+                              Class="mythra-button-primary"
+                              OnClick="OnGuardar"
+                              Disabled="@Guardando"
+                              StartIcon="@Icons.Material.Filled.Save">
+                        @if (Guardando)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        }
+                        Guardar
+                    </MudButton>
+                </div>
+            </MudItem>
+        </MudGrid>
+    </div>
+</MudPaper>
+
+@code {
+    // Clase mutable interna para binding
+    public class ParametroEditable
+    {
+        public int? ReglaParametroId { get; set; }
+        public string Nombre { get; set; } = "";
+        public byte Tipo { get; set; } = 1;
+        public string Valor { get; set; } = "";
+        public byte[]? RowVersion { get; set; }
+    }
+
+    [Parameter] public int? ReglaId { get; set; }
+    [Parameter] public string Clave { get; set; } = "";
+    [Parameter] public string Nombre { get; set; } = "";
+    [Parameter] public string? Descripcion { get; set; }
+    [Parameter] public byte Severidad { get; set; } = 2;
+    [Parameter] public byte Objetivo { get; set; } = 1;
+    [Parameter] public bool Activa { get; set; } = true;
+    [Parameter] public int Prioridad { get; set; } = 100;
+    [Parameter] public int Version { get; set; } = 1;
+    [Parameter] public List<ReglaParametroDto> Parametros { get; set; } = new();
+    [Parameter] public byte[]? RowVersion { get; set; }
+    [Parameter] public bool Guardando { get; set; }
+    [Parameter] public EventCallback OnGuardar { get; set; }
+    [Parameter] public EventCallback OnCancelar { get; set; }
+
+    private List<ParametroEditable> _parametrosEditable = new();
+    private bool _modoAvanzado = false;
+
+    protected override void OnParametersSet()
+    {
+        // Convertir DTOs a editables
+        _parametrosEditable = Parametros.Select(p => new ParametroEditable
+        {
+            ReglaParametroId = p.ReglaParametroId,
+            Nombre = p.Nombre,
+            Tipo = p.Tipo,
+            Valor = p.Valor,
+            RowVersion = p.RowVersion
+        }).ToList();
+    }
+
+    private void AgregarParametro()
+    {
+        _parametrosEditable.Add(new ParametroEditable { Nombre = "UMBRAL_AUSENCIAS", Tipo = 1, Valor = "3" });
+    }
+
+    private void EliminarParametro(ParametroEditable param)
+    {
+        _parametrosEditable.Remove(param);
+    }
+
+    private int ObtenerValorEntero(ParametroEditable param)
+    {
+        return int.TryParse(param.Valor, out var val) ? val : 0;
+    }
+
+    private decimal ObtenerValorDecimal(ParametroEditable param)
+    {
+        return decimal.TryParse(param.Valor, out var val) ? val : 0;
+    }
+
+    private bool ObtenerValorBool(ParametroEditable param)
+    {
+        return bool.TryParse(param.Valor, out var val) && val;
+    }
+
+    private void ActualizarValor(ParametroEditable param, int valor)
+    {
+        param.Valor = valor.ToString();
+    }
+
+    private void ActualizarValor(ParametroEditable param, decimal valor)
+    {
+        param.Valor = valor.ToString("F2");
+    }
+
+    private void ActualizarValor(ParametroEditable param, bool valor)
+    {
+        param.Valor = valor.ToString().ToLower();
+    }
+
+    private string ObtenerHelperText(string nombre)
+    {
+        return nombre switch
+        {
+            "UMBRAL_AUSENCIAS" => "Número de ausencias consecutivas permitidas",
+            "UMBRAL_PCT" => "Porcentaje mínimo requerido (0-100)",
+            "MIN_INSCRITOS" => "Cantidad mínima de inscritos",
+            "DIAS_RETRASO" => "Días de retraso permitidos",
+            "MAX_AUSENCIAS" => "Máximo de ausencias totales",
+            "DIAS_VENTANA" => "Ventana de tiempo en días",
+            _ => "Valor del parámetro"
+        };
+    }
+
+    public UpsertReglaRequest ObtenerRequest()
+    {
+        var parametrosDto = _parametrosEditable.Select(p => new ReglaParametroDto(
+            p.ReglaParametroId,
+            p.Nombre,
+            p.Tipo,
+            p.Valor,
+            p.RowVersion
+        )).ToList();
+
+        return new UpsertReglaRequest(
+            ReglaId,
+            Clave.Trim(),
+            Nombre.Trim(),
+            string.IsNullOrWhiteSpace(Descripcion) ? null : Descripcion.Trim(),
+            Severidad,
+            Objetivo,
+            Activa,
+            Prioridad,
+            Version,
+            parametrosDto,
+            RowVersion
+        );
+    }
+
+    public void CargarDesdeDto(ReglaDto dto)
+    {
+        Clave = dto.Clave;
+        Nombre = dto.Nombre;
+        Descripcion = dto.Descripcion;
+        Severidad = dto.Severidad;
+        Objetivo = dto.Objetivo;
+        Activa = dto.Activa;
+        Prioridad = dto.Prioridad;
+        Version = dto.Version;
+        Parametros = dto.Parametros.ToList();
+        RowVersion = dto.RowVersion;
+        
+        _parametrosEditable = dto.Parametros.Select(p => new ParametroEditable
+        {
+            ReglaParametroId = p.ReglaParametroId,
+            Nombre = p.Nombre,
+            Tipo = p.Tipo,
+            Valor = p.Valor,
+            RowVersion = p.RowVersion
+        }).ToList();
+    }
+}

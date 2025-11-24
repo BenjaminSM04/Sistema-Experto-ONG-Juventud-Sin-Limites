@@ -1,0 +1,94 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+
+@if (_verificandoAcceso)
+{
+    <div style="text-align: center; padding: 4rem;">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        <MudText Typo="Typo.body1" Class="mt-3">Verificando permisos...</MudText>
+    </div>
+}
+else if (!_tieneAcceso)
+{
+    <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+        <MudPaper Class="pa-6" Elevation="3">
+            <div style="text-align: center;">
+                <MudIcon Icon="@Icons.Material.Filled.Lock" 
+                        Size="Size.Large" 
+                        Style="color: #F7C484; font-size: 5rem;" />
+                <MudText Typo="Typo.h4" Class="mt-4" Style="color: #4D3935; font-weight: 600;">
+                    Acceso Denegado
+                </MudText>
+                <MudText Typo="Typo.body1" Class="mt-3" Style="color: #6D534F;">
+                    No tienes permisos para acceder a esta página.
+                </MudText>
+                <MudText Typo="Typo.body2" Class="mt-2" Style="color: #6D534F;">
+                    @if (!string.IsNullOrEmpty(RolesRequeridos))
+                    {
+                        <text>Roles requeridos: <strong>@RolesRequeridos</strong></text>
+                    }
+                </MudText>
+                <MudText Typo="Typo.body2" Class="mt-2" Style="color: #6D534F;">
+                    Si crees que deberías tener acceso, contacta con el administrador del sistema.
+                </MudText>
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          StartIcon="@Icons.Material.Filled.Home"
+                          OnClick="@(() => Navigation.NavigateTo("/", forceLoad: true))"
+                          Class="mt-6"
+                          Style="background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%); color: #4D3935;">
+                    Volver al Inicio
+                </MudButton>
+            </div>
+        </MudPaper>
+    </MudContainer>
+}
+else
+{
+    @ChildContent
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string? RolesRequeridos { get; set; }
+
+    private bool _verificandoAcceso = true;
+    private bool _tieneAcceso = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (!user.Identity?.IsAuthenticated ?? true)
+            {
+                _tieneAcceso = false;
+                _verificandoAcceso = false;
+                Navigation.NavigateTo("/Account/Login?returnUrl=" + Uri.EscapeDataString(Navigation.Uri), forceLoad: true);
+                return;
+            }
+
+            // Verificar roles
+            if (string.IsNullOrEmpty(RolesRequeridos))
+            {
+                // Si no se especifican roles, solo requiere autenticación
+                _tieneAcceso = true;
+            }
+            else
+            {
+                var roles = RolesRequeridos.Split(',').Select(r => r.Trim());
+                _tieneAcceso = roles.Any(role => user.IsInRole(role));
+            }
+
+            _verificandoAcceso = false;
+        }
+        catch (Exception)
+        {
+            _tieneAcceso = false;
+            _verificandoAcceso = false;
+        }
+    }
+}

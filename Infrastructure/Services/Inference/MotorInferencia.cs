@@ -16,7 +16,7 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
             _features = features;
         }
 
-        public async Task<EjecucionResumen> EjecutarAsync(DateOnly fechaCorte, int? programaId, CancellationToken ct)
+        public async Task<EjecucionResumen> EjecutarAsync(DateOnly fechaCorte, int? programaId, bool dryRun, CancellationToken ct)
         {
             var inicio = DateTime.UtcNow;
             var ejec = new EjecucionMotor
@@ -25,10 +25,15 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
                 Ambito = programaId.HasValue ? AmbitoEjecucion.EDV : AmbitoEjecucion.Todos,
                 ResultadoResumen = ""
             };
-            _db.EjecucionesMotor.Add(ejec);
-            await _db.SaveChangesAsync(ct);
+
+            if (!dryRun)
+            {
+                _db.EjecucionesMotor.Add(ejec);
+                await _db.SaveChangesAsync(ct);
+            }
 
             int reglas = 0, alertas = 0, errores = 0;
+            var alertasSimuladas = new List<Alerta>();
 
             // 1) Carga reglas activas
             var qReglas = _db.Reglas.Where(r => r.Activa && !r.IsDeleted);
@@ -52,13 +57,13 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
                     switch (r.Objetivo)
                     {
                         case ObjetivoRegla.Participante:
-                            alertas += await EjecutarParaParticipantes(r, dict, fechaCorte, programaId, ct);
+                            alertas += await EjecutarParaParticipantes(r, dict, fechaCorte, programaId, dryRun, alertasSimuladas, ct);
                             break;
                         case ObjetivoRegla.Actividad:
-                            alertas += await EjecutarParaActividades(r, dict, fechaCorte, programaId, ct);
+                            alertas += await EjecutarParaActividades(r, dict, fechaCorte, programaId, dryRun, alertasSimuladas, ct);
                             break;
                         case ObjetivoRegla.Programa:
-                            alertas += await EjecutarParaPrograma(r, dict, fechaCorte, programaId, ct);
+                            alertas += await EjecutarParaPrograma(r, dict, fechaCorte, programaId, dryRun, alertasSimuladas, ct);
                             break;
                     }
                 }
@@ -70,12 +75,17 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
                 }
             }
 
-            ejec.FinUtc = DateTime.UtcNow;
-            ejec.Exitos = alertas;
-            ejec.Errores = errores;
-            ejec.ResultadoResumen = $"Reglas:{reglas}; Alertas:{alertas}; Errores:{errores}";
-            await _db.SaveChangesAsync(ct);
+            if (!dryRun)
+            {
+                ejec.FinUtc = DateTime.UtcNow;
+                ejec.Exitos = alertas;
+                ejec.Errores = errores;
+                ejec.ResultadoResumen = $"Reglas:{reglas}; Alertas:{alertas}; Errores:{errores}";
+                await _db.SaveChangesAsync(ct);
+            }
 
+            // En modo dryRun, podríamos querer devolver las alertas simuladas de alguna manera
+            // Por ahora, el resumen solo cuenta cuántas se habrían generado
             return new EjecucionResumen(reglas, alertas, errores);
         }
 
@@ -83,20 +93,20 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
         // REGLAS DE PARTICIPANTE
         // ========================================
 
-        private async Task<int> EjecutarParaParticipantes(Regla r, IDictionary<string, (TipoParametro tipo, string val)> p, DateOnly fechaCorte, int? programaId, CancellationToken ct)
+        private async Task<int> EjecutarParaParticipantes(Regla r, IDictionary<string, (TipoParametro tipo, string val)> p, DateOnly fechaCorte, int? programaId, bool dryRun, List<Alerta> alertasSimuladas, CancellationToken ct)
         {
             int generadas = 0;
 
             // REGLA 1: INASISTENCIA_CONSECUTIVA
             if (r.Clave == "INASISTENCIA_CONSECUTIVA")
             {
-                generadas += await ReglaInasistenciaConsecutiva(r, p, fechaCorte, programaId, ct);
+                generadas += await ReglaInasistenciaConsecutiva(r, p, fechaCorte, programaId, dryRun, alertasSimuladas, ct);
             }
 
             // REGLA 2: BAJA_ASISTENCIA_GENERAL
             if (r.Clave == "BAJA_ASISTENCIA_GENERAL")
             {
-                generadas += await ReglaBajaAsistenciaGeneral(r, p, fechaCorte, programaId, ct);
+                generadas += await ReglaBajaAsistenciaGeneral(r, p, fechaCorte, programaId, dryRun, alertasSimuladas, ct);
             }
 
             return generadas;
@@ -105,7 +115,7 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
         /// <summary>
         /// Detecta participantes con múltiples inasistencias consecutivas en una actividad
         /// </summary>
-        private async Task<int> ReglaInasistenciaConsecutiva(Regla r, IDictionary<string, (TipoParametro tipo, string val)> p, DateOnly fechaCorte, int? programaId, CancellationToken ct)
+        private async Task<int> ReglaInasistenciaConsecutiva(Regla r, IDictionary<string, (TipoParametro tipo, string val)> p, DateOnly fechaCorte, int? programaId, bool dryRun, List<Alerta> alertasSimuladas, CancellationToken ct)
         {
             int generadas = 0;
 
@@ -135,7 +145,7 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
 
                 if (streak >= umbral)
                 {
-                    _db.Alertas.Add(new Alerta
+                    var alerta = new Alerta
                     {
                         ReglaId = r.ReglaId,
                         Severidad = r.Severidad,
@@ -145,12 +155,21 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
                         ParticipanteId = inscripcion.ParticipanteId,
                         GeneradaEn = DateTime.UtcNow,
                         Estado = EstadoAlerta.Abierta
-                    });
+                    };
+
+                    if (dryRun)
+                    {
+                        alertasSimuladas.Add(alerta);
+                    }
+                    else
+                    {
+                        _db.Alertas.Add(alerta);
+                    }
                     generadas++;
                 }
             }
 
-            if (generadas > 0)
+            if (generadas > 0 && !dryRun)
                 await _db.SaveChangesAsync(ct);
 
             return generadas;
@@ -159,7 +178,7 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
         /// <summary>
         /// Detecta participantes con porcentaje de asistencia por debajo del umbral
         /// </summary>
-        private async Task<int> ReglaBajaAsistenciaGeneral(Regla r, IDictionary<string, (TipoParametro tipo, string val)> p, DateOnly fechaCorte, int? programaId, CancellationToken ct)
+        private async Task<int> ReglaBajaAsistenciaGeneral(Regla r, IDictionary<string, (TipoParametro tipo, string val)> p, DateOnly fechaCorte, int? programaId, bool dryRun, List<Alerta> alertasSimuladas, CancellationToken ct)
         {
             int generadas = 0;
 
@@ -198,7 +217,7 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
 
                         if (porcAsistencia < (double)umbralPct && porcAsistencia > 0) // Solo alertar si tiene asistencias registradas
                         {
-                            _db.Alertas.Add(new Alerta
+                            var alerta = new Alerta
                             {
                                 ReglaId = r.ReglaId,
                                 Severidad = r.Severidad,
@@ -207,7 +226,11 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
                                 ParticipanteId = participante.ParticipanteId,
                                 GeneradaEn = DateTime.UtcNow,
                                 Estado = EstadoAlerta.Abierta
-                            });
+                            };
+
+                            if (dryRun) alertasSimuladas.Add(alerta);
+                            else _db.Alertas.Add(alerta);
+
                             generadas++;
                         }
                     }
@@ -224,7 +247,7 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
 
                     if (porcAsistencia < (double)umbralPct && porcAsistencia > 0)
                     {
-                        _db.Alertas.Add(new Alerta
+                        var alerta = new Alerta
                         {
                             ReglaId = r.ReglaId,
                             Severidad = r.Severidad,
@@ -233,13 +256,17 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
                             ParticipanteId = participante.ParticipanteId,
                             GeneradaEn = DateTime.UtcNow,
                             Estado = EstadoAlerta.Abierta
-                        });
+                        };
+
+                        if (dryRun) alertasSimuladas.Add(alerta);
+                        else _db.Alertas.Add(alerta);
+
                         generadas++;
                     }
                 }
             }
 
-            if (generadas > 0)
+            if (generadas > 0 && !dryRun)
                 await _db.SaveChangesAsync(ct);
 
             return generadas;
@@ -249,20 +276,20 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
         // REGLAS DE ACTIVIDAD
         // ========================================
 
-        private async Task<int> EjecutarParaActividades(Regla r, IDictionary<string, (TipoParametro tipo, string val)> p, DateOnly fechaCorte, int? programaId, CancellationToken ct)
+        private async Task<int> EjecutarParaActividades(Regla r, IDictionary<string, (TipoParametro tipo, string val)> p, DateOnly fechaCorte, int? programaId, bool dryRun, List<Alerta> alertasSimuladas, CancellationToken ct)
         {
             int generadas = 0;
 
             // REGLA 3: ACTIVIDAD_SIN_ASISTENTES
             if (r.Clave == "ACTIVIDAD_SIN_ASISTENTES")
             {
-                generadas += await ReglaActividadSinAsistentes(r, p, fechaCorte, programaId, ct);
+                generadas += await ReglaActividadSinAsistentes(r, p, fechaCorte, programaId, dryRun, alertasSimuladas, ct);
             }
 
             // REGLA 4: RETRASO_ACTIVIDAD
             if (r.Clave == "RETRASO_ACTIVIDAD")
             {
-                generadas += await ReglaRetrasoActividad(r, p, fechaCorte, programaId, ct);
+                generadas += await ReglaRetrasoActividad(r, p, fechaCorte, programaId, dryRun, alertasSimuladas, ct);
             }
 
             return generadas;
@@ -271,7 +298,7 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
         /// <summary>
         /// Detecta actividades planificadas sin participantes inscritos
         /// </summary>
-        private async Task<int> ReglaActividadSinAsistentes(Regla r, IDictionary<string, (TipoParametro tipo, string val)> p, DateOnly fechaCorte, int? programaId, CancellationToken ct)
+        private async Task<int> ReglaActividadSinAsistentes(Regla r, IDictionary<string, (TipoParametro tipo, string val)> p, DateOnly fechaCorte, int? programaId, bool dryRun, List<Alerta> alertasSimuladas, CancellationToken ct)
         {
             int generadas = 0;
 
@@ -298,7 +325,7 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
 
                 if (countInscritos < minInscritos)
                 {
-                    _db.Alertas.Add(new Alerta
+                    var alerta = new Alerta
                     {
                         ReglaId = r.ReglaId,
                         Severidad = r.Severidad,
@@ -307,12 +334,16 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
                         ActividadId = actividad.ActividadId,
                         GeneradaEn = DateTime.UtcNow,
                         Estado = EstadoAlerta.Abierta
-                    });
+                    };
+
+                    if (dryRun) alertasSimuladas.Add(alerta);
+                    else _db.Alertas.Add(alerta);
+
                     generadas++;
                 }
             }
 
-            if (generadas > 0)
+            if (generadas > 0 && !dryRun)
                 await _db.SaveChangesAsync(ct);
 
             return generadas;
@@ -321,7 +352,7 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
         /// <summary>
         /// Detecta actividades planificadas que no se han ejecutado pasada su fecha
         /// </summary>
-        private async Task<int> ReglaRetrasoActividad(Regla r, IDictionary<string, (TipoParametro tipo, string val)> p, DateOnly fechaCorte, int? programaId, CancellationToken ct)
+        private async Task<int> ReglaRetrasoActividad(Regla r, IDictionary<string, (TipoParametro tipo, string val)> p, DateOnly fechaCorte, int? programaId, bool dryRun, List<Alerta> alertasSimuladas, CancellationToken ct)
         {
             int generadas = 0;
 
@@ -343,7 +374,7 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
             {
                 var diasAtraso = (DateTime.Now - actividad.FechaInicio).Days;
 
-                _db.Alertas.Add(new Alerta
+                var alerta = new Alerta
                 {
                     ReglaId = r.ReglaId,
                     Severidad = r.Severidad,
@@ -352,11 +383,15 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
                     ActividadId = actividad.ActividadId,
                     GeneradaEn = DateTime.UtcNow,
                     Estado = EstadoAlerta.Abierta
-                });
+                };
+
+                if (dryRun) alertasSimuladas.Add(alerta);
+                else _db.Alertas.Add(alerta);
+
                 generadas++;
             }
 
-            if (generadas > 0)
+            if (generadas > 0 && !dryRun)
                 await _db.SaveChangesAsync(ct);
 
             return generadas;
@@ -366,14 +401,14 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
         // REGLAS DE PROGRAMA
         // ========================================
 
-        private async Task<int> EjecutarParaPrograma(Regla r, IDictionary<string, (TipoParametro tipo, string val)> p, DateOnly fechaCorte, int? programaId, CancellationToken ct)
+        private async Task<int> EjecutarParaPrograma(Regla r, IDictionary<string, (TipoParametro tipo, string val)> p, DateOnly fechaCorte, int? programaId, bool dryRun, List<Alerta> alertasSimuladas, CancellationToken ct)
         {
             int generadas = 0;
 
             // REGLA 5: BAJO_CUMPLIMIENTO_POA
             if (r.Clave == "BAJO_CUMPLIMIENTO_POA")
             {
-                generadas += await ReglaBajoCumplimientoPOA(r, p, fechaCorte, programaId, ct);
+                generadas += await ReglaBajoCumplimientoPOA(r, p, fechaCorte, programaId, dryRun, alertasSimuladas, ct);
             }
 
             return generadas;
@@ -382,7 +417,7 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
         /// <summary>
         /// Detecta programas con desvío plan vs ejecución por encima del umbral
         /// </summary>
-        private async Task<int> ReglaBajoCumplimientoPOA(Regla r, IDictionary<string, (TipoParametro tipo, string val)> p, DateOnly fechaCorte, int? programaId, CancellationToken ct)
+        private async Task<int> ReglaBajoCumplimientoPOA(Regla r, IDictionary<string, (TipoParametro tipo, string val)> p, DateOnly fechaCorte, int? programaId, bool dryRun, List<Alerta> alertasSimuladas, CancellationToken ct)
         {
             int generadas = 0;
 
@@ -411,7 +446,7 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
 
                 if (gap >= umbralPct)
                 {
-                    _db.Alertas.Add(new Alerta
+                    var alerta = new Alerta
                     {
                         ReglaId = r.ReglaId,
                         Severidad = r.Severidad,
@@ -419,12 +454,16 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
                         ProgramaId = progId,
                         GeneradaEn = DateTime.UtcNow,
                         Estado = EstadoAlerta.Abierta
-                    });
+                    };
+
+                    if (dryRun) alertasSimuladas.Add(alerta);
+                    else _db.Alertas.Add(alerta);
+
                     generadas++;
                 }
             }
 
-            if (generadas > 0)
+            if (generadas > 0 && !dryRun)
                 await _db.SaveChangesAsync(ct);
 
             return generadas;

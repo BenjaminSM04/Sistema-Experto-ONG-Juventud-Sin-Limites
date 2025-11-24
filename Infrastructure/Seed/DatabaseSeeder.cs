@@ -48,13 +48,16 @@ public static class DatabaseSeeder
         // ========== 9) ASISTENCIAS (para generar alertas) ==========
         await SeedAsistenciasAsync(context);
 
-        // ========== 10) MÉTRICAS MENSUALES ==========
+        // ========== 10) EVIDENCIAS DE ACTIVIDADES ==========
+        await SeedEvidenciasAsync(context);
+
+        // ========== 11) MÉTRICAS MENSUALES ==========
         await SeedMetricasProgramaMesAsync(context);
 
-        // ========== 11) POA DINÁMICO (OPCIONAL) ==========
+        // ========== 12) POA DINÁMICO (OPCIONAL) ==========
         await SeedPOADinamicoAsync(context);
 
-        // ========== 12) DICCIONARIO DE OBSERVACIONES (OPCIONAL) ==========
+        // ========== 13) DICCIONARIO DE OBSERVACIONES (OPCIONAL) ==========
         await SeedDiccionarioObservacionesAsync(context);
 
         Console.WriteLine("✅ Seeding completado exitosamente!");
@@ -114,8 +117,8 @@ public static class DatabaseSeeder
         // Crear persona
         var personaAdmin = new Persona
         {
-            Nombres = "Administrador",
-            Apellidos = "Del Sistema",
+            Nombres = "Benjamín",
+            Apellidos = "Saenz",
             FechaNacimiento = new DateTime(1990, 1, 1),
             Telefono = "0000-0000",
             CreadoEn = DateTime.UtcNow
@@ -128,11 +131,12 @@ public static class DatabaseSeeder
         var adminUser = new Usuario
         {
             PersonaId = personaAdmin.PersonaId,
-            UserName = "admin@ong.com",
-            Email = "admin@ong.com",
+            UserName = "benjaminspsn@outlook.com",
+            Email = "benjaminspsn@outlook.com",
             EmailConfirmed = true,
             Estado = EstadoGeneral.Activo,
             MustChangePassword = false, // Admin no necesita cambiar password en primer login
+            TwoFactorEnabled = true, // Habilitar 2FA por defecto
             CreatedBy = "Sistema",
             CreatedAtUtc = DateTime.UtcNow,
             CreadoEn = DateTime.UtcNow
@@ -158,7 +162,7 @@ public static class DatabaseSeeder
             }
             await context.SaveChangesAsync();
 
-            Console.WriteLine("✅ Usuario administrador creado (admin@ong.com / Admin@2025!)");
+            Console.WriteLine("✅ Usuario administrador creado (benjaminspsn@outlook.com / Administrador@2025!)");
         }
         else
         {
@@ -372,7 +376,7 @@ CreadoEn = DateTime.UtcNow
       {
   Clave = "RETRASO_ACTIVIDAD",
     Nombre = "Retraso en actividad",
-       Descripcion = "Actividad planificada no ejecutada pasada su fecha",
+       Descripcion = "Actividad planificadas no ejecutada pasada su fecha",
       Severidad = Severidad.Alta,
        Objetivo = ObjetivoRegla.Actividad,
   Activa = true,
@@ -488,23 +492,84 @@ new ReglaParametro
     {
         Console.WriteLine("👥 Seeding Personas y Participantes...");
 
-        if (await context.Personas.CountAsync() > 1) // Ya hay más que solo el admin
+        if (await context.Personas.CountAsync() > 1)
         {
             Console.WriteLine("⏭️  Personas ya existen, saltando...");
             return;
         }
 
-        var personasData = new List<(string Nombres, string Apellidos, DateTime Nac, string Tel, DateTime Alta)>
-  {
-      // EDV
-            ("Ana Sofía", "Rojas Pérez", new DateTime(2008, 5, 12), "711-0001", new DateTime(2025, 9, 1)),
-      ("Luis Alberto", "Quiroga Mendoza", new DateTime(2007, 3, 8), "711-0002", new DateTime(2025, 9, 1)),
-            ("Camila", "Flores Vargas", new DateTime(2006, 11, 25), "711-0003", new DateTime(2025, 9, 1)),
-          // ACADEMIA
- ("Diego", "Fernández Ortiz", new DateTime(2005, 2, 14), "722-0001", new DateTime(2025, 9, 1)),
-     ("Mariana", "Gutiérrez Salas", new DateTime(2006, 7, 19), "722-0002", new DateTime(2025, 9, 1)),
-  ("Javier", "Salazar Pinto", new DateTime(2004, 9, 30), "722-0003", new DateTime(2025, 9, 1))
-    };
+        // ========== NOMBRES Y APELLIDOS PARA GENERAR PERSONAS ==========
+        var nombres = new[] {
+            "Ana Sofía", "Luis Alberto", "Camila", "Diego", "Mariana", "Javier",
+            "Valentina", "Santiago", "Isabella", "Mateo", "Sofía", "Sebastián",
+            "Lucía", "Alejandro", "Victoria", "Daniel", "Emma", "Gabriel",
+            "Martina", "Nicolás", "Paula", "Andrés", "Carolina", "Felipe",
+            "Daniela", "Ricardo", "Gabriela", "Miguel", "Alejandra", "Fernando",
+            "Laura", "Cristian", "Natalia", "Jorge", "Andrea", "Roberto",
+            "María José", "Carlos", "Juliana", "Pedro", "Catalina", "Manuel",
+            "Valeria", "Raúl", "Paola", "Eduardo", "Diana", "Rodrigo",
+            "Claudia", "Gustavo", "Patricia", "Hernán", "Sandra", "Óscar",
+            "Beatriz", "Antonio", "Mónica", "Francisco", "Adriana", "José",
+            "Silvia", "Álvaro", "Teresa", "Iván", "Gloria", "Leonardo",
+            "Rosa", "Sergio", "Inés", "Tomás", "Elvira", "Ángel",
+            "Carmen", "Víctor", "Pilar", "Esteban", "Dolores", "Alberto",
+            "Amparo", "Julio", "Concepción", "Ramón", "Mercedes", "Pablo"
+        };
+
+        var apellidos = new[] {
+            "García", "Rodríguez", "Martínez", "Fernández", "López", "González",
+            "Pérez", "Sánchez", "Ramírez", "Torres", "Flores", "Rivera",
+            "Gómez", "Díaz", "Cruz", "Reyes", "Morales", "Jiménez",
+            "Hernández", "Ruiz", "Mendoza", "Álvarez", "Castillo", "Romero",
+            "Ortiz", "Silva", "Vargas", "Castro", "Ramos", "Vega",
+            "Moreno", "Guerrero", "Medina", "Salazar", "Rojas", "Contreras",
+            "Gutiérrez", "Pinto", "Vásquez", "Núñez", "Herrera", "Campos",
+            "Cortés", "Aguilar", "Navarro", "Mendez", "Serrano", "Valencia",
+            "Molina", "Bravo", "Peña", "Cabrera", "Fuentes", "Espinoza"
+        };
+
+        var random = new Random(42); // Seed fijo para reproducibilidad
+
+        // ========== GENERAR 80 PERSONAS Y PARTICIPANTES ==========
+        var personasData = new List<(string Nombres, string Apellidos, DateTime Nac, string Tel, DateTime Alta, string Programa)>();
+
+        // 40 para EDV
+        for (int i = 0; i < 40; i++)
+        {
+            var nombre = nombres[random.Next(nombres.Length)];
+            var apellido1 = apellidos[random.Next(apellidos.Length)];
+            var apellido2 = apellidos[random.Next(apellidos.Length)];
+            var apellido = $"{apellido1} {apellido2}";
+
+            // Edad entre 13 y 25 años
+            var edad = random.Next(13, 26);
+            var nacimiento = DateTime.Now.AddYears(-edad).AddDays(random.Next(-365, 365));
+
+            var telefono = $"{random.Next(6, 10)}{random.Next(10, 100)}-{random.Next(1000, 10000)}";
+
+            // Fecha de alta entre 6 meses y 2 años atrás
+            var alta = DateTime.Now.AddDays(-random.Next(180, 730));
+
+            personasData.Add((nombre, apellido, nacimiento, telefono, alta, "EDV"));
+        }
+
+        // 40 para ACADEMIA
+        for (int i = 0; i < 40; i++)
+        {
+            var nombre = nombres[random.Next(nombres.Length)];
+            var apellido1 = apellidos[random.Next(apellidos.Length)];
+            var apellido2 = apellidos[random.Next(apellidos.Length)];
+            var apellido = $"{apellido1} {apellido2}";
+
+            var edad = random.Next(15, 28);
+            var nacimiento = DateTime.Now.AddYears(-edad).AddDays(random.Next(-365, 365));
+
+            var telefono = $"{random.Next(6, 10)}{random.Next(10, 100)}-{random.Next(1000, 10000)}";
+
+            var alta = DateTime.Now.AddDays(-random.Next(180, 730));
+
+            personasData.Add((nombre, apellido, nacimiento, telefono, alta, "ACADEMIA"));
+        }
 
         var personas = new List<Persona>();
         var participantes = new List<Participante>();
@@ -528,10 +593,13 @@ new ReglaParametro
         // Crear participantes
         for (int i = 0; i < personas.Count; i++)
         {
+            // 90% activos, 10% inactivos
+            var estado = random.Next(100) < 90 ? EstadoGeneral.Activo : EstadoGeneral.Inactivo;
+
             var participante = new Participante
             {
                 PersonaId = personas[i].PersonaId,
-                Estado = EstadoGeneral.Activo,
+                Estado = estado,
                 FechaAlta = personasData[i].Alta,
                 CreadoEn = DateTime.UtcNow
             };
@@ -541,12 +609,12 @@ new ReglaParametro
         await context.Participantes.AddRangeAsync(participantes);
         await context.SaveChangesAsync();
 
-        Console.WriteLine("✅ Personas y Participantes creados exitosamente");
+        Console.WriteLine($"✅ Creadas {personas.Count} personas y {participantes.Count} participantes");
     }
 
     private static async Task SeedActividadesAsync(ApplicationDbContext context)
     {
-        Console.WriteLine("📅 Seeding Actividades octubre 2025...");
+        Console.WriteLine("📅 Seeding Actividades...");
 
         if (await context.Actividades.AnyAsync())
         {
@@ -557,77 +625,159 @@ new ReglaParametro
         var programas = await context.Programas.ToListAsync();
         var progEDV = programas.First(p => p.Clave == "EDV");
         var progACADEMIA = programas.First(p => p.Clave == "ACADEMIA");
+        var progJuventudSegura = programas.First(p => p.Clave == "JUVENTUD_SEGURA");
+        var progBernabe = programas.First(p => p.Clave == "BERNABE");
 
-        var actividades = new List<Actividad>
-  {
-            // EDV - 3 sesiones semanales (miércoles)
-  new Actividad
-     {
-      ProgramaId = progEDV.ProgramaId,
-           Titulo = "EDV Taller 101",
-      Descripcion = "Primera sesión de valores",
-     FechaInicio = new DateTime(2025, 10, 1, 18, 0, 0),
-      FechaFin = new DateTime(2025, 10, 1, 20, 0, 0),
-          Lugar = "Salón A",
-                Tipo = TipoActividad.Taller,
-       Estado = EstadoActividad.Planificada,
-     CreadoEn = DateTime.UtcNow
-            },
-new Actividad
-   {
- ProgramaId = progEDV.ProgramaId,
-    Titulo = "EDV Taller 102",
-    Descripcion = "Segunda sesión de valores",
-                FechaInicio = new DateTime(2025, 10, 8, 18, 0, 0),
-                FechaFin = new DateTime(2025, 10, 8, 20, 0, 0),
-Lugar = "Salón A",
-Tipo = TipoActividad.Taller,
-        Estado = EstadoActividad.Planificada,
- CreadoEn = DateTime.UtcNow
- },
-            new Actividad
-      {
-      ProgramaId = progEDV.ProgramaId,
-    Titulo = "EDV Taller 103",
-              Descripcion = "Tercera sesión de valores",
-   FechaInicio = new DateTime(2025, 10, 15, 18, 0, 0),
-            FechaFin = new DateTime(2025, 10, 15, 20, 0, 0),
-   Lugar = "Salón A",
-Tipo = TipoActividad.Taller,
-           Estado = EstadoActividad.Planificada,
-       CreadoEn = DateTime.UtcNow
-            },
-            // ACADEMIA
-  new Actividad
-    {
-     ProgramaId = progACADEMIA.ProgramaId,
-         Titulo = "Mentoría Liderazgo",
-    Descripcion = "Sesión de mentoría - Para RETRASO_ACTIVIDAD",
-   FechaInicio = new DateTime(2025, 10, 5, 17, 0, 0),
-             FechaFin = new DateTime(2025, 10, 5, 19, 0, 0),
-           Lugar = "Auditorio",
-           Tipo = TipoActividad.Taller,
-     Estado = EstadoActividad.Planificada, // No se ejecutó
-        CreadoEn = DateTime.UtcNow
-            },
-   new Actividad
-        {
-            ProgramaId = progACADEMIA.ProgramaId,
-    Titulo = "Sesión Debate",
-         Descripcion = "Debate de liderazgo - Para ACTIVIDAD_SIN_ASISTENTES",
-        FechaInicio = new DateTime(2025, 10, 20, 17, 0, 0),
-      FechaFin = new DateTime(2025, 10, 20, 19, 0, 0),
-  Lugar = "Aula 2",
-                Tipo = TipoActividad.Taller,
-       Estado = EstadoActividad.Planificada,
-        CreadoEn = DateTime.UtcNow
-            }
+        var actividades = new List<Actividad>();
+        var random = new Random(42);
+
+        var titulosEDV = new[] {
+            "Taller de Valores", "Formación en Liderazgo", "Convivencia Escolar",
+            "Prevención de Violencia", "Cultura de Paz", "Resolución de Conflictos",
+            "Comunicación Asertiva", "Trabajo en Equipo", "Empatía y Respeto"
         };
+
+        var titulosAcademia = new[] {
+            "Mentoría Individual", "Coaching Grupal", "Desarrollo Personal",
+            "Planificación de Vida", "Habilidades Blandas", "Oratoria",
+            "Gestión del Tiempo", "Inteligencia Emocional", "Liderazgo Juvenil"
+        };
+
+        var lugares = new[] { "Salón A", "Salón B", "Auditorio", "Aula 1", "Aula 2", "Patio Central", "Biblioteca" };
+
+        // ========== EDV: 60 actividades en los últimos 6 meses ==========
+        var fechaInicio = DateTime.Now.AddMonths(-6);
+        for (int i = 0; i < 60; i++)
+        {
+            // Actividades semanales (miércoles y viernes)
+            var diasDesdeinicio = i * 3; // Aproximadamente 2 por semana
+            var fechaActividad = fechaInicio.AddDays(diasDesdeinicio);
+
+            // Ajustar al miércoles o viernes más cercano
+            while (fechaActividad.DayOfWeek != DayOfWeek.Wednesday && fechaActividad.DayOfWeek != DayOfWeek.Friday)
+            {
+                fechaActividad = fechaActividad.AddDays(1);
+            }
+
+            var titulo = titulosEDV[random.Next(titulosEDV.Length)] + $" {i + 1:000}";
+            
+            // ESCENARIO 5: Crear actividades RETRASADAS (planificadas pero no ejecutadas después de 7+ días) para alertas ALTA
+            EstadoActividad estado;
+            if (fechaActividad < DateTime.Now.AddDays(-10) && i % 8 == 0) // Cada 8va actividad antigua
+            {
+                estado = EstadoActividad.Planificada; // RETRASO_ACTIVIDAD -> ALTA
+                Console.WriteLine($"🎯 Actividad RETRASADA: {titulo} - Fecha: {fechaActividad:dd/MM/yyyy} (alerta ALTA)");
+            }
+            else
+            {
+                estado = fechaActividad < DateTime.Now.AddDays(-7)
+                    ? (random.Next(100) < 85 ? EstadoActividad.Realizada : EstadoActividad.Planificada)
+                    : EstadoActividad.Planificada;
+            }
+
+            actividades.Add(new Actividad
+            {
+                ProgramaId = progEDV.ProgramaId,
+                Titulo = titulo,
+                Descripcion = $"Sesión de formación en valores para jóvenes - {titulo}",
+                FechaInicio = fechaActividad.Date.AddHours(18),
+                FechaFin = fechaActividad.Date.AddHours(20),
+                Lugar = lugares[random.Next(lugares.Length)],
+                Tipo = random.Next(100) < 70 ? TipoActividad.Taller : (random.Next(100) < 50 ? TipoActividad.Capacitacion : TipoActividad.Evento),
+                Estado = estado,
+                CreadoEn = DateTime.UtcNow
+            });
+        }
+
+        // ========== ACADEMIA: 40 actividades en los últimos 6 meses ==========
+        for (int i = 0; i < 40; i++)
+        {
+            var diasDesdeInicio = i * 4; // Aproximadamente 1-2 por semana
+            var fechaActividad = fechaInicio.AddDays(diasDesdeInicio);
+
+            var titulo = titulosAcademia[random.Next(titulosAcademia.Length)] + $" {i + 1:000}";
+            
+            // ESCENARIO 6: Actividades retrasadas en ACADEMIA
+            EstadoActividad estado;
+            if (fechaActividad < DateTime.Now.AddDays(-10) && i % 10 == 0) // Cada 10ma actividad antigua
+            {
+                estado = EstadoActividad.Planificada; // RETRASO_ACTIVIDAD -> ALTA
+                Console.WriteLine($"🎯 Actividad RETRASADA: {titulo} - Fecha: {fechaActividad:dd/MM/yyyy} (alerta ALTA)");
+            }
+            else
+            {
+                estado = fechaActividad < DateTime.Now.AddDays(-7)
+                    ? (random.Next(100) < 80 ? EstadoActividad.Realizada : EstadoActividad.Planificada)
+                    : EstadoActividad.Planificada;
+            }
+
+            actividades.Add(new Actividad
+            {
+                ProgramaId = progACADEMIA.ProgramaId,
+                Titulo = titulo,
+                Descripcion = $"Desarrollo de habilidades de liderazgo - {titulo}",
+                FechaInicio = fechaActividad.Date.AddHours(17),
+                FechaFin = fechaActividad.Date.AddHours(19),
+                Lugar = lugares[random.Next(lugares.Length)],
+                Tipo = random.Next(100) < 60 ? TipoActividad.Taller : TipoActividad.Reunion,
+                Estado = estado,
+                CreadoEn = DateTime.UtcNow
+            });
+        }
+
+        // ========== JUVENTUD SEGURA: 30 actividades ==========
+        for (int i = 0; i < 30; i++)
+        {
+            var diasDesdeInicio = i * 6;
+            var fechaActividad = fechaInicio.AddDays(diasDesdeInicio);
+
+            var estado = fechaActividad < DateTime.Now.AddDays(-7)
+                ? (random.Next(100) < 75 ? EstadoActividad.Realizada : EstadoActividad.Planificada)
+                : EstadoActividad.Planificada;
+
+            actividades.Add(new Actividad
+            {
+                ProgramaId = progJuventudSegura.ProgramaId,
+                Titulo = $"Prevención y Seguridad {i + 1:000}",
+                Descripcion = "Actividad de prevención y seguridad para jóvenes",
+                FechaInicio = fechaActividad.Date.AddHours(16),
+                FechaFin = fechaActividad.Date.AddHours(18),
+                Lugar = lugares[random.Next(lugares.Length)],
+                Tipo = TipoActividad.Capacitacion,
+                Estado = estado,
+                CreadoEn = DateTime.UtcNow
+            });
+        }
+
+        // ========== BERNABÉ: 20 actividades ==========
+        for (int i = 0; i < 20; i++)
+        {
+            var diasDesdeInicio = i * 9;
+            var fechaActividad = fechaInicio.AddDays(diasDesdeInicio);
+
+            var estado = fechaActividad < DateTime.Now.AddDays(-7)
+                ? (random.Next(100) < 70 ? EstadoActividad.Realizada : EstadoActividad.Planificada)
+                : EstadoActividad.Planificada;
+
+            actividades.Add(new Actividad
+            {
+                ProgramaId = progBernabe.ProgramaId,
+                Titulo = $"Acompañamiento Integral {i + 1:000}",
+                Descripcion = "Sesión de acompañamiento integral a jóvenes",
+                FechaInicio = fechaActividad.Date.AddHours(15),
+                FechaFin = fechaActividad.Date.AddHours(17),
+                Lugar = lugares[random.Next(lugares.Length)],
+                Tipo = TipoActividad.Reunion,
+                Estado = estado,
+                CreadoEn = DateTime.UtcNow
+            });
+        }
 
         await context.Actividades.AddRangeAsync(actividades);
         await context.SaveChangesAsync();
 
-        Console.WriteLine("✅ Actividades creadas exitosamente");
+        Console.WriteLine($"✅ Creadas {actividades.Count} actividades");
+        Console.WriteLine($"🎯 Actividades retrasadas para alertas ALTA: ~{60 / 8 + 40 / 10}");
     }
 
     private static async Task SeedActividadParticipantesAsync(ApplicationDbContext context)
@@ -642,51 +792,99 @@ Tipo = TipoActividad.Taller,
 
         var actividades = await context.Actividades.Include(a => a.Programa).ToListAsync();
         var participantes = await context.Participantes.Include(p => p.Persona).ToListAsync();
+        var random = new Random(42);
 
-        // EDV: participantes 1, 2, 3
-        var partEDV = participantes.Take(3).ToList();
-        // ACADEMIA: participantes 4, 5
-        var partACADEMIA = participantes.Skip(3).Take(2).ToList();
+        // Dividir participantes por programa (primeros 40 EDV, siguientes 40 ACADEMIA)
+        var partEDV = participantes.Take(40).ToList();
+        var partACADEMIA = participantes.Skip(40).Take(40).ToList();
 
         var inscripciones = new List<ActividadParticipante>();
 
-        // EDV-ACT-01, 02, 03 -> inscribir a P-EDV-01, 02, 03
-        var actividadesEDV = actividades.Where(a => a.Programa.Clave == "EDV").ToList();
-        foreach (var act in actividadesEDV)
+        // ========== EDV: Inscribir 25-35 participantes por actividad ==========
+        var actividadesEDV = actividades.Where(a => a.Programa.Clave == "EDV").OrderBy(a => a.FechaInicio).ToList();
+        
+        // ESCENARIO 1: Crear 2-3 actividades SIN INSCRIPTOS para generar alertas INFO
+        for (int i = 0; i < Math.Min(3, actividadesEDV.Count); i++)
         {
-            foreach (var part in partEDV)
+            // Las primeras 3 actividades EDV no tendrán participantes (ACTIVIDAD_SIN_ASISTENTES -> INFO)
+            Console.WriteLine($"🎯 Actividad {actividadesEDV[i].Titulo} - SIN INSCRIPTOS (generará alerta INFO)");
+        }
+        
+        // Resto de actividades EDV con participantes normales
+        for (int i = 3; i < actividadesEDV.Count; i++)
+        {
+            var actividad = actividadesEDV[i];
+            var cantidadParticipantes = random.Next(25, 36);
+            var participantesSeleccionados = partEDV.OrderBy(_ => random.Next()).Take(cantidadParticipantes);
+
+            foreach (var participante in participantesSeleccionados)
             {
                 inscripciones.Add(new ActividadParticipante
                 {
-                    ActividadId = act.ActividadId,
-                    ParticipanteId = part.ParticipanteId,
+                    ActividadId = actividad.ActividadId,
+                    ParticipanteId = participante.ParticipanteId,
                     Rol = RolParticipante.Asistente,
-                    Estado = EstadoInscripcion.Inscrito,
+                    Estado = random.Next(100) < 95 ? EstadoInscripcion.Inscrito : EstadoInscripcion.Retirado,
                     CreadoEn = DateTime.UtcNow
                 });
             }
         }
 
-        // ACA-ACT-01 -> inscribir a P-ACA-01 y P-ACA-02
-        var actMentoria = actividades.First(a => a.Titulo == "Mentoría Liderazgo");
-        foreach (var part in partACADEMIA)
+        // ========== ACADEMIA: Inscribir 15-25 participantes por actividad ==========
+        var actividadesACADEMIA = actividades.Where(a => a.Programa.Clave == "ACADEMIA").OrderBy(a => a.FechaInicio).ToList();
+        
+        // ESCENARIO 2: Crear 2 actividades SIN INSCRIPTOS para generar alertas INFO
+        for (int i = 0; i < Math.Min(2, actividadesACADEMIA.Count); i++)
         {
-            inscripciones.Add(new ActividadParticipante
+            Console.WriteLine($"🎯 Actividad {actividadesACADEMIA[i].Titulo} - SIN INSCRIPTOS (generará alerta INFO)");
+        }
+        
+        // Resto con participantes normales
+        for (int i = 2; i < actividadesACADEMIA.Count; i++)
+        {
+            var actividad = actividadesACADEMIA[i];
+            var cantidadParticipantes = random.Next(15, 26);
+            var participantesSeleccionados = partACADEMIA.OrderBy(_ => random.Next()).Take(cantidadParticipantes);
+
+            foreach (var participante in participantesSeleccionados)
             {
-                ActividadId = actMentoria.ActividadId,
-                ParticipanteId = part.ParticipanteId,
-                Rol = RolParticipante.Asistente,
-                Estado = EstadoInscripcion.Inscrito,
-                CreadoEn = DateTime.UtcNow
-            });
+                inscripciones.Add(new ActividadParticipante
+                {
+                    ActividadId = actividad.ActividadId,
+                    ParticipanteId = participante.ParticipanteId,
+                    Rol = RolParticipante.Asistente,
+                    Estado = random.Next(100) < 93 ? EstadoInscripcion.Inscrito : EstadoInscripcion.Retirado,
+                    CreadoEn = DateTime.UtcNow
+                });
+            }
         }
 
-        // ACA-ACT-02 -> NO inscribir a nadie (para ACTIVIDAD_SIN_ASISTENTES)
+        // ========== OTROS PROGRAMAS: Inscribir participantes variados ==========
+        var actividadesOtros = actividades.Where(a => a.Programa.Clave != "EDV" && a.Programa.Clave != "ACADEMIA").ToList();
+        foreach (var actividad in actividadesOtros)
+        {
+            var cantidadParticipantes = random.Next(10, 21);
+            var todosParticipantes = partEDV.Concat(partACADEMIA).ToList();
+            var participantesSeleccionados = todosParticipantes.OrderBy(_ => random.Next()).Take(cantidadParticipantes);
+
+            foreach (var participante in participantesSeleccionados)
+            {
+                inscripciones.Add(new ActividadParticipante
+                {
+                    ActividadId = actividad.ActividadId,
+                    ParticipanteId = participante.ParticipanteId,
+                    Rol = RolParticipante.Asistente,
+                    Estado = random.Next(100) < 90 ? EstadoInscripcion.Inscrito : EstadoInscripcion.Retirado,
+                    CreadoEn = DateTime.UtcNow
+                });
+            }
+        }
 
         await context.ActividadParticipantes.AddRangeAsync(inscripciones);
         await context.SaveChangesAsync();
 
-        Console.WriteLine("✅ Inscripciones creadas exitosamente");
+        Console.WriteLine($"✅ Creadas {inscripciones.Count} inscripciones a actividades");
+        Console.WriteLine($"🎯 Escenarios creados: {3 + 2} actividades sin inscriptos (alertas INFO)");
     }
 
     private static async Task SeedAsistenciasAsync(ApplicationDbContext context)
@@ -699,102 +897,170 @@ Tipo = TipoActividad.Taller,
             return;
         }
 
-        var actividades = await context.Actividades.Include(a => a.Programa).ToListAsync();
-        var participantes = await context.Participantes.Include(p => p.Persona).ToListAsync();
+        var inscripciones = await context.ActividadParticipantes
+            .Include(ap => ap.Actividad)
+            .Include(ap => ap.Participante)
+            .Where(ap => ap.Actividad.Estado == EstadoActividad.Realizada && ap.Estado == EstadoInscripcion.Inscrito)
+            .OrderBy(ap => ap.Actividad.FechaInicio)
+            .ThenBy(ap => ap.ParticipanteId)
+            .ToListAsync();
 
         var asistencias = new List<Asistencia>();
+        var random = new Random(42);
 
-        // EDV participantes
-        var pEDV01 = participantes.First(p => p.Persona.Nombres == "Ana Sofía");
-        var pEDV02 = participantes.First(p => p.Persona.Nombres == "Luis Alberto");
-        var pEDV03 = participantes.First(p => p.Persona.Nombres == "Camila");
+        var observaciones = new[] {
+            "Participó activamente", "Llegó tarde", "Se retiró temprano",
+            "Excelente participación", "Mostró interés", "Poca participación",
+            null, null, null, null // 40% sin observación
+        };
 
-        var actEDV01 = actividades.First(a => a.Titulo == "EDV Taller 101");
-        var actEDV02 = actividades.First(a => a.Titulo == "EDV Taller 102");
-        var actEDV03 = actividades.First(a => a.Titulo == "EDV Taller 103");
+        // ESCENARIO 3: Crear participantes con BAJA ASISTENCIA GENERAL (< 75%) para alertas ALTA
+        // Seleccionar 5 participantes problema
+        var participantesProblema = inscripciones
+            .GroupBy(i => i.ParticipanteId)
+            .Take(5)
+            .Select(g => g.Key)
+            .ToList();
 
-        // P-EDV-01: 3 ausencias consecutivas
-        asistencias.Add(new Asistencia
-        {
-            ActividadId = actEDV01.ActividadId,
-            ParticipanteId = pEDV01.ParticipanteId,
-            Fecha = new DateTime(2025, 10, 1),
-            Estado = EstadoAsistencia.Ausente,
-            CreadoEn = DateTime.UtcNow
-        });
-        asistencias.Add(new Asistencia
-        {
-            ActividadId = actEDV02.ActividadId,
-            ParticipanteId = pEDV01.ParticipanteId,
-            Fecha = new DateTime(2025, 10, 8),
-            Estado = EstadoAsistencia.Ausente,
-            CreadoEn = DateTime.UtcNow
-        });
-        asistencias.Add(new Asistencia
-        {
-            ActividadId = actEDV03.ActividadId,
-            ParticipanteId = pEDV01.ParticipanteId,
-            Fecha = new DateTime(2025, 10, 15),
-            Estado = EstadoAsistencia.Ausente,
-            CreadoEn = DateTime.UtcNow
-        });
+        Console.WriteLine($"🎯 Participantes con baja asistencia programados: {participantesProblema.Count} (alertas ALTA)");
 
-        // P-EDV-02: 1 presente, 2 ausentes (33.3% < 75%)
-        asistencias.Add(new Asistencia
-        {
-            ActividadId = actEDV01.ActividadId,
-            ParticipanteId = pEDV02.ParticipanteId,
-            Fecha = new DateTime(2025, 10, 1),
-            Estado = EstadoAsistencia.Presente,
-            CreadoEn = DateTime.UtcNow
-        });
-        asistencias.Add(new Asistencia
-        {
-            ActividadId = actEDV02.ActividadId,
-            ParticipanteId = pEDV02.ParticipanteId,
-            Fecha = new DateTime(2025, 10, 8),
-            Estado = EstadoAsistencia.Ausente,
-            CreadoEn = DateTime.UtcNow
-        });
-        asistencias.Add(new Asistencia
-        {
-            ActividadId = actEDV03.ActividadId,
-            ParticipanteId = pEDV02.ParticipanteId,
-            Fecha = new DateTime(2025, 10, 15),
-            Estado = EstadoAsistencia.Ausente,
-            CreadoEn = DateTime.UtcNow
-        });
+        // ESCENARIO 4: Crear participantes con INASISTENCIAS CONSECUTIVAS (3+ ausencias seguidas) para alertas ALTA
+        // Seleccionar 3 participantes con inasistencias consecutivas
+        var participantesInasistenciaConsecutiva = inscripciones
+            .GroupBy(i => i.ParticipanteId)
+            .Skip(5)
+            .Take(3)
+            .Select(g => g.Key)
+            .ToList();
 
-        // P-EDV-03: Control (sin alerta) - 2 presentes, 1 tarde
-        asistencias.Add(new Asistencia
+        Console.WriteLine($"🎯 Participantes con inasistencias consecutivas programados: {participantesInasistenciaConsecutiva.Count} (alertas ALTA)");
+
+        foreach (var inscripcion in inscripciones)
         {
-            ActividadId = actEDV01.ActividadId,
-            ParticipanteId = pEDV03.ParticipanteId,
-            Fecha = new DateTime(2025, 10, 1),
-            Estado = EstadoAsistencia.Presente,
-            CreadoEn = DateTime.UtcNow
-        });
-        asistencias.Add(new Asistencia
-        {
-            ActividadId = actEDV02.ActividadId,
-            ParticipanteId = pEDV03.ParticipanteId,
-            Fecha = new DateTime(2025, 10, 8),
-            Estado = EstadoAsistencia.Presente,
-            CreadoEn = DateTime.UtcNow
-        });
-        asistencias.Add(new Asistencia
-        {
-            ActividadId = actEDV03.ActividadId,
-            ParticipanteId = pEDV03.ParticipanteId,
-            Fecha = new DateTime(2025, 10, 15),
-            Estado = EstadoAsistencia.Tarde,
-            CreadoEn = DateTime.UtcNow
-        });
+            EstadoAsistencia estado;
+
+            // ESCENARIO: Participantes con baja asistencia general (60% ausente)
+            if (participantesProblema.Contains(inscripcion.ParticipanteId))
+            {
+                var dado = random.Next(100);
+                if (dado < 40)
+                    estado = EstadoAsistencia.Presente; // Solo 40% presente
+                else if (dado < 60)
+                    estado = EstadoAsistencia.Tarde;
+                else
+                    estado = EstadoAsistencia.Ausente; // 40% ausente
+            }
+            // ESCENARIO: Participantes con inasistencias consecutivas
+            else if (participantesInasistenciaConsecutiva.Contains(inscripcion.ParticipanteId))
+            {
+                // Crear patrón: P, P, A, A, A, A, P, P (4 ausencias consecutivas)
+                var actividadesDelParticipante = inscripciones
+                    .Where(i => i.ParticipanteId == inscripcion.ParticipanteId)
+                    .OrderBy(i => i.Actividad.FechaInicio)
+                    .ToList();
+                
+                var indice = actividadesDelParticipante.IndexOf(inscripcion);
+                
+                // Ausente en actividades 2, 3, 4, 5 (índices 2-5)
+                if (indice >= 2 && indice <= 5)
+                    estado = EstadoAsistencia.Ausente;
+                else
+                    estado = EstadoAsistencia.Presente;
+            }
+            // Resto: distribución normal (82% presentes)
+            else
+            {
+                var dado = random.Next(100);
+                if (dado < 82)
+                    estado = EstadoAsistencia.Presente;
+                else if (dado < 92)
+                    estado = EstadoAsistencia.Ausente;
+                else if (dado < 97)
+                    estado = EstadoAsistencia.Tarde;
+                else
+                    estado = EstadoAsistencia.Justificado;
+            }
+
+            asistencias.Add(new Asistencia
+            {
+                ActividadId = inscripcion.ActividadId,
+                ParticipanteId = inscripcion.ParticipanteId,
+                Fecha = inscripcion.Actividad.FechaInicio.Date,
+                Estado = estado,
+                Observacion = random.Next(100) < 30 ? observaciones[random.Next(observaciones.Length)] : null,
+                CreadoEn = DateTime.UtcNow
+            });
+        }
 
         await context.Asistencias.AddRangeAsync(asistencias);
         await context.SaveChangesAsync();
 
-        Console.WriteLine("✅ Asistencias creadas exitosamente");
+        Console.WriteLine($"✅ Creadas {asistencias.Count} asistencias");
+        Console.WriteLine($"🎯 Escenarios para motor de inferencia:");
+        Console.WriteLine($"   - {participantesProblema.Count} participantes con baja asistencia general < 75% (ALTA)");
+        Console.WriteLine($"   - {participantesInasistenciaConsecutiva.Count} participantes con 3+ inasistencias consecutivas (ALTA)");
+    }
+
+    private static async Task SeedEvidenciasAsync(ApplicationDbContext context)
+    {
+        Console.WriteLine("📎 Seeding Evidencias de Actividades...");
+
+        if (await context.EvidenciaActividades.AnyAsync())
+        {
+            Console.WriteLine("⏭️  Evidencias ya existen, saltando...");
+            return;
+        }
+
+        var actividades = await context.Actividades
+            .Where(a => a.Estado == EstadoActividad.Realizada && !a.IsDeleted)
+            .ToListAsync();
+
+        var evidencias = new List<EvidenciaActividad>();
+        var random = new Random(42);
+
+        var tiposEvidencia = new[] {
+            TipoEvidencia.Foto,
+            TipoEvidencia.Video,
+            TipoEvidencia.Acta,
+            TipoEvidencia.Lista
+        };
+
+        foreach (var actividad in actividades)
+        {
+            // 70% de actividades tienen evidencias
+            if (random.Next(100) < 70)
+            {
+                // 1-3 evidencias por actividad
+                var cantidadEvidencias = random.Next(1, 4);
+                
+                for (int i = 0; i < cantidadEvidencias; i++)
+                {
+                    var tipo = tiposEvidencia[random.Next(tiposEvidencia.Length)];
+                    var extension = tipo switch
+                    {
+                        TipoEvidencia.Foto => ".jpg",
+                        TipoEvidencia.Video => ".mp4",
+                        TipoEvidencia.Acta => ".pdf",
+                        TipoEvidencia.Lista => ".xlsx",
+                        _ => ".jpg"
+                    };
+
+                    evidencias.Add(new EvidenciaActividad
+                    {
+                        ActividadId = actividad.ActividadId,
+                        Tipo = tipo,
+                        ArchivoPath = $"/evidencias/{actividad.ActividadId}/{tipo}_{i + 1}{extension}",
+                        SubidoEn = actividad.FechaInicio.AddDays(random.Next(1, 8)),
+                        CreadoEn = DateTime.UtcNow
+                    });
+                }
+            }
+        }
+
+        await context.EvidenciaActividades.AddRangeAsync(evidencias);
+        await context.SaveChangesAsync();
+
+        Console.WriteLine($"✅ Creadas {evidencias.Count} evidencias para {actividades.Count} actividades");
     }
 
     private static async Task SeedMetricasProgramaMesAsync(ApplicationDbContext context)
@@ -808,41 +1074,68 @@ Tipo = TipoActividad.Taller,
         }
 
         var programas = await context.Programas.ToListAsync();
-        var progEDV = programas.First(p => p.Clave == "EDV");
-        var progACADEMIA = programas.First(p => p.Clave == "ACADEMIA");
+        var metricas = new List<MetricasProgramaMes>();
+        var random = new Random(42);
 
-        var metricas = new List<MetricasProgramaMes>
+        // Generar métricas para los últimos 6 meses
+        var fechaInicio = DateTime.Now.AddMonths(-6);
+
+        for (int mes = 0; mes < 6; mes++)
         {
-          // EDV - octubre 2025 (GAP = 50%)
-     new MetricasProgramaMes
-       {
-     ProgramaId = progEDV.ProgramaId,
-     AnioMes = "2025-10",
-            ActividadesPlanificadas = 12,
-        ActividadesEjecutadas = 6,
-         PorcCumplimiento = 50.00m,
-                RetrasoPromedioDias = 2.0m,
-   PorcAsistenciaProm = 60.00m,
-    CreadoEn = DateTime.UtcNow
-            },
-   // ACADEMIA - octubre 2025 (GAP = 30%)
-  new MetricasProgramaMes
-      {
-      ProgramaId = progACADEMIA.ProgramaId,
-     AnioMes = "2025-10",
-         ActividadesPlanificadas = 10,
-       ActividadesEjecutadas = 7,
-          PorcCumplimiento = 70.00m,
-    RetrasoPromedioDias = 1.0m,
-                PorcAsistenciaProm = 65.00m,
-   CreadoEn = DateTime.UtcNow
-}
-        };
+            var fecha = fechaInicio.AddMonths(mes);
+            var anioMes = $"{fecha.Year:0000}-{fecha.Month:00}";
+
+            foreach (var programa in programas)
+            {
+                // Calcular métricas reales
+                var planificadas = await context.Actividades
+                    .Where(a => a.ProgramaId == programa.ProgramaId &&
+                                a.FechaInicio.Year == fecha.Year &&
+                                a.FechaInicio.Month == fecha.Month &&
+                                !a.IsDeleted)
+                    .CountAsync();
+
+                var ejecutadas = await context.Actividades
+                    .Where(a => a.ProgramaId == programa.ProgramaId &&
+                                a.FechaInicio.Year == fecha.Year &&
+                                a.FechaInicio.Month == fecha.Month &&
+                                a.Estado == EstadoActividad.Realizada &&
+                                !a.IsDeleted)
+                    .CountAsync();
+
+                var cumplimiento = planificadas > 0 ? (ejecutadas * 100.0m / planificadas) : 0;
+
+                // Calcular asistencia promedio
+                var asistencias = await context.Asistencias
+                    .Include(a => a.Actividad)
+                    .Where(a => a.Actividad.ProgramaId == programa.ProgramaId &&
+                                a.Fecha.Year == fecha.Year &&
+                                a.Fecha.Month == fecha.Month &&
+                                !a.IsDeleted)
+                    .ToListAsync();
+
+                var totalAsistencias = asistencias.Count;
+                var presentes = asistencias.Count(a => a.Estado == EstadoAsistencia.Presente || a.Estado == EstadoAsistencia.Tarde);
+                var porcAsistencia = totalAsistencias > 0 ? (presentes * 100.0m / totalAsistencias) : 0;
+
+                metricas.Add(new MetricasProgramaMes
+                {
+                    ProgramaId = programa.ProgramaId,
+                    AnioMes = anioMes,
+                    ActividadesPlanificadas = planificadas,
+                    ActividadesEjecutadas = ejecutadas,
+                    PorcCumplimiento = Math.Round(cumplimiento, 2),
+                    RetrasoPromedioDias = random.Next(0, 5) + (decimal)random.NextDouble(),
+                    PorcAsistenciaProm = Math.Round(porcAsistencia, 2),
+                    CreadoEn = DateTime.UtcNow
+                });
+            }
+        }
 
         await context.MetricasProgramaMes.AddRangeAsync(metricas);
         await context.SaveChangesAsync();
 
-        Console.WriteLine("✅ Métricas mensuales creadas exitosamente");
+        Console.WriteLine($"✅ Creadas {metricas.Count} métricas mensuales");
     }
 
     private static async Task SeedPOADinamicoAsync(ApplicationDbContext context)
@@ -881,58 +1174,217 @@ Tipo = TipoActividad.Taller,
         await context.POAPlantillas.AddRangeAsync(new[] { plantillaEDV, plantillaACADEMIA });
         await context.SaveChangesAsync();
 
-        // Campos para EDV
-        var campoEDVPlan = new POACampo
+        // ========== CAMPOS COMPLETOS PARA EDV ==========
+        var camposEDV = new List<POACampo>
         {
-            PlantillaId = plantillaEDV.PlantillaId,
-            Clave = "TALLERES_PLAN",
-            Etiqueta = "Talleres Planificados",
-            TipoDato = TipoDato.Entero,
-            Requerido = true,
-            Orden = 1,
-            Alcance = AlcancePOA.Programa,
-            CreadoEn = DateTime.UtcNow
+            // 1. Actividades
+            new POACampo
+            {
+                PlantillaId = plantillaEDV.PlantillaId,
+                Clave = "ACTIVIDADES_PLANIFICADAS",
+                Etiqueta = "Actividades Planificadas",
+                TipoDato = TipoDato.Entero,
+                Requerido = true,
+                Orden = 1,
+                Alcance = AlcancePOA.Programa,
+                CreadoEn = DateTime.UtcNow
+            },
+            new POACampo
+            {
+                PlantillaId = plantillaEDV.PlantillaId,
+                Clave = "ACTIVIDADES_EJECUTADAS",
+                Etiqueta = "Actividades Ejecutadas",
+                TipoDato = TipoDato.Entero,
+                Requerido = false,
+                Orden = 2,
+                Alcance = AlcancePOA.Programa,
+                CreadoEn = DateTime.UtcNow
+            },
+            
+            // 2. Presupuesto
+            new POACampo
+            {
+                PlantillaId = plantillaEDV.PlantillaId,
+                Clave = "PRESUPUESTO_TOTAL",
+                Etiqueta = "Presupuesto Total",
+                TipoDato = TipoDato.Decimal,
+                Requerido = false,
+                Orden = 3,
+                Unidad = "USD",
+                Alcance = AlcancePOA.Programa,
+                CreadoEn = DateTime.UtcNow
+            },
+            new POACampo
+            {
+                PlantillaId = plantillaEDV.PlantillaId,
+                Clave = "PRESUPUESTO_EJECUTADO",
+                Etiqueta = "Presupuesto Ejecutado",
+                TipoDato = TipoDato.Decimal,
+                Requerido = false,
+                Orden = 4,
+                Unidad = "USD",
+                Alcance = AlcancePOA.Programa,
+                CreadoEn = DateTime.UtcNow
+            },
+            
+            // 3. Participantes
+            new POACampo
+            {
+                PlantillaId = plantillaEDV.PlantillaId,
+                Clave = "TOTAL_PARTICIPANTES",
+                Etiqueta = "Total Participantes",
+                TipoDato = TipoDato.Entero,
+                Requerido = false,
+                Orden = 5,
+                Alcance = AlcancePOA.Programa,
+                CreadoEn = DateTime.UtcNow
+            },
+            new POACampo
+            {
+                PlantillaId = plantillaEDV.PlantillaId,
+                Clave = "PARTICIPANTES_ACTIVOS",
+                Etiqueta = "Participantes Activos",
+                TipoDato = TipoDato.Entero,
+                Requerido = false,
+                Orden = 6,
+                Alcance = AlcancePOA.Programa,
+                CreadoEn = DateTime.UtcNow
+            },
+
+           new POACampo
+            {
+                PlantillaId = plantillaEDV.PlantillaId,
+                Clave = "PORCENTAJE_ASISTENCIA",
+                Etiqueta = "Porcentaje de Asistencia Promedio",
+                TipoDato = TipoDato.Decimal,
+                Requerido = false,
+                Orden = 7,
+                Unidad = "%",
+                Alcance = AlcancePOA.Programa,
+                CreadoEn = DateTime.UtcNow
+            },
+            new POACampo
+            {
+                PlantillaId = plantillaEDV.PlantillaId,
+                Clave = "PORCENTAJE_CUMPLIMIENTO",
+                Etiqueta = "Porcentaje de Cumplimiento General",
+                TipoDato = TipoDato.Decimal,
+                Requerido = false,
+                Orden = 8,
+                Unidad = "%",
+                Alcance = AlcancePOA.Programa,
+                CreadoEn = DateTime.UtcNow
+            }
         };
 
-        var campoEDVEjec = new POACampo
+        // ========== CAMPOS COMPLETOS PARA ACADEMIA ==========
+        var camposACADEMIA = new List<POACampo>
         {
-            PlantillaId = plantillaEDV.PlantillaId,
-            Clave = "TALLERES_EJEC",
-            Etiqueta = "Talleres Ejecutados",
-            TipoDato = TipoDato.Entero,
-            Requerido = true,
-            Orden = 2,
-            Alcance = AlcancePOA.Programa,
-            CreadoEn = DateTime.UtcNow
+            // 1. Actividades
+            new POACampo
+            {
+                PlantillaId = plantillaACADEMIA.PlantillaId,
+                Clave = "ACTIVIDADES_PLANIFICADAS",
+                Etiqueta = "Sesiones Planificadas",
+                TipoDato = TipoDato.Entero,
+                Requerido = true,
+                Orden = 1,
+                Alcance = AlcancePOA.Programa,
+                CreadoEn = DateTime.UtcNow
+            },
+            new POACampo
+            {
+                PlantillaId = plantillaACADEMIA.PlantillaId,
+                Clave = "ACTIVIDADES_EJECUTADAS",
+                Etiqueta = "Sesiones Ejecutadas",
+                TipoDato = TipoDato.Entero,
+                Requerido = false,
+                Orden = 2,
+                Alcance = AlcancePOA.Programa,
+                CreadoEn = DateTime.UtcNow
+            },
+            
+            // 2. Presupuesto
+            new POACampo
+            {
+                PlantillaId = plantillaACADEMIA.PlantillaId,
+                Clave = "PRESUPUESTO_TOTAL",
+                Etiqueta = "Presupuesto Total",
+                TipoDato = TipoDato.Decimal,
+                Requerido = false,
+                Orden = 3,
+                Unidad = "USD",
+                Alcance = AlcancePOA.Programa,
+                CreadoEn = DateTime.UtcNow
+            },
+            new POACampo
+            {
+                PlantillaId = plantillaACADEMIA.PlantillaId,
+                Clave = "PRESUPUESTO_EJECUTADO",
+                Etiqueta = "Presupuesto Ejecutado",
+                TipoDato = TipoDato.Decimal,
+                Requerido = false,
+                Orden = 4,
+                Unidad = "USD",
+                Alcance = AlcancePOA.Programa,
+                CreadoEn = DateTime.UtcNow
+            },
+            
+            // 3. Participantes
+            new POACampo
+            {
+                PlantillaId = plantillaACADEMIA.PlantillaId,
+                Clave = "TOTAL_PARTICIPANTES",
+                Etiqueta = "Total Participantes",
+                TipoDato = TipoDato.Entero,
+                Requerido = false,
+                Orden = 5,
+                Alcance = AlcancePOA.Programa,
+                CreadoEn = DateTime.UtcNow
+            },
+            new POACampo
+            {
+                PlantillaId = plantillaACADEMIA.PlantillaId,
+                Clave = "PARTICIPANTES_ACTIVOS",
+                Etiqueta = "Participantes Activos",
+                TipoDato = TipoDato.Entero,
+                Requerido = false,
+                Orden = 6,
+                Alcance = AlcancePOA.Programa,
+                CreadoEn = DateTime.UtcNow
+            },
+
+           new POACampo
+            {
+                PlantillaId = plantillaACADEMIA.PlantillaId,
+                Clave = "PORCENTAJE_ASISTENCIA",
+                Etiqueta = "Porcentaje de Asistencia Promedio",
+                TipoDato = TipoDato.Decimal,
+                Requerido = false,
+                Orden = 7,
+                Unidad = "%",
+                Alcance = AlcancePOA.Programa,
+                CreadoEn = DateTime.UtcNow
+            },
+            new POACampo
+            {
+                PlantillaId = plantillaACADEMIA.PlantillaId,
+                Clave = "PORCENTAJE_CUMPLIMIENTO",
+                Etiqueta = "Porcentaje de Cumplimiento General",
+                TipoDato = TipoDato.Decimal,
+                Requerido = false,
+                Orden = 8,
+                Unidad = "%",
+                Alcance = AlcancePOA.Programa,
+                CreadoEn = DateTime.UtcNow
+            }
         };
 
-        // Campos para ACADEMIA
-        var campoACADEMIAPlan = new POACampo
-        {
-            PlantillaId = plantillaACADEMIA.PlantillaId,
-            Clave = "SESIONES_PLAN",
-            Etiqueta = "Sesiones Planificadas",
-            TipoDato = TipoDato.Entero,
-            Requerido = true,
-            Orden = 1,
-            Alcance = AlcancePOA.Programa,
-            CreadoEn = DateTime.UtcNow
-        };
-
-        var campoACADEMIAEjec = new POACampo
-        {
-            PlantillaId = plantillaACADEMIA.PlantillaId,
-            Clave = "SESIONES_EJEC",
-            Etiqueta = "Sesiones Ejecutadas",
-            TipoDato = TipoDato.Entero,
-            Requerido = true,
-            Orden = 2,
-            Alcance = AlcancePOA.Programa,
-            CreadoEn = DateTime.UtcNow
-        };
-
-        await context.POACampos.AddRangeAsync(new[] { campoEDVPlan, campoEDVEjec, campoACADEMIAPlan, campoACADEMIAEjec });
+        await context.POACampos.AddRangeAsync(camposEDV);
+        await context.POACampos.AddRangeAsync(camposACADEMIA);
         await context.SaveChangesAsync();
+
+        Console.WriteLine("✅ Campos POA creados exitosamente");
 
         // Instancias octubre 2025
         var instanciaEDV = new POAInstancia
@@ -958,49 +1410,80 @@ Tipo = TipoActividad.Taller,
         await context.POAInstancias.AddRangeAsync(new[] { instanciaEDV, instanciaACADEMIA });
         await context.SaveChangesAsync();
 
-        // Valores
+        // Calcular valores reales desde las actividades
+        var actividadesEDV = await context.Actividades
+            .Where(a => a.ProgramaId == progEDV.ProgramaId && 
+                       a.FechaInicio.Year == 2025 && 
+                       a.FechaInicio.Month == 10 &&
+                       !a.IsDeleted)
+            .ToListAsync();
+
+        var actividadesACADEMIA = await context.Actividades
+            .Where(a => a.ProgramaId == progACADEMIA.ProgramaId && 
+                       a.FechaInicio.Year == 2025 && 
+                       a.FechaInicio.Month == 10 &&
+                       !a.IsDeleted)
+            .ToListAsync();
+
+        // ESCENARIO 7: Generar BAJO CUMPLIMIENTO POA para alertas CRÍTICAS
+        // EDV: Planificadas 20, pero solo ejecutadas 10 = 50% (umbral 20% = alerta crítica)
+        var planificadasEDV = 20;
+        var ejecutadasEDV = 10; // 50% cumplimiento -> desviación 50% > 20% umbral
+        
+        // ACADEMIA: Planificadas 15, pero solo ejecutadas 11 = 73.3% (umbral 15% = alerta crítica)
+        var planificadasACADEMIA = 15;
+        var ejecutadasACADEMIA = 11; // 73.3% cumplimiento -> desviación 26.7% > 15% umbral
+
+        Console.WriteLine($"🎯 POA EDV: Planificadas {planificadasEDV}, Ejecutadas {ejecutadasEDV} = {(ejecutadasEDV * 100.0 / planificadasEDV):F1}% (alerta CRÍTICA esperada)");
+        Console.WriteLine($"🎯 POA ACADEMIA: Planificadas {planificadasACADEMIA}, Ejecutadas {ejecutadasACADEMIA} = {(ejecutadasACADEMIA * 100.0 / planificadasACADEMIA):F1}% (alerta CRÍTICA esperada)");
+
         var valores = new List<POAValor>
         {
-            // EDV
-     new POAValor
-   {
-     InstanciaId = instanciaEDV.InstanciaId,
-    CampoId = campoEDVPlan.CampoId,
-           ProgramaId = progEDV.ProgramaId,
-     ValorNumero = 12,
-       CreadoEn = DateTime.UtcNow
-     },
-  new POAValor
+            // EDV - Valores que generan alerta crítica
+            new POAValor
             {
                 InstanciaId = instanciaEDV.InstanciaId,
- CampoId = campoEDVEjec.CampoId,
+                CampoId = camposEDV[0].CampoId,
                 ProgramaId = progEDV.ProgramaId,
-      ValorNumero = 6,
-       CreadoEn = DateTime.UtcNow
-            },
-            // ACADEMIA
- new POAValor
-  {
-                InstanciaId = instanciaACADEMIA.InstanciaId,
-       CampoId = campoACADEMIAPlan.CampoId,
-              ProgramaId = progACADEMIA.ProgramaId,
-         ValorNumero = 10,
+                ValorNumero = planificadasEDV,
+                ValorDecimal = planificadasEDV,
                 CreadoEn = DateTime.UtcNow
             },
-   new POAValor
-    {
-        InstanciaId = instanciaACADEMIA.InstanciaId,
-    CampoId = campoACADEMIAEjec.CampoId,
-    ProgramaId = progACADEMIA.ProgramaId,
-   ValorNumero = 7,
-        CreadoEn = DateTime.UtcNow
-      }
+            new POAValor
+            {
+                InstanciaId = instanciaEDV.InstanciaId,
+                CampoId = camposEDV[1].CampoId,
+                ProgramaId = progEDV.ProgramaId,
+                ValorNumero = ejecutadasEDV,
+                ValorDecimal = ejecutadasEDV,
+                CreadoEn = DateTime.UtcNow
+            },
+            
+            // ACADEMIA - Valores que generan alerta crítica
+            new POAValor
+            {
+                InstanciaId = instanciaACADEMIA.InstanciaId,
+                CampoId = camposACADEMIA[0].CampoId,
+                ProgramaId = progACADEMIA.ProgramaId,
+                ValorNumero = planificadasACADEMIA,
+                ValorDecimal = planificadasACADEMIA,
+                CreadoEn = DateTime.UtcNow
+            },
+            new POAValor
+            {
+                InstanciaId = instanciaACADEMIA.InstanciaId,
+                CampoId = camposACADEMIA[1].CampoId,
+                ProgramaId = progACADEMIA.ProgramaId,
+                ValorNumero = ejecutadasACADEMIA,
+                ValorDecimal = ejecutadasACADEMIA,
+                CreadoEn = DateTime.UtcNow
+            }
         };
 
         await context.POAValores.AddRangeAsync(valores);
         await context.SaveChangesAsync();
 
-        Console.WriteLine("✅ POA Dinámico creado exitosamente");
+        Console.WriteLine("✅ POA Dinámico creado exitosamente con campos completos");
     }
 
     private static async Task SeedDiccionarioObservacionesAsync(ApplicationDbContext context)
@@ -1020,21 +1503,21 @@ Tipo = TipoActividad.Taller,
         var diccionarios = new List<DiccionarioObservaciones>
         {
             new DiccionarioObservaciones
-   {
-    Expresion = "llegó tarde",
-        Ponderacion = 0.2m,
-     Ambito = AmbitoDiccionario.Global,
-       Activo = true,
- CreadoEn = DateTime.UtcNow
+            {
+                Expresion = "llegó tarde",
+                Ponderacion = 0.2m,
+                Ambito = AmbitoDiccionario.Global,
+                Activo = true,
+                CreadoEn = DateTime.UtcNow
             },
             new DiccionarioObservaciones
-          {
+            {
                 Expresion = "no asistió",
-   Ponderacion = 0.5m,
-       Ambito = AmbitoDiccionario.Global,
-      Activo = true,
-   CreadoEn = DateTime.UtcNow
-   }
+                Ponderacion = 0.5m,
+                Ambito = AmbitoDiccionario.Global,
+                Activo = true,
+                CreadoEn = DateTime.UtcNow
+            }
         };
 
         await context.DiccionarioObservaciones.AddRangeAsync(diccionarios);
@@ -1046,7 +1529,6 @@ Tipo = TipoActividad.Taller,
         {
             if (dic.Expresion == "llegó tarde")
             {
-                // EDV y ACADEMIA
                 relaciones.Add(new DiccionarioObservacionesPrograma
                 {
                     DiccionarioId = dic.DiccionarioId,
@@ -1062,7 +1544,6 @@ Tipo = TipoActividad.Taller,
             }
             else if (dic.Expresion == "no asistió")
             {
-                // Solo EDV
                 relaciones.Add(new DiccionarioObservacionesPrograma
                 {
                     DiccionarioId = dic.DiccionarioId,
@@ -1075,6 +1556,7 @@ Tipo = TipoActividad.Taller,
         await context.DiccionarioObservacionesProgramas.AddRangeAsync(relaciones);
         await context.SaveChangesAsync();
 
-        Console.WriteLine("✅ Diccionario de Observaciones creado exitosamente");
+        Console.WriteLine("Diccionario de Observaciones creado exitosamente");
     }
 }
+

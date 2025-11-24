@@ -1,0 +1,236 @@
+﻿@page "/poa/{InstanciaId:int}"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Pages.POA
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Shared
+
+@inject POAService POAService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+
+<PageTitle>POA - @(_poa?.PeriodoTexto ?? "Cargando...")</PageTitle>
+
+<style>
+    .mythra-header {
+        background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
+        color: #FEFEFD;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+
+    .mythra-tab-panel {
+        padding: 2rem;
+    }
+</style>
+
+<AutorizacionWrapper RolesRequeridos="Administrador">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    @if (_cargando)
+    {
+        <div style="text-align: center; padding: 4rem;">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        </div>
+    }
+    else if (_poa == null)
+    {
+        <MudAlert Severity="Severity.Error">POA no encontrado</MudAlert>
+    }
+    else
+    {
+        <div class="mythra-header">
+            <MudGrid>
+                <MudItem xs="12" md="2" Class="d-flex align-center justify-center">
+                    <!-- Logo del programa -->
+                    @if (_poa != null && !string.IsNullOrEmpty(_poa.ProgramaClave))
+                    {
+                        <img src="@ObtenerRutaLogo(_poa.ProgramaClave)" 
+                             alt="@_poa.ProgramaNombre" 
+                             style="max-width: 120px; max-height: 100px; object-fit: contain;" />
+                    }
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudText Typo="Typo.h4">
+                        <MudIcon Icon="@Icons.Material.Filled.Assignment" Class="mr-2" />
+                        POA @_poa.PeriodoTexto
+                    </MudText>
+                    <MudText Typo="Typo.body1" Class="mt-2" Style="opacity: 0.9;">
+                        Programa: @_poa.ProgramaNombre (@_poa.ProgramaClave)
+                    </MudText>
+                </MudItem>
+                <MudItem xs="12" md="4" Class="d-flex align-end justify-end gap-2">
+                    <MudButton Variant="Variant.Text" 
+                              StartIcon="@Icons.Material.Filled.ArrowBack"
+                              OnClick="Volver"
+                              Style="color: #FEFEFD;">
+                        Volver
+                    </MudButton>
+                    
+                    <!-- Botón de Exportación PDF Completo -->
+                    <MudButton Variant="Variant.Filled" 
+                              Color="Color.Error"
+                              StartIcon="@Icons.Material.Filled.PictureAsPdf"
+                              OnClick="ExportarPDF"
+                              Disabled="_exportando"
+                              Style="font-weight: 600;">
+                        @if (_exportando)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" />
+                        }
+                        Exportar PDF
+                    </MudButton>
+                    
+                    <MudButton Variant="Variant.Filled" 
+                              StartIcon="@Icons.Material.Filled.Edit"
+                              OnClick="EditarPOA"
+                              Style="background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%); color: #4D3935; font-weight: 600;">
+                        Editar
+                    </MudButton>
+                    @if (_poa.Estado != "Aprobado")
+                    {
+                        <MudButton Variant="Variant.Filled" 
+                                  StartIcon="@Icons.Material.Filled.CheckCircle"
+                                  OnClick="AprobarPOA"
+                                  Disabled="_aprobando"
+                                  Style="background: linear-gradient(135deg, #F7C484 0%, #E6B374 100%); color: #4D3935; font-weight: 600;">
+                            @if (_aprobando)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            }
+                            Aprobar
+                        </MudButton>
+                    }
+                    <MudChip T="string" Size="Size.Medium" Style="background-color: #9FD996; color: #4D3935; font-weight: 600;">
+                        @_poa.Estado
+                    </MudChip>
+                </MudItem>
+            </MudGrid>
+        </div>
+
+        <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" PanelClass="mythra-tab-panel">
+            <MudTabPanel Text="Dashboard" Icon="@Icons.Material.Filled.Dashboard">
+                <POADashboard InstanciaId="@InstanciaId" />
+            </MudTabPanel>
+        </MudTabs>
+    }
+</MudContainer>
+</AutorizacionWrapper>
+
+@code {
+    [Parameter] public int InstanciaId { get; set; }
+
+    private POAViewModel? _poa;
+    private PlantillaPOAViewModel? _plantilla;
+    private bool _cargando = true;
+    private bool _aprobando = false;
+    private bool _exportando = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatosAsync();
+    }
+
+    private async Task CargarDatosAsync()
+    {
+        _cargando = true;
+        try
+        {
+            _poa = await POAService.ObtenerPOAPorIdAsync(InstanciaId);
+            _plantilla = await POAService.ObtenerPlantillaConValoresAsync(InstanciaId);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cargar POA: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task ExportarPDF()
+    {
+        if (_exportando) return;
+
+        _exportando = true;
+        StateHasChanged();
+
+        try
+        {
+            // Navegar a la página de exportación que manejará la generación y descarga
+            var url = $"/poa/exportar/{InstanciaId}";
+            Navigation.NavigateTo(url, forceLoad: true);
+            
+            Snackbar.Add("Generando PDF completo...", Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al exportar PDF: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            // Esperar un momento para que la descarga inicie
+            await Task.Delay(1000);
+            _exportando = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnGuardado()
+    {
+        await CargarDatosAsync();
+        Snackbar.Add("POA guardado exitosamente", Severity.Success);
+    }
+
+    private void Volver()
+    {
+        if (_poa != null)
+        {
+            Navigation.NavigateTo($"/poas/{_poa.ProgramaId}");
+        }
+        else
+        {
+            Navigation.NavigateTo("/poas");
+        }
+    }
+
+    private void EditarPOA()
+    {
+        Navigation.NavigateTo($"/poa/editar/{InstanciaId}");
+    }
+
+    private async Task AprobarPOA()
+    {
+        if (_aprobando) return;
+
+        _aprobando = true;
+        try
+        {
+            await POAService.AprobarPOAAsync(InstanciaId);
+            await CargarDatosAsync();
+            Snackbar.Add("POA aprobado exitosamente", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al aprobar POA: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _aprobando = false;
+        }
+    }
+
+    private string ObtenerRutaLogo(string clave)
+    {
+        return clave switch
+        {
+            "EDV" => "/images/escueladevida.png",
+            "ACADEMIA" => "/images/Academias.png",
+            "JUVENTUD_SEGURA" => "/images/JuventudSegura.png",
+            "BERNABE" => "/images/bernabe.png",
+            _ => "/images/bernabe.png"
+        };
+    }
+}

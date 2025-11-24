@@ -1,0 +1,106 @@
+﻿@page "/admin/motor/reglas/crear"
+@rendermode InteractiveServer
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Api.Models
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Shared
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Pages.Admin.Motor
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services
+@inject ReglaAdminService ReglaService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Nueva Regla - Motor de Inferencia</PageTitle>
+
+<AutorizacionWrapper RolesRequeridos="Administrador">
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <div class="mythra-header">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudText Typo="Typo.h4">
+                    <MudIcon Icon="@Icons.Material.Filled.AddCircle" Class="mr-2" />
+                    Nueva Regla del Motor
+                </MudText>
+                <MudText Typo="Typo.body1" Class="mt-2" Style="opacity: 0.9;">
+                    Crear una nueva regla de inferencia con sus parámetros
+                </MudText>
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    <div class="mt-4">
+        <ReglaFormulario @ref="_formulario"
+                        ReglaId="null"
+                        Clave=""
+                        Nombre=""
+                        Descripcion=""
+                        Severidad="2"
+                        Objetivo="1"
+                        Activa="true"
+                        Prioridad="100"
+                        Version="1"
+                        Parametros="_parametros"
+                        Guardando="_guardando"
+                        OnGuardar="GuardarRegla"
+                        OnCancelar="Cancelar" />
+    </div>
+</MudContainer>
+</AutorizacionWrapper>
+
+@code {
+    private ReglaFormulario? _formulario;
+    private List<ReglaParametroDto> _parametros = new();
+    private bool _guardando = false;
+
+    private async Task GuardarRegla()
+    {
+        if (_formulario == null) return;
+
+        var request = _formulario.ObtenerRequest();
+
+        // Validaciones básicas
+        if (string.IsNullOrWhiteSpace(request.Clave))
+        {
+            Snackbar.Add("La clave es requerida", Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Nombre))
+        {
+            Snackbar.Add("El nombre es requerido", Severity.Warning);
+            return;
+        }
+
+        if (request.Parametros.Any(p => string.IsNullOrWhiteSpace(p.Nombre) || string.IsNullOrWhiteSpace(p.Valor)))
+        {
+            Snackbar.Add("Todos los parámetros deben tener nombre y valor", Severity.Warning);
+            return;
+        }
+
+        _guardando = true;
+        StateHasChanged();
+
+        try
+        {
+            var reglaCreada = await ReglaService.UpsertAsync(request, CancellationToken.None);
+            Snackbar.Add($"Regla '{request.Nombre}' creada exitosamente", Severity.Success);
+            Navigation.NavigateTo("/admin/motor/reglas");
+        }
+        catch (InvalidOperationException ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al crear regla: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _guardando = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Cancelar()
+    {
+        Navigation.NavigateTo("/admin/motor/reglas");
+    }
+}

@@ -11,10 +11,14 @@
 
 
   <ItemGroup>
+    <PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
     <PackageReference Include="Blazor-ApexCharts" Version="6.0.2" />
+    <PackageReference Include="HtmlSanitizer" Version="9.0.886" />
+    <PackageReference Include="MailKit" Version="4.14.1" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.21" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.21" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.21" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.21" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.21" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.21" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.21">
@@ -23,24 +27,39 @@
     </PackageReference>
     <PackageReference Include="MudBlazor" Version="8.13.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="QuestPDF" Version="2024.12.3" />
+    <PackageReference Include="QuestPDF" Version="2024.3.0" />
   </ItemGroup>
     <ItemGroup>
-    <Folder Include="Components\Dialogs\" />
     <Folder Include="Components\Pages\Programa\Dialogs\" />
-    <Folder Include="Infrastructure\Migrations\" />
-    <Folder Include="Pages\" />
+    <Folder Include="Tests\" />
   </ItemGroup>
 
   <!-- Excluir carpeta Tests del build del proyecto principal -->
   <ItemGroup>
+    <Compile Remove="Infrastructure\Migrations\**" />
+    <Compile Remove="Pages\**" />
     <Compile Remove="Tests\**" />
+    <Content Remove="Infrastructure\Migrations\**" />
+    <Content Remove="Pages\**" />
     <Content Remove="Tests\**" />
+    <EmbeddedResource Remove="Infrastructure\Migrations\**" />
+    <EmbeddedResource Remove="Pages\**" />
     <EmbeddedResource Remove="Tests\**" />
+    <None Remove="Infrastructure\Migrations\**" />
+    <None Remove="Pages\**" />
     <None Remove="Tests\**" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Tests\README.md" />
+    <Content Remove="wwwroot\images\Academias.png" />
+    <Content Remove="wwwroot\images\bernabe.png" />
+    <Content Remove="wwwroot\images\escueladevida.png" />
+    <Content Remove="wwwroot\images\JuventudSegura.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="wwwroot\images\Academias.png" />
+    <None Include="wwwroot\images\bernabe.png" />
+    <None Include="wwwroot\images\escueladevida.png" />
+    <None Include="wwwroot\images\JuventudSegura.png" />
   </ItemGroup>
 
 </Project>

@@ -19,6 +19,7 @@
 @inject NavigationManager NavigationManager
 @inject ILogger<CrearUsuario> Logger
 @inject IJSRuntime JSRuntime
+@inject Infrastructure.Services.Security.EmailSenderService EmailSender
 
 <PageTitle>Crear Usuario</PageTitle>
 
@@ -50,54 +51,78 @@
      {
        <div class="card border-success mb-3">
     <div class="card-header bg-success text-white">
-  <h5 class="mb-0"><i class="bi bi-key-fill"></i> Usuario Creado Exitosamente</h5>
+  <h5 class="mb-0"><i class="bi bi-check-circle-fill"></i> Usuario Creado Exitosamente</h5>
    </div>
       <div class="card-body">
    <p class="mb-2"><strong>Email:</strong> @model.Email</p>
       <p class="mb-3"><strong>Nombre:</strong> @model.Nombres @model.Apellidos</p>
       
-       <div class="alert alert-warning mb-3">
- <i class="bi bi-exclamation-triangle-fill"></i> 
-  <strong>¡IMPORTANTE!</strong> Copie y guarde esta contraseña temporal de forma segura. No se volverá a mostrar.
-  </div>
-
-  <div class="input-group input-group-lg mb-3">
-     <span class="input-group-text bg-dark text-white"><i class="bi bi-lock-fill"></i></span>
-      <input id="passwordField" type="@(showPassword ? "text" : "password")" 
-    class="form-control font-monospace fw-bold text-center" 
- value="@generatedPassword" 
-        readonly 
-     style="letter-spacing: 2px; font-size: 1.2rem;" />
-       <button class="btn btn-outline-secondary" type="button" @onclick="TogglePasswordVisibility">
-     @if (showPassword)
-                {
-        <i class="bi bi-eye-slash-fill"></i>
-         }
-    else
+       @if (emailEnviado)
        {
-           <i class="bi bi-eye-fill"></i>
-         }
-       </button>
-    <button class="btn btn-primary" type="button" @onclick="CopyPassword">
- <i class="bi bi-clipboard-fill"></i> Copiar
-  </button>
-      </div>
+           <div class="alert alert-success mb-3">
+               <i class="bi bi-envelope-check-fill"></i> 
+               <strong>¡Credenciales enviadas por email!</strong><br/>
+               Se ha enviado un correo electrónico a <strong>@model.Email</strong> con las credenciales de acceso.
+           </div>
+       }
+       else
+       {
+           <div class="alert alert-warning mb-3">
+               <i class="bi bi-exclamation-triangle-fill"></i> 
+               <strong>Credenciales generadas</strong><br/>
+               Se intentó enviar las credenciales por email, pero ocurrió un problema. 
+               Puede copiar la contraseña temporal y enviarla manualmente.
+           </div>
+       }
 
- @if (passwordCopied)
-   {
-   <div class="alert alert-success">
-    <i class="bi bi-check-circle-fill"></i> Contraseña copiada al portapapeles
-    </div>
-    }
+       @if (!emailEnviado)
+       {
+           <div class="input-group input-group-lg mb-3">
+               <span class="input-group-text bg-dark text-white"><i class="bi bi-lock-fill"></i></span>
+               <input id="passwordField" type="@(showPassword ? "text" : "password")" 
+                   class="form-control font-monospace fw-bold text-center" 
+                   value="@generatedPassword" 
+                   readonly 
+                   style="letter-spacing: 2px; font-size: 1.2rem;" />
+               <button class="btn btn-outline-secondary" type="button" @onclick="TogglePasswordVisibility">
+                   @if (showPassword)
+                   {
+                       <i class="bi bi-eye-slash-fill"></i>
+                   }
+                   else
+                   {
+                       <i class="bi bi-eye-fill"></i>
+                   }
+               </button>
+               <button class="btn btn-primary" type="button" @onclick="CopyPassword">
+                   <i class="bi bi-clipboard-fill"></i> Copiar
+               </button>
+           </div>
 
-    <div class="alert alert-info mb-0">
-<h6><i class="bi bi-info-circle-fill"></i> Próximos pasos:</h6>
-    <ol class="mb-0">
- <li>Envíe estas credenciales al usuario de forma segura</li>
-     <li>El usuario debe cambiar la contraseña en su primer inicio de sesión</li>
-  <li class="text-muted"><em>(Próximamente: Envío automático por email)</em></li>
-      </ol>
- </div>
+           @if (passwordCopied)
+           {
+               <div class="alert alert-success">
+                   <i class="bi bi-check-circle-fill"></i> Contraseña copiada al portapapeles
+               </div>
+           }
+       }
+
+       <div class="alert alert-info mb-0">
+           <h6><i class="bi bi-info-circle-fill"></i> Próximos pasos:</h6>
+           <ol class="mb-0">
+               @if (emailEnviado)
+               {
+                   <li>El usuario recibirá un email con sus credenciales de acceso</li>
+                   <li>Debe revisar su bandeja de entrada (y spam)</li>
+               }
+               else
+               {
+                   <li>Envíe estas credenciales al usuario de forma segura</li>
+               }
+               <li>El usuario debe cambiar la contraseña en su primer inicio de sesión</li>
+               <li>Asegúrese de que el usuario haya recibido y entendido las instrucciones</li>
+           </ol>
+       </div>
    </div>
         <div class="card-footer">
        <div class="d-flex justify-content-between">
@@ -230,13 +255,14 @@
   private List<ProgramaInfo> availableProgramas = new();
   private string? errorMessage;
     private string? successMessage;
-private bool isSubmitting = false;
+    private bool isSubmitting = false;
     private string? generatedPassword;
     private bool showPassword = false;
-  private bool passwordCopied = false;
+    private bool passwordCopied = false;
+    private bool emailEnviado = false;
 
     [CascadingParameter]
- private Task<AuthenticationState>? authenticationState { get; set; }
+    private Task<AuthenticationState>? authenticationState { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -305,12 +331,13 @@ StateHasChanged();
     private void CrearOtroUsuario()
     {
         model = new();
-   generatedPassword = null;
+        generatedPassword = null;
         successMessage = null;
-  errorMessage = null;
+        errorMessage = null;
         passwordCopied = false;
-     showPassword = false;
- }
+        showPassword = false;
+        emailEnviado = false;
+    }
 
     private void VolverALista()
     {
@@ -389,6 +416,7 @@ Nombres = model.Nombres.Trim(),
           EmailConfirmed = true,
   Estado = Domain.Common.EstadoGeneral.Activo,
     MustChangePassword = true,
+    TwoFactorEnabled = true, // Habilitar 2FA por defecto
     CreatedBy = currentUserEmail ?? "Admin",
         CreatedAtUtc = DateTime.UtcNow,
        CreadoEn = DateTime.UtcNow
@@ -425,9 +453,29 @@ CreadoEn = DateTime.UtcNow
 
         Logger.LogInformation("Usuario {Email} creado por {CreatedBy} con contraseña temporal", model.Email, currentUserEmail);
 
- // Guardar la contraseña generada para mostrarla
-  generatedPassword = tempPassword;
-   successMessage = $"Usuario creado exitosamente";
+        // Guardar la contraseña generada para mostrarla
+        generatedPassword = tempPassword;
+        successMessage = $"Usuario creado exitosamente";
+
+        // Enviar email con credenciales
+        try
+        {
+            await EmailSender.SendNewUserCredentialsAsync(
+                usuario, 
+                model.Email, 
+                tempPassword, 
+                model.Rol
+            );
+            
+            emailEnviado = true;
+            Logger.LogInformation("Email de credenciales enviado a {Email}", model.Email);
+        }
+        catch (Exception emailEx)
+        {
+            Logger.LogError(emailEx, "Error al enviar email de credenciales a {Email}", model.Email);
+            emailEnviado = false;
+            // No bloqueamos el flujo si falla el email
+        }
    
    // NO redirigir: await Task.Delay(3000); NavigationManager.NavigateTo("/Admin/Usuarios");
    }

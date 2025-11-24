@@ -306,7 +306,7 @@ public class ReportesMotorService
         var query = _context.Alertas
             .Include(a => a.Programa)
             .Include(a => a.Regla)
-            .Where(a => !a.IsDeleted && a.GeneradaEn <= fechaCorte.ToDateTime(TimeOnly.MinValue));
+            .Where(a => !a.IsDeleted && a.GeneradaEn <= fechaCorte.ToDateTime(TimeOnly.MaxValue));
 
         if (programaId.HasValue)
             query = query.Where(a => a.ProgramaId == programaId.Value);
@@ -331,7 +331,7 @@ public class ReportesMotorService
     private async Task<EstadisticasMotor> ObtenerEstadisticasAsync(DateOnly fechaCorte, int? programaId)
     {
         var query = _context.Alertas
-            .Where(a => !a.IsDeleted && a.GeneradaEn <= fechaCorte.ToDateTime(TimeOnly.MinValue));
+            .Where(a => !a.IsDeleted && a.GeneradaEn <= fechaCorte.ToDateTime(TimeOnly.MaxValue));
 
         if (programaId.HasValue)
             query = query.Where(a => a.ProgramaId == programaId.Value);

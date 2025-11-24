@@ -200,13 +200,17 @@ Participantes del Programa (@_participantes.Count)
       </div>
 
        <MudButtonGroup Class="mt-3" Size="Size.Small" Variant="Variant.Text" FullWidth="true">
-        <MudButton StartIcon="@Icons.Material.Filled.Visibility" Color="Color.Primary">
-       Ver Detalles
+        <MudButton StartIcon="@Icons.Material.Filled.Edit" 
+                                                   Color="Color.Primary"
+                                                   OnClick="@(() => EditarParticipante(item.Participante))">
+       Editar
       </MudButton>
-  <MudButton StartIcon="@Icons.Material.Filled.Assessment" Color="Color.Info">
-       Asistencias
-     </MudButton>
-  </MudButtonGroup>
+  <MudButton StartIcon="@Icons.Material.Filled.Delete" 
+                                                   Color="Color.Error"
+                                                   OnClick="@(() => EliminarParticipante(item.Participante))">
+                                            Eliminar
+                                        </MudButton>
+      </MudButtonGroup>
          </div>
       </MudItem>
    }
@@ -247,12 +251,16 @@ Participantes del Programa (@_participantes.Count)
       </MudTd>
  <MudTd DataLabel="Acciones">
       <MudButtonGroup Size="Size.Small" Variant="Variant.Text">
- <MudButton StartIcon="@Icons.Material.Filled.Visibility" Color="Color.Primary">
-   Ver
-        </MudButton>
-    <MudButton StartIcon="@Icons.Material.Filled.Assessment" Color="Color.Info">
-           Asistencias
-        </MudButton>
+ <MudButton StartIcon="@Icons.Material.Filled.Edit" 
+                                               Color="Color.Primary"
+                                               OnClick="@(() => EditarParticipante(context.Participante))"
+                                               Size="Size.Small"
+                                               Title="Editar participante" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                               Color="Color.Error"
+                                               OnClick="@(() => EliminarParticipante(context.Participante))"
+                                               Size="Size.Small"
+                                               Title="Eliminar participante" />
     </MudButtonGroup>
       </MudTd>
    </RowTemplate>
@@ -365,9 +373,93 @@ private EstadoInscripcion? _filtroEstadoInscripcion = null;
     StateHasChanged();
     }
 
-    private void AbrirDialogoAgregarParticipante()
+    private async Task AbrirDialogoAgregarParticipante()
     {
-        NavigationManager.NavigateTo($"/programa/{ProgramaId}/participante/agregar");
+        var parameters = new DialogParameters<DialogoParticipante>
+        {
+            { x => x.ProgramaId, ProgramaId },
+            { x => x.ParticipanteExistente, null }
+        };
+
+        var options = new DialogOptions 
+        { 
+            CloseButton = true, 
+            MaxWidth = MaxWidth.Medium, 
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+
+        var dialog = await DialogService.ShowAsync<DialogoParticipante>("Agregar Participante", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await CargarParticipantesAsync();
+        }
+    }
+
+    private async Task EditarParticipante(Participante participante)
+    {
+        var parameters = new DialogParameters<DialogoParticipante>
+        {
+            { x => x.ProgramaId, ProgramaId },
+            { x => x.ParticipanteExistente, participante }
+        };
+
+        var options = new DialogOptions 
+        { 
+            CloseButton = true, 
+            MaxWidth = MaxWidth.Medium, 
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+
+        var dialog = await DialogService.ShowAsync<DialogoParticipante>("Editar Participante", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await CargarParticipantesAsync();
+        }
+    }
+
+    private async Task EliminarParticipante(Participante participante)
+    {
+        var confirmacion = await DialogService.ShowMessageBox(
+            "Confirmar eliminación",
+            $"¿Está seguro que desea eliminar a {participante.Persona.Nombres} {participante.Persona.Apellidos}?",
+            yesText: "Eliminar",
+            cancelText: "Cancelar");
+
+        if (confirmacion == true)
+        {
+            try
+            {
+                // Marcar como eliminadas todas las inscripciones del participante en este programa
+                var inscripciones = await DbContext.ActividadParticipantes
+                    .Include(ap => ap.Actividad)
+                    .Where(ap => ap.ParticipanteId == participante.ParticipanteId &&
+                                ap.Actividad.ProgramaId == ProgramaId &&
+                                !ap.IsDeleted)
+                    .ToListAsync();
+
+                foreach (var inscripcion in inscripciones)
+                {
+                    inscripcion.IsDeleted = true;
+                    inscripcion.ActualizadoEn = DateTime.UtcNow;
+                }
+
+                await DbContext.SaveChangesAsync();
+
+                Snackbar.Add("Participante eliminado del programa", Severity.Success);
+                await CargarParticipantesAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error al eliminar participante");
+                Snackbar.Add("Error al eliminar el participante", Severity.Error);
+            }
+        }
     }
 
   private string ObtenerIniciales(string nombres, string apellidos)

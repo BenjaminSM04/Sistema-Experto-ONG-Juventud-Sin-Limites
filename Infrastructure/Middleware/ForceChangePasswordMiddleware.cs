@@ -15,7 +15,7 @@ public class ForceChangePasswordMiddleware
     private static readonly HashSet<string> AllowedPaths = new(StringComparer.OrdinalIgnoreCase)
     {
         "/Account/ForceChangePassword",
-        "/Account/Manage",  // Permitir acceso al perfil
+        "/Account/Manage",  
         "/Account/Logout",
         "/_framework",
         "/_blazor",

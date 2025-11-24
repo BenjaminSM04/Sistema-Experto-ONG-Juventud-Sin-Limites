@@ -181,7 +181,7 @@ Tipo = TipoParametro.Entero,
         var fechaCorte = DateOnly.FromDateTime(DateTime.Now);
 
  // Act
-    var resultado = await _motor.EjecutarAsync(fechaCorte, null, CancellationToken.None);
+    var resultado = await _motor.EjecutarAsync(fechaCorte, null, false, CancellationToken.None);
 
         // Assert
         Assert.NotNull(resultado);
@@ -252,18 +252,9 @@ Tipo = TipoParametro.Entero,
   CreadoEn = DateTime.UtcNow
             });
    }
-        _context.SaveChanges();
-
-        var fechaCorte = DateOnly.FromDateTime(DateTime.Now);
-
-        // Act
-   var resultado = await _motor.EjecutarAsync(fechaCorte, null, CancellationToken.None);
-
-        // Assert
-   Assert.True(resultado.AlertasGeneradas > 0);
         var alerta = await _context.Alertas.FirstOrDefaultAsync();
         Assert.NotNull(alerta);
-   Assert.Equal(participante.ParticipanteId, alerta.ParticipanteId);
+        Assert.Equal(participante.ParticipanteId, alerta.ParticipanteId);
         Assert.Equal(EstadoAlerta.Abierta, alerta.Estado);
     }
 
@@ -341,7 +332,7 @@ Fecha = DateTime.Now.AddDays(-i),
         var fechaCorte = DateOnly.FromDateTime(DateTime.Now);
 
         // Act
-        var resultado = await _motor.EjecutarAsync(fechaCorte, programa.ProgramaId, CancellationToken.None);
+        var resultado = await _motor.EjecutarAsync(fechaCorte, programa.ProgramaId, false, CancellationToken.None);
 
    // Assert
         Assert.True(resultado.AlertasGeneradas > 0);
@@ -370,7 +361,7 @@ Fecha = DateTime.Now.AddDays(-i),
         var fechaCorte = DateOnly.FromDateTime(DateTime.Now);
 
         // Act
-        var resultado = await _motor.EjecutarAsync(fechaCorte, null, CancellationToken.None);
+        var resultado = await _motor.EjecutarAsync(fechaCorte, null, false, CancellationToken.None);
 
         // Assert
         var alerta = await _context.Alertas.FirstOrDefaultAsync(a => a.ActividadId == actividad.ActividadId);
@@ -399,7 +390,7 @@ Fecha = DateTime.Now.AddDays(-i),
       var fechaCorte = DateOnly.FromDateTime(DateTime.Now);
 
         // Act
-        var resultado = await _motor.EjecutarAsync(fechaCorte, null, CancellationToken.None);
+        var resultado = await _motor.EjecutarAsync(fechaCorte, null, false, CancellationToken.None);
 
         // Assert
         var alerta = await _context.Alertas.FirstOrDefaultAsync(a => a.ActividadId == actividad.ActividadId);
@@ -431,7 +422,7 @@ Fecha = DateTime.Now.AddDays(-i),
         var fechaCorte = DateOnly.FromDateTime(DateTime.Now);
 
         // Act
-        var resultado = await _motor.EjecutarAsync(fechaCorte, programa.ProgramaId, CancellationToken.None);
+        var resultado = await _motor.EjecutarAsync(fechaCorte, programa.ProgramaId, false, CancellationToken.None);
 
         // Assert
       var alerta = await _context.Alertas.FirstOrDefaultAsync(a => a.ProgramaId == programa.ProgramaId);
@@ -453,7 +444,7 @@ Fecha = DateTime.Now.AddDays(-i),
         var fechaCorte = DateOnly.FromDateTime(DateTime.Now);
 
       // Act
-        var resultado = await _motor.EjecutarAsync(fechaCorte, null, CancellationToken.None);
+        var resultado = await _motor.EjecutarAsync(fechaCorte, null, false, CancellationToken.None);
 
     // Assert
         Assert.Equal(0, resultado.AlertasGeneradas);

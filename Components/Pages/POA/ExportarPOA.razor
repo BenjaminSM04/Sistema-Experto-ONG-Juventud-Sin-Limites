@@ -1,0 +1,103 @@
+﻿@page "/poa/exportar/{InstanciaId:int}"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services
+@attribute [Authorize]
+@inject ApplicationDbContext DbContext
+@inject POAPdfExportService PdfExportService
+@inject ILogger<ExportarPOA> Logger
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+<PageTitle>Exportando POA...</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
+    @if (_cargando)
+    {
+        <MudPaper Class="pa-6" Elevation="3">
+            <div class="d-flex flex-column align-center">
+                <MudProgressCircular Indeterminate="true" Size="Size.Large" Color="Color.Primary" />
+                <MudText Typo="Typo.h6" Class="mt-4">Generando PDF...</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">
+                    Por favor espere mientras se genera su documento
+                </MudText>
+            </div>
+        </MudPaper>
+    }
+    else if (!string.IsNullOrEmpty(_error))
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+            <MudText Typo="Typo.h6">Error al generar PDF</MudText>
+            <MudText Typo="Typo.body2">@_error</MudText>
+            <MudButton Variant="Variant.Text" 
+                       Color="Color.Inherit" 
+                       OnClick="@(() => NavigationManager.NavigateTo("/"))"
+                       Class="mt-3">
+                Volver al Inicio
+            </MudButton>
+        </MudAlert>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public int InstanciaId { get; set; }
+
+    private bool _cargando = true;
+    private string? _error;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await GenerarYDescargarPdfAsync();
+        }
+    }
+
+    private async Task GenerarYDescargarPdfAsync()
+    {
+        try
+        {
+            _cargando = true;
+            StateHasChanged();
+
+            // Verificar que la instancia existe
+            var existe = await DbContext.POAInstancias
+                .AnyAsync(i => i.InstanciaId == InstanciaId && !i.IsDeleted);
+
+            if (!existe)
+            {
+                _error = "No se encontró el POA solicitado";
+                _cargando = false;
+                StateHasChanged();
+                return;
+            }
+
+            // Generar PDF completo
+            byte[] pdfBytes = await PdfExportService.GenerarPOAPdfAsync(InstanciaId);
+            string fileName = $"POA_Completo_{InstanciaId}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+
+            // Convertir a Base64 para descargar
+            var base64 = Convert.ToBase64String(pdfBytes);
+
+            // Descargar usando JavaScript
+            await JS.InvokeVoidAsync("downloadFileFromBase64", base64, fileName, "application/pdf");
+
+            // Esperar un momento para que la descarga inicie
+            await Task.Delay(1000);
+
+            // Redirigir de vuelta
+            NavigationManager.NavigateTo($"/poa/{InstanciaId}");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error al generar PDF del POA {InstanciaId}", InstanciaId);
+            _error = $"Ocurrió un error al generar el PDF: {ex.Message}";
+        }
+        finally
+        {
+            _cargando = false;
+            StateHasChanged();
+        }
+    }
+}

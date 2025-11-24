@@ -5,6 +5,7 @@
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Operacion
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Validation
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Components.Forms
 @using System.Security.Claims
@@ -16,6 +17,7 @@
 @inject IWebHostEnvironment Environment
 @inject ILogger<SubirEvidencia> Logger
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject HtmlSanitizerService HtmlSanitizer
 
 <PageTitle>Subir Evidencias</PageTitle>
 
@@ -220,105 +222,146 @@ private bool _subiendo = false;
     }
 
     private void OnFilesChanged(IReadOnlyList<IBrowserFile> files)
- {
+    {
         _archivosSeleccionados.Clear();
-        _archivosSeleccionados.AddRange(files);
-    StateHasChanged();
+        
+        // Validar cada archivo antes de agregarlo
+        foreach (var file in files)
+        {
+            // Validación rápida de extensión y tamaño
+            var ext = Path.GetExtension(file.Name).ToLowerInvariant();
+            var allowedExts = new[] { ".jpg", ".jpeg", ".png", ".pdf", ".doc", ".docx", ".mp4" };
+            
+            if (!allowedExts.Contains(ext))
+            {
+                Snackbar.Add($"Archivo '{file.Name}': tipo no permitido", Severity.Warning);
+                continue;
+            }
+            
+            if (file.Size > 10 * 1024 * 1024) // 10 MB
+            {
+                Snackbar.Add($"Archivo '{file.Name}': demasiado grande (máx 10 MB)", Severity.Warning);
+                continue;
+            }
+            
+            if (file.Size == 0)
+            {
+                Snackbar.Add($"Archivo '{file.Name}': está vacío", Severity.Warning);
+                continue;
+            }
+            
+            _archivosSeleccionados.Add(file);
+        }
+        
+        StateHasChanged();
     }
 
     private void RemoverArchivo(IBrowserFile archivo)
     {
-_archivosSeleccionados.Remove(archivo);
-      StateHasChanged();
+        _archivosSeleccionados.Remove(archivo);
+        StateHasChanged();
     }
 
     private async Task Guardar()
     {
         if (_actividadSeleccionada == null || !_archivosSeleccionados.Any())
-  {
-    Snackbar.Add("Seleccione una actividad y al menos un archivo", Severity.Warning);
-    return;
+        {
+            Snackbar.Add("Seleccione una actividad y al menos un archivo", Severity.Warning);
+            return;
         }
 
         _subiendo = true;
 
         try
         {
-     // Validar que Environment no sea null
-            if (Environment?.WebRootPath == null)
-{
-     Logger.LogError("WebRootPath es null");
-      Snackbar.Add("Error: No se pudo determinar la ruta de almacenamiento", Severity.Error);
-  return;
-      }
+            // Validación completa de archivos usando FileUploadValidator
+            var validationResult = await FileUploadValidator.ValidateMultipleAsync(
+                _archivosSeleccionados, 
+                fileType: "all", 
+                maxFiles: 10
+            );
 
-      var uploadsPath = Path.Combine(Environment.WebRootPath, "uploads", "evidencias");
-
-      // Crear directorio si no existe
-         if (!Directory.Exists(uploadsPath))
-      {
-   Directory.CreateDirectory(uploadsPath);
-    Logger.LogInformation($"Directorio creado: {uploadsPath}");
+            if (!validationResult.IsValid)
+            {
+                Snackbar.Add($"Error de validación: {validationResult.GetErrorMessage()}", Severity.Error);
+                _subiendo = false;
+                return;
             }
 
-          var evidenciasGuardadas = 0;
+            // Validar que Environment no sea null
+            if (Environment?.WebRootPath == null)
+            {
+                Logger.LogError("WebRootPath es null");
+                Snackbar.Add("Error: No se pudo determinar la ruta de almacenamiento", Severity.Error);
+                return;
+            }
+
+            var uploadsPath = Path.Combine(Environment.WebRootPath, "uploads", "evidencias");
+
+            // Crear directorio si no existe
+            if (!Directory.Exists(uploadsPath))
+            {
+                Directory.CreateDirectory(uploadsPath);
+                Logger.LogInformation($"Directorio creado: {uploadsPath}");
+            }
+
+            var evidenciasGuardadas = 0;
 
             foreach (var archivo in _archivosSeleccionados)
             {
-      try
-       {
-        // Generar nombre único
-var extension = Path.GetExtension(archivo.Name);
-    var nombreArchivo = $"{Guid.NewGuid()}{extension}";
-     var rutaCompleta = Path.Combine(uploadsPath, nombreArchivo);
+                try
+                {
+                    // Generar nombre seguro
+                    var nombreSeguro = FileUploadValidator.GenerateSafeFileName(archivo.Name);
+                    var rutaCompleta = Path.Combine(uploadsPath, nombreSeguro);
 
-        // Guardar archivo
-          await using var stream = new FileStream(rutaCompleta, FileMode.Create);
-      await archivo.OpenReadStream(maxAllowedSize: 10485760).CopyToAsync(stream); // 10 MB max
+                    // Guardar archivo
+                    await using var stream = new FileStream(rutaCompleta, FileMode.Create);
+                    await archivo.OpenReadStream(maxAllowedSize: 10485760).CopyToAsync(stream); // 10 MB max
 
-         Logger.LogInformation($"Archivo guardado: {rutaCompleta}");
+                    Logger.LogInformation($"Archivo guardado: {rutaCompleta}");
 
-             // Crear registro en base de datos
-    var evidencia = new EvidenciaActividad
- {
-  ActividadId = _actividadSeleccionada.ActividadId,
-             Tipo = _tipoEvidencia,
-           ArchivoPath = $"/uploads/evidencias/{nombreArchivo}",
-       SubidoPorUsuarioId = _usuarioId,
-           SubidoEn = DateTime.UtcNow,
-               CreadoEn = DateTime.UtcNow
-            };
+                    // Crear registro en base de datos
+                    var evidencia = new EvidenciaActividad
+                    {
+                        ActividadId = _actividadSeleccionada.ActividadId,
+                        Tipo = _tipoEvidencia,
+                        ArchivoPath = $"/uploads/evidencias/{nombreSeguro}",
+                        SubidoPorUsuarioId = _usuarioId,
+                        SubidoEn = DateTime.UtcNow,
+                        CreadoEn = DateTime.UtcNow
+                    };
 
- DbContext.EvidenciaActividades.Add(evidencia);
-                evidenciasGuardadas++;
+                    DbContext.EvidenciaActividades.Add(evidencia);
+                    evidenciasGuardadas++;
                 }
-       catch (Exception exArchivo)
-        {
-        Logger.LogError(exArchivo, $"Error al guardar archivo: {archivo.Name}");
-                Snackbar.Add($"Error al subir {archivo.Name}", Severity.Warning);
-     }
+                catch (Exception exArchivo)
+                {
+                    Logger.LogError(exArchivo, $"Error al guardar archivo: {archivo.Name}");
+                    Snackbar.Add($"Error al subir {archivo.Name}", Severity.Warning);
+                }
             }
 
             // Guardar cambios en la base de datos
-     if (evidenciasGuardadas > 0)
-          {
-        await DbContext.SaveChangesAsync();
-         Snackbar.Add($"{evidenciasGuardadas} evidencia(s) subida(s) correctamente", Severity.Success);
-       NavigationManager.NavigateTo($"/programa/academia/{ProgramaId}");
-}
+            if (evidenciasGuardadas > 0)
+            {
+                await DbContext.SaveChangesAsync();
+                Snackbar.Add($"{evidenciasGuardadas} evidencia(s) subida(s) correctamente", Severity.Success);
+                NavigationManager.NavigateTo($"/programa/academia/{ProgramaId}");
+            }
             else
-{
-      Snackbar.Add("No se pudo subir ningún archivo", Severity.Warning);
-        }
+            {
+                Snackbar.Add("No se pudo subir ningún archivo", Severity.Warning);
+            }
         }
         catch (Exception ex)
         {
-        Logger.LogError(ex, "Error general al subir evidencias");
+            Logger.LogError(ex, "Error general al subir evidencias");
             Snackbar.Add($"Error al subir evidencias: {ex.Message}", Severity.Error);
         }
         finally
-    {
-       _subiendo = false;
+        {
+            _subiendo = false;
         }
     }
 

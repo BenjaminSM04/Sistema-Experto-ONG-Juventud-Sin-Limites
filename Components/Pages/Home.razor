@@ -43,6 +43,14 @@
         50% { transform: scale(1.1); opacity: 0.3; }
     }
 
+    .logo-institucion {
+        max-width: 120px;
+        height: auto;
+        margin-right: 1.5rem;
+        filter: brightness(0) invert(1);
+        opacity: 0.95;
+    }
+
     .weather-widget {
         background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%);
         border-radius: 16px;
@@ -170,6 +178,7 @@
                 <MudGrid>
                     <MudItem xs="12" md="8">
                         <div class="d-flex align-center">
+                            <img src="/images/logoInstitucion.png" alt="Logo ONG" class="logo-institucion" />
                             <div class="profile-avatar me-4">
                                 @GetIniciales()
                             </div>
@@ -182,7 +191,7 @@
                                 </MudText>
                                 @if (roles != null && roles.Any())
                                 {
-                                    <div class="mt-2" style="position: relative, z-index: 1; display: flex; flex-wrap: wrap;">
+                                    <div class="mt-2" style="position: relative; z-index: 1; display: flex; flex-wrap: wrap;">
                                         @foreach (var rol in roles)
                                         {
                                             <MudChip T="string" Size="Size.Small" Style="background-color: #9FD996; color: #4D3935; font-weight: 600; margin-right: 0.5rem; margin-bottom: 0.5rem;">
@@ -386,6 +395,7 @@
     <NotAuthorized>
         <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
             <MudPaper Class="pa-8" Elevation="4" Style="border-radius: 16px; text-align: center;">
+                <img src="/images/logoInstitucion.png" alt="Logo ONG" style="max-width: 200px; height: auto; margin-bottom: 2rem;" />
                 <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Large" Style="font-size: 5rem; color: #4D3935; margin-bottom: 2rem;" />
                 <MudText Typo="Typo.h4" Style="color: #4D3935; font-weight: 700; margin-bottom: 1rem;">
                     Acceso Restringido

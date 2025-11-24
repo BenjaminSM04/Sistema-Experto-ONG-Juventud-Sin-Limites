@@ -1,4 +1,4 @@
-using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common;
+﻿using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common;
 
 namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Motor;
 
@@ -14,7 +14,7 @@ public class Regla : BaseEntity
     public int Prioridad { get; set; } = 100;
     public int Version { get; set; } = 1;
 
-    // Navegaci�n
+    // Navegación
     public ICollection<ReglaParametro> Parametros { get; set; } = new List<ReglaParametro>();
     public ICollection<ReglaParametroOverride> ParametroOverrides { get; set; } = new List<ReglaParametroOverride>();
     public ICollection<Alerta> Alertas { get; set; } = new List<Alerta>();

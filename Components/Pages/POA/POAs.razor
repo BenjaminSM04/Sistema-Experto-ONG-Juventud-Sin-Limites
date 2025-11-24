@@ -1,0 +1,458 @@
+﻿@page "/poas"
+@page "/poas/{ProgramaId:int}"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Pages.POA
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Microsoft.EntityFrameworkCore
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Shared
+
+@inject POAService POAService
+@inject ApplicationDbContext DbContext
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>POAs - Plan Operativo Anual</PageTitle>
+
+<style>
+    .mythra-header {
+        background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
+        color: #FEFEFD;
+        padding: 2rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+
+    .program-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .program-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+    }
+
+    .program-logo {
+        width: 100%;
+        height: 150px;
+        object-fit: contain;
+        object-position: center;
+        padding: 20px;
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+    }
+
+    .card-edv:hover {
+        border: 2px solid #9FD996;
+    }
+
+    .card-academia:hover {
+        border: 2px solid #F7C484;
+    }
+
+    .card-juventud:hover {
+        border: 2px solid #F3C95A;
+    }
+
+    .card-bernabe:hover {
+        border: 2px solid #00A0B0;
+    }
+
+    .poa-card {
+        border-left: 4px solid #F7C484;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .poa-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 16px rgba(247, 196, 132, 0.3);
+    }
+
+    .mythra-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-left: 4px solid #4D3935;
+    }
+
+    .mythra-toolbar {
+        background-color: #F7C484;
+        border-radius: 8px 8px 0 0;
+        padding: 1rem;
+    }
+
+    .mythra-button-primary {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .no-programs-message {
+        text-align: center;
+        padding: 3rem;
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-radius: 12px;
+        border: 2px dashed #9FD996;
+    }
+</style>
+
+<AutorizacionWrapper RolesRequeridos="Administrador">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <div class="mythra-header">
+        <MudText Typo="Typo.h3" Style="font-weight: 600;">
+            <MudIcon Icon="@Icons.Material.Filled.Assignment" Class="mr-3" Size="Size.Large" />
+            @if (ProgramaId.HasValue)
+            {
+                <text>POAs - @(_programaSeleccionado?.Nombre ?? "Cargando...")</text>
+            }
+            else
+            {
+                <text>Planes Operativos Anuales</text>
+            }
+        </MudText>
+        <MudText Typo="Typo.body1" Class="mt-2" Style="opacity: 0.9;">
+            Gestión de Planes Operativos Anuales por programa
+        </MudText>
+        @if (!ProgramaId.HasValue && _programas.Any())
+        {
+            <div class="mt-3">
+                <MudChip T="string" Size="Size.Small" Style="background-color: #9FD996; color: #4D3935; font-weight: 600;">
+                    @_programas.Count programa(s) disponible(s)
+                </MudChip>
+            </div>
+        }
+    </div>
+
+    @if (!ProgramaId.HasValue)
+    {
+        <!-- Vista de programas con logos -->
+        @if (!_programas.Any())
+        {
+            <div class="no-programs-message">
+                <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Large" Style="color: #9FD996; margin-bottom: 1rem;" />
+                <MudText Typo="Typo.h5" Style="color: #4D3935; font-weight: 600; margin-bottom: 1rem;">
+                    No hay programas disponibles
+                </MudText>
+                <MudText Typo="Typo.body1" Style="color: #6D534F;">
+                    Contacta al administrador para obtener acceso a los programas de la ONG.
+                </MudText>
+            </div>
+        }
+        else
+        {
+            <MudText Typo="Typo.h6" Class="mb-4">Selecciona un programa para ver sus POAs:</MudText>
+            
+            <MudGrid>
+                @foreach (var programa in _programas)
+                {
+                    var columnas = _programas.Count >= 4 ? 3 : 4;
+                    <MudItem xs="12" sm="6" md="@columnas">
+                        <MudCard Elevation="3" Class="@($"{ObtenerClaseCard(programa.Clave)} program-card")" @onclick="@(() => SeleccionarPrograma(programa.ProgramaId))">
+                            <!-- Logo del programa -->
+                            <div style="background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%); padding: 20px; text-align: center;">
+                                <img src="@ObtenerRutaLogo(programa.Clave)" 
+                                     alt="@programa.Nombre" 
+                                     class="program-logo"
+                                     style="max-width: 100%; height: 150px; object-fit: contain;" />
+                            </div>
+                            
+                            <MudCardContent>
+                                <MudText Typo="Typo.h6" Style="font-weight: 600; color: #4D3935;">
+                                    @programa.Nombre
+                                </MudText>
+                                <MudText Typo="Typo.body2" Style="color: #6D534F;" Class="mt-2">
+                                    @(programa.Descripcion ?? "Programa de la ONG Juventud Sin Límites")
+                                </MudText>
+                                <div class="mt-3">
+                                    <MudChip T="string" Size="Size.Small" Style="background-color: #9FD996; color: #4D3935; font-weight: 600;">
+                                        @programa.Clave
+                                    </MudChip>
+                                </div>
+                            </MudCardContent>
+                            <MudCardActions>
+                                <MudButton Variant="Variant.Text" 
+                                          Color="Color.Primary" 
+                                          Size="Size.Small"
+                                          OnClick="@(() => SeleccionarPrograma(programa.ProgramaId))"
+                                          StartIcon="@Icons.Material.Filled.ArrowForward">
+                                    Ver POAs
+                                </MudButton>
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+    }
+    else
+    {
+        <!-- Vista de POAs del programa seleccionado -->
+        <MudPaper Class="mythra-card mb-4" Elevation="3">
+            <div class="mythra-toolbar">
+                <MudGrid>
+                    <MudItem xs="12" md="10">
+                        <MudButton Variant="Variant.Text" 
+                                  StartIcon="@Icons.Material.Filled.ArrowBack"
+                                  OnClick="VolverAProgramas"
+                                  Style="color: #4D3935;">
+                            Volver a Programas
+                        </MudButton>
+                    </MudItem>
+                    <MudItem xs="12" md="2">
+                        <MudButton Variant="Variant.Filled" 
+                                  Class="mythra-button-primary"
+                                  StartIcon="@Icons.Material.Filled.Add"
+                                  OnClick="AbrirDialogoNuevoPOA"
+                                  FullWidth="true">
+                            Nuevo POA
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            </div>
+
+            @if (_cargandoPOAs)
+            {
+                <div style="padding: 2rem; text-align: center;">
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                    <MudText Typo="Typo.body1" Class="mt-2">Cargando POAs...</MudText>
+                </div>
+            }
+            else if (!_poas.Any())
+            {
+                <div style="padding: 2rem; text-align: center;">
+                    <MudIcon Icon="@Icons.Material.Filled.Assignment" Size="Size.Large" Style="color: #6D534F; font-size: 4rem;" />
+                    <MudText Typo="Typo.h6" Class="mt-2">No hay POAs registrados</MudText>
+                    <MudText Typo="Typo.body2" Style="color: #6D534F;">Crea tu primer POA haciendo clic en "Nuevo POA"</MudText>
+                </div>
+            }
+            else
+            {
+                <div style="padding: 1rem;">
+                    <MudGrid>
+                        @foreach (var poa in _poas)
+                        {
+                            <MudItem xs="12">
+                                <MudPaper Class="poa-card pa-3 mb-3" Elevation="2" @onclick="@(() => VerPOA(poa.InstanciaId))">
+                                    <MudGrid>
+                                        <MudItem xs="12" md="8">
+                                            <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 600;">
+                                                POA @poa.PeriodoTexto
+                                            </MudText>
+                                            <MudText Typo="Typo.body2" Style="color: #6D534F;">
+                                                Programa: @poa.ProgramaNombre (@poa.ProgramaClave)
+                                            </MudText>
+                                            @if (!string.IsNullOrEmpty(poa.Notas))
+                                            {
+                                                <MudText Typo="Typo.caption" Class="mt-1">
+                                                    @poa.Notas
+                                                </MudText>
+                                            }
+                                        </MudItem>
+                                        <MudItem xs="12" md="4" Class="d-flex align-end justify-end">
+                                            <MudChip T="string" Size="Size.Small" Class="@ObtenerClaseEstado(poa.Estado)">
+                                                @poa.Estado
+                                            </MudChip>
+                                            <MudText Typo="Typo.caption" Class="ml-2">
+                                                Creado: @poa.CreadoEn.ToString("dd/MM/yyyy")
+                                            </MudText>
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                                          Color="Color.Error" 
+                                                          Size="Size.Small"
+                                                          OnClick="@(() => EliminarPOA(poa.InstanciaId))"
+                                                          Class="ml-2" />
+                                        </MudItem>
+                                    </MudGrid>
+                                </MudPaper>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </div>
+            }
+        </MudPaper>
+    }
+</MudContainer>
+</AutorizacionWrapper>
+
+@code {
+    [Parameter] public int? ProgramaId { get; set; }
+
+    private List<ProgramaInfo> _programas = new();
+    private ProgramaInfo? _programaSeleccionado;
+    private List<POAViewModel> _poas = new();
+    private bool _cargandoPOAs = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarProgramasAsync();
+        
+        if (ProgramaId.HasValue)
+        {
+            await CargarPOAsAsync();
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ProgramaId.HasValue)
+        {
+            _programaSeleccionado = _programas.FirstOrDefault(p => p.ProgramaId == ProgramaId.Value);
+            await CargarPOAsAsync();
+        }
+    }
+
+    private async Task CargarProgramasAsync()
+    {
+        try
+        {
+            _programas = await DbContext.Programas
+                .Where(p => !p.IsDeleted)
+                .Select(p => new ProgramaInfo
+                {
+                    ProgramaId = p.ProgramaId,
+                    Clave = p.Clave,
+                    Nombre = p.Nombre,
+                    Descripcion = p.Descripcion
+                })
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cargar programas: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task CargarPOAsAsync()
+    {
+        if (!ProgramaId.HasValue) return;
+
+        _cargandoPOAs = true;
+        try
+        {
+            _poas = await POAService.ObtenerPOAsPorProgramaAsync(ProgramaId.Value);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cargar POAs: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _cargandoPOAs = false;
+        }
+    }
+
+    private void SeleccionarPrograma(int programaId)
+    {
+        Navigation.NavigateTo($"/poas/{programaId}");
+    }
+
+    private void VolverAProgramas()
+    {
+        Navigation.NavigateTo("/poas");
+    }
+
+    private void VerPOA(int instanciaId)
+    {
+        Navigation.NavigateTo($"/poa/{instanciaId}");
+    }
+
+    private void AbrirDialogoNuevoPOA()
+    {
+        if (!ProgramaId.HasValue) return;
+
+        Navigation.NavigateTo($"/poa/crear/{ProgramaId.Value}");
+    }
+
+    private async Task EliminarPOA(int instanciaId)
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Confirmar Eliminación",
+            "¿Está seguro de eliminar este POA? Esta acción no se puede deshacer.",
+            yesText: "Eliminar", cancelText: "Cancelar");
+
+        if (confirmed == true)
+        {
+            try
+            {
+                await POAService.EliminarPOAAsync(instanciaId);
+                await CargarPOAsAsync();
+                Snackbar.Add("POA eliminado exitosamente", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error al eliminar POA: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private string ObtenerClaseCard(string clave)
+    {
+        return clave switch
+        {
+            "EDV" => "card-edv",
+            "ACADEMIA" => "card-academia",
+            "JUVENTUD_SEGURA" => "card-juventud",
+            "BERNABE" => "card-bernabe",
+            _ => "card-edv"
+        };
+    }
+
+    private string ObtenerRutaLogo(string clave)
+    {
+        return clave switch
+        {
+            "EDV" => "/images/escueladevida.png",
+            "ACADEMIA" => "/images/Academias.png",
+            "JUVENTUD_SEGURA" => "/images/JuventudSegura.png",
+            "BERNABE" => "/images/bernabe.png",
+            _ => "/images/bernabe.png"
+        };
+    }
+
+    private string ObtenerClaseEstado(string estado)
+    {
+        return estado switch
+        {
+            "Borrador" => "mythra-chip-warning",
+            "EnRevision" => "mythra-chip-info",
+            "Aprobado" => "mythra-chip-success",
+            _ => "mythra-chip-default"
+        };
+    }
+
+    public class ProgramaInfo
+    {
+        public int ProgramaId { get; set; }
+        public string Clave { get; set; } = string.Empty;
+        public string Nombre { get; set; } = string.Empty;
+        public string? Descripcion { get; set; }
+    }
+}
+
+<style>
+    .mythra-chip-warning {
+        background-color: #F3C95A !important;
+        color: #4D3935 !important;
+        font-weight: 600;
+    }
+
+    .mythra-chip-info {
+        background-color: #F7C484 !important;
+        color: #4D3935 !important;
+        font-weight: 600;
+    }
+
+    .mythra-chip-success {
+        background-color: #9FD996 !important;
+        color: #4D3935 !important;
+        font-weight: 600;
+    }
+
+    .mythra-chip-default {
+        background-color: #6D534F !important;
+        color: #FEFEFD !important;
+        font-weight: 600;
+    }
+</style>

@@ -1,0 +1,248 @@
+﻿@using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Pages.POA
+@inject POAService POAService
+@inject ISnackbar Snackbar
+
+<style>
+    .mythra-section {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-left: 4px solid #9FD996;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+
+    .mythra-section-header {
+        color: #4D3935;
+        font-weight: 700;
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #9FD996;
+    }
+
+    .mythra-field {
+        margin-bottom: 1rem;
+    }
+
+    .mythra-button-save {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+        padding: 0.75rem 2rem !important;
+    }
+</style>
+
+@if (Plantilla == null)
+{
+    <MudAlert Severity="Severity.Warning">No hay plantilla disponible para este POA</MudAlert>
+}
+else
+{
+    <EditForm Model="@_formulario" OnValidSubmit="GuardarAsync">
+        @foreach (var seccion in Plantilla.Secciones.OrderBy(s => s.Orden))
+        {
+            <div class="mythra-section">
+                <div class="mythra-section-header">
+                    <MudIcon Icon="@Icons.Material.Filled.FolderOpen" Class="mr-2" />
+                    @seccion.Nombre
+                </div>
+
+                <MudGrid>
+                    @foreach (var campo in seccion.Campos.OrderBy(c => c.Orden))
+                    {
+                        <MudItem xs="12" md="@(ObtenerColumnas(campo.TipoDato))">
+                            <div class="mythra-field">
+                                @RenderizarCampo(campo)
+                            </div>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </div>
+        }
+
+        <div class="d-flex justify-end mt-4">
+            <MudButton ButtonType="ButtonType.Submit" 
+                      Variant="Variant.Filled" 
+                      Class="mythra-button-save"
+                      StartIcon="@Icons.Material.Filled.Save"
+                      Disabled="@_guardando"
+                      Size="Size.Large">
+                @if (_guardando)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                }
+                Guardar POA
+            </MudButton>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int InstanciaId { get; set; }
+    [Parameter] public PlantillaPOAViewModel? Plantilla { get; set; }
+    [Parameter] public EventCallback OnGuardado { get; set; }
+
+    private FormularioPOAModel _formulario = new();
+    private bool _guardando = false;
+
+    protected override void OnParametersSet()
+    {
+        if (Plantilla != null)
+        {
+            InicializarFormulario();
+        }
+    }
+
+    private void InicializarFormulario()
+    {
+        _formulario = new FormularioPOAModel
+        {
+            InstanciaId = InstanciaId,
+            Valores = new Dictionary<int, ValorCampoModel>()
+        };
+
+        // Inicializar valores existentes
+        foreach (var seccion in Plantilla!.Secciones)
+        {
+            foreach (var campo in seccion.Campos)
+            {
+                _formulario.Valores[campo.CampoId] = new ValorCampoModel
+                {
+                    CampoId = campo.CampoId,
+                    ValorTexto = campo.ValorTexto,
+                    ValorNumero = campo.ValorNumero,
+                    ValorFecha = campo.ValorFecha,
+                    ValorBool = campo.ValorBool
+                };
+            }
+        }
+    }
+
+    private RenderFragment RenderizarCampo(CampoPOAViewModel campo)
+    {
+        return builder =>
+        {
+            var valor = _formulario.Valores.GetValueOrDefault(campo.CampoId) ?? new ValorCampoModel { CampoId = campo.CampoId };
+
+            switch (campo.TipoDato)
+            {
+                case "Texto":
+                    builder.OpenComponent<MudTextField<string>>(0);
+                    builder.AddAttribute(1, "Label", campo.Etiqueta);
+                    builder.AddAttribute(2, "Value", valor.ValorTexto);
+                    builder.AddAttribute(3, "ValueChanged", EventCallback.Factory.Create<string>(this, v => ActualizarValor(campo.CampoId, textoValor: v)));
+                    builder.AddAttribute(4, "Required", campo.Requerido);
+                    builder.AddAttribute(5, "Variant", Variant.Outlined);
+                    builder.AddAttribute(6, "HelperText", campo.Unidad);
+                    builder.CloseComponent();
+                    break;
+
+                case "Entero":
+                case "Decimal":
+                    builder.OpenComponent<MudNumericField<decimal?>>(0);
+                    builder.AddAttribute(1, "Label", campo.Etiqueta);
+                    builder.AddAttribute(2, "Value", valor.ValorNumero);
+                    builder.AddAttribute(3, "ValueChanged", EventCallback.Factory.Create<decimal?>(this, v => ActualizarValor(campo.CampoId, numeroValor: v)));
+                    builder.AddAttribute(4, "Required", campo.Requerido);
+                    builder.AddAttribute(5, "Variant", Variant.Outlined);
+                    builder.AddAttribute(6, "Adornment", Adornment.End);
+                    builder.AddAttribute(7, "AdornmentText", campo.Unidad ?? (campo.TipoDato == "Decimal" ? "$" : ""));
+                    builder.CloseComponent();
+                    break;
+
+                case "Fecha":
+                    builder.OpenComponent<MudDatePicker>(0);
+                    builder.AddAttribute(1, "Label", campo.Etiqueta);
+                    builder.AddAttribute(2, "Date", valor.ValorFecha);
+                    builder.AddAttribute(3, "DateChanged", EventCallback.Factory.Create<DateTime?>(this, v => ActualizarValor(campo.CampoId, fechaValor: v)));
+                    builder.AddAttribute(4, "Required", campo.Requerido);
+                    builder.AddAttribute(5, "Variant", Variant.Outlined);
+                    builder.AddAttribute(6, "DateFormat", "dd/MM/yyyy");
+                    builder.CloseComponent();
+                    break;
+
+                case "Bool":
+                    builder.OpenComponent<MudSwitch<bool?>>(0);
+                    builder.AddAttribute(1, "Label", campo.Etiqueta);
+                    builder.AddAttribute(2, "Checked", valor.ValorBool ?? false);
+                    builder.AddAttribute(3, "CheckedChanged", EventCallback.Factory.Create<bool>(this, v => ActualizarValor(campo.CampoId, boolValor: v)));
+                    builder.AddAttribute(4, "Color", Color.Success);
+                    builder.CloseComponent();
+                    break;
+
+                case "Lista":
+                    if (campo.Opciones.Any())
+                    {
+                        builder.OpenComponent<MudSelect<string>>(0);
+                        builder.AddAttribute(1, "Label", campo.Etiqueta);
+                        builder.AddAttribute(2, "Value", valor.ValorTexto);
+                        builder.AddAttribute(3, "ValueChanged", EventCallback.Factory.Create<string>(this, v => ActualizarValor(campo.CampoId, textoValor: v)));
+                        builder.AddAttribute(4, "Required", campo.Requerido);
+                        builder.AddAttribute(5, "Variant", Variant.Outlined);
+                        builder.AddAttribute(6, "ChildContent", (RenderFragment)(childBuilder =>
+                        {
+                            int seq = 0;
+                            foreach (var opcion in campo.Opciones)
+                            {
+                                childBuilder.OpenComponent<MudSelectItem<string>>(seq++);
+                                childBuilder.AddAttribute(seq++, "Value", opcion.Valor);
+                                childBuilder.AddAttribute(seq++, "ChildContent", (RenderFragment)(contentBuilder =>
+                                {
+                                    contentBuilder.AddContent(0, opcion.Etiqueta);
+                                }));
+                                childBuilder.CloseComponent();
+                            }
+                        }));
+                        builder.CloseComponent();
+                    }
+                    break;
+            }
+        };
+    }
+
+    private void ActualizarValor(int campoId, string? textoValor = null, decimal? numeroValor = null, DateTime? fechaValor = null, bool? boolValor = null)
+    {
+        if (!_formulario.Valores.ContainsKey(campoId))
+        {
+            _formulario.Valores[campoId] = new ValorCampoModel { CampoId = campoId };
+        }
+
+        var valor = _formulario.Valores[campoId];
+        
+        if (textoValor != null) valor.ValorTexto = textoValor;
+        if (numeroValor.HasValue) valor.ValorNumero = numeroValor;
+        if (fechaValor.HasValue) valor.ValorFecha = fechaValor;
+        if (boolValor.HasValue) valor.ValorBool = boolValor;
+    }
+
+    private async Task GuardarAsync()
+    {
+        _guardando = true;
+        try
+        {
+            await POAService.GuardarValoresAsync(InstanciaId, _formulario.Valores);
+            await OnGuardado.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al guardar: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _guardando = false;
+        }
+    }
+
+    private int ObtenerColumnas(string tipoDato)
+    {
+        return tipoDato switch
+        {
+            "Bool" => 12,
+            "Fecha" => 6,
+            "Entero" => 6,
+            "Decimal" => 6,
+            _ => 12
+        };
+    }
+}

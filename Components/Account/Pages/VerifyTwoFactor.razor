@@ -1,0 +1,375 @@
+﻿@page "/Account/VerifyTwoFactor"
+@layout AuthLayout
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Identity
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Security
+
+@inject SignInManager<Usuario> SignInManager
+@inject UserManager<Usuario> UserManager
+@inject EmailTwoFactorService TwoFactorService
+@inject IdentityRedirectManager RedirectManager
+@inject ILogger<VerifyTwoFactor> Logger
+@inject NavigationManager Navigation
+
+<PageTitle>Verificación en Dos Factores</PageTitle>
+
+<style>
+    .verification-container {
+        max-width: 500px;
+        margin: 2rem auto;
+        padding: 2rem;
+    }
+
+    .verification-header {
+        background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
+        color: #FEFEFD;
+        padding: 2rem;
+        border-radius: 8px 8px 0 0;
+        text-align: center;
+    }
+
+    .verification-body {
+        background: #FEFEFD;
+        padding: 2rem;
+        border-radius: 0 0 8px 8px;
+        box-shadow: 0 4px 12px rgba(77, 57, 53, 0.1);
+    }
+
+    .code-input {
+        font-size: 24px;
+        letter-spacing: 8px;
+        text-align: center;
+        text-transform: uppercase;
+        font-weight: 600;
+        padding: 1rem;
+        border: 2px solid #9FD996;
+        border-radius: 8px;
+        background: #F7F7F7;
+    }
+
+    .code-input:focus {
+        outline: none;
+        border-color: #4D3935;
+        box-shadow: 0 0 0 3px rgba(159, 217, 150, 0.3);
+    }
+
+    .verify-button {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%);
+        color: #4D3935;
+        font-weight: 600;
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 8px;
+        width: 100%;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .verify-button:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(159, 217, 150, 0.4);
+    }
+
+    .verify-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .resend-button {
+        background: transparent;
+        border: 2px solid #4D3935;
+        color: #4D3935;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .resend-button:hover:not(:disabled) {
+        background: #4D3935;
+        color: #FEFEFD;
+    }
+
+    .resend-button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .timer-badge {
+        display: inline-block;
+        background: #F7C484;
+        color: #4D3935;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        margin-top: 1rem;
+    }
+
+    .info-box {
+        background: #F7F7F7;
+        border-left: 4px solid #9FD996;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-top: 1.5rem;
+    }
+</style>
+
+<div class="verification-container">
+    <div class="verification-header">
+        <h2>
+            <i class="bi bi-shield-lock" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
+            Verificación en Dos Factores
+        </h2>
+        <p style="opacity: 0.9; margin-top: 1rem;">
+            Hemos enviado un código de 6 caracteres a tu correo electrónico
+        </p>
+    </div>
+
+    <div class="verification-body">
+        <StatusMessage Message="@errorMessage" />
+
+        <form action="/Account/Complete2FA" method="post">
+            <AntiforgeryToken />
+            <input type="hidden" name="email" value="@userEmail" />
+            <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+            
+            <div class="mb-4">
+                <label for="code" class="form-label" style="color: #4D3935; font-weight: 600; margin-bottom: 0.5rem;">
+                    Ingresa el código de verificación
+                </label>
+                <input type="text" 
+                       name="code" 
+                       id="code"
+                       class="form-control code-input" 
+                       autocomplete="off" 
+                       maxlength="6"
+                       placeholder="A1B2C3"
+                       required
+                       @bind="codeValue"
+                       @bind:event="oninput" />
+            </div>
+
+            @if (timeRemaining.HasValue && timeRemaining.Value.TotalSeconds > 0)
+            {
+                <div class="text-center">
+                    <span class="timer-badge">
+                        <i class="bi bi-clock"></i>
+                        Expira en: @FormatTime(timeRemaining.Value)
+                    </span>
+                </div>
+            }
+
+            <div class="d-grid gap-3 mt-4">
+                <button type="submit" class="verify-button">
+                    <i class="bi bi-shield-check me-2"></i>
+                    Verificar Código
+                </button>
+
+                <button type="button" 
+                       class="resend-button" 
+                       @onclick="ResendCodeAsync"
+                       disabled="@(canResend == false || isResending)">
+                    @if (isResending)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    }
+                    <i class="bi bi-arrow-clockwise me-2"></i>
+                    @if (canResend)
+                    {
+                        <span>Reenviar Código</span>
+                    }
+                    else
+                    {
+                        <span>Espera @resendCountdown segundos</span>
+                    }
+                </button>
+            </div>
+        </form>
+
+        <div class="info-box">
+            <h6 style="color: #4D3935; margin-bottom: 0.5rem;">
+                <i class="bi bi-info-circle"></i> Información Importante
+            </h6>
+            <ul style="margin: 0; padding-left: 1.5rem; color: #6D534F; font-size: 0.9rem;">
+                <li>El código es válido por 10 minutos</li>
+                <li>El código distingue entre mayúsculas y minúsculas</li>
+                <li>Solo tienes 5 intentos antes de que el código se invalide</li>
+                <li>Si no recibes el código, verifica tu carpeta de spam</li>
+            </ul>
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="/Account/Login" style="color: #4D3935; text-decoration: none;">
+                <i class="bi bi-arrow-left"></i> Volver al inicio de sesión
+            </a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string? errorMessage;
+    private bool isResending;
+    private TimeSpan? timeRemaining;
+    private bool canResend = true;
+    private int resendCountdown = 0;
+    private System.Threading.Timer? countdownTimer;
+    private System.Threading.Timer? expirationTimer;
+    private Usuario? currentUser;
+    private string? userEmail;
+    private string codeValue = "";
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? Email { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? Error { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Mostrar mensaje de error si viene del endpoint
+        if (!string.IsNullOrEmpty(Error))
+        {
+            errorMessage = Error;
+        }
+
+        // Obtener email del query parameter
+        if (string.IsNullOrEmpty(Email))
+        {
+            RedirectManager.RedirectTo("/Account/Login");
+            return;
+        }
+
+        userEmail = Email;
+
+        // Verificar que existe una sesión 2FA válida
+        var session = TwoFactorService.GetUserSession(userEmail);
+        if (session == null)
+        {
+            Logger.LogWarning("No hay sesión 2FA válida para {Email}", userEmail);
+            RedirectManager.RedirectTo($"/Account/Login?Message={Uri.EscapeDataString("Sesión expirada. Por favor, inicia sesión nuevamente.")}");
+            return;
+        }
+
+        // Cargar usuario
+        currentUser = await UserManager.FindByIdAsync(session.UserId.ToString());
+        
+        if (currentUser == null)
+        {
+            Logger.LogWarning("Usuario no encontrado para sesión 2FA: {UserId}", session.UserId);
+            RedirectManager.RedirectTo("/Account/Login");
+            return;
+        }
+
+        // Verificar tiempo restante del código
+        timeRemaining = TwoFactorService.GetTimeRemaining(userEmail);
+
+        // Iniciar timer de expiración
+        StartExpirationTimer();
+    }
+
+    private async Task ResendCodeAsync()
+    {
+        if (!canResend || isResending || currentUser == null || string.IsNullOrEmpty(userEmail)) return;
+
+        isResending = true;
+        errorMessage = null;
+
+        try
+        {
+            // Verificar que la sesión siga válida
+            var session = TwoFactorService.GetUserSession(userEmail);
+            if (session == null)
+            {
+                errorMessage = "Sesión expirada. Por favor, inicia sesión nuevamente.";
+                isResending = false;
+                return;
+            }
+
+            // Generar nuevo código
+            var newCode = TwoFactorService.GenerateCode();
+            
+            // Actualizar código y mantener la sesión
+            TwoFactorService.StoreCode(userEmail, newCode, currentUser.Id, session.RememberMe);
+
+            // Obtener el servicio de email y enviar nuevo código
+            var serviceProvider = SignInManager.Context.RequestServices;
+            var emailSender = serviceProvider.GetRequiredService<EmailSenderService>();
+            await emailSender.SendPasswordResetCodeAsync(currentUser, userEmail, newCode);
+
+            Logger.LogInformation("Código 2FA reenviado a {Email}", userEmail);
+
+            // Actualizar tiempo restante
+            timeRemaining = TwoFactorService.GetTimeRemaining(userEmail);
+
+            // Iniciar countdown de reenvío (60 segundos)
+            StartResendCountdown();
+
+            // Mostrar mensaje de éxito
+            errorMessage = null;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error al reenviar código 2FA");
+            errorMessage = "Error al reenviar el código. Por favor, intenta nuevamente.";
+        }
+        finally
+        {
+            isResending = false;
+        }
+    }
+
+    private void StartExpirationTimer()
+    {
+        if (string.IsNullOrEmpty(userEmail)) return;
+
+        expirationTimer = new System.Threading.Timer(async _ =>
+        {
+            timeRemaining = TwoFactorService.GetTimeRemaining(userEmail);
+            
+            await InvokeAsync(StateHasChanged);
+
+            if (timeRemaining == null || timeRemaining.Value.TotalSeconds <= 0)
+            {
+                expirationTimer?.Dispose();
+            }
+        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+    }
+
+    private void StartResendCountdown()
+    {
+        canResend = false;
+        resendCountdown = 60;
+
+        countdownTimer = new System.Threading.Timer(async _ =>
+        {
+            resendCountdown--;
+
+            if (resendCountdown <= 0)
+            {
+                canResend = true;
+                countdownTimer?.Dispose();
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+    }
+
+    private string FormatTime(TimeSpan time)
+    {
+        return $"{time.Minutes:D2}:{time.Seconds:D2}";
+    }
+
+    public void Dispose()
+    {
+        countdownTimer?.Dispose();
+        expirationTimer?.Dispose();
+    }
+}

@@ -5,6 +5,7 @@
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Operacion
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Validation
 @using Microsoft.EntityFrameworkCore
 @attribute [Authorize]
 
@@ -12,6 +13,7 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
 @inject ILogger<CrearActividad> Logger
+@inject HtmlSanitizerService HtmlSanitizer
 
 <PageTitle>Crear Actividad</PageTitle>
 
@@ -218,15 +220,20 @@
         _guardando = true;
 
         try
-      {
+        {
+            // Sanitizar inputs de texto
+            var tituloSanitizado = HtmlSanitizer.SanitizeStrict(_model.Titulo ?? "");
+            var descripcionSanitizada = HtmlSanitizer.Sanitize(_model.Descripcion ?? "");
+            var lugarSanitizado = HtmlSanitizer.SanitizeStrict(_model.Lugar ?? "");
+
             var actividad = new Actividad
       {
  ProgramaId = ProgramaId,
-           Titulo = _model.Titulo!,
-   Descripcion = _model.Descripcion,
+           Titulo = tituloSanitizado,
+   Descripcion = descripcionSanitizada,
 FechaInicio = _model.FechaInicio!.Value.Date.Add(_model.HoraInicio ?? TimeSpan.Zero),
      FechaFin = _model.FechaFin?.Date.Add(_model.HoraFin ?? TimeSpan.Zero),
-                Lugar = _model.Lugar,
+                Lugar = lugarSanitizado,
              Tipo = _model.Tipo,
           Estado = _model.Estado,
 CreadoEn = DateTime.UtcNow

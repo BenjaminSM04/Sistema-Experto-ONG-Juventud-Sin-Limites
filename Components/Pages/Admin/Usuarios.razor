@@ -16,6 +16,7 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject ILogger<Usuarios> Logger
+@inject Infrastructure.Services.Security.EmailSenderService EmailSender
 
 <PageTitle>Gestión de Usuarios</PageTitle>
 
@@ -443,50 +444,72 @@ if (user == null)
 
     private async Task ResetPasswordAsync(UsuarioViewModel userViewModel)
     {
-     var confirmed = await DialogService.ShowMessageBox(
-   "Confirmar Reset de Contraseña",
-   $"¿Está seguro de resetear la contraseña de {userViewModel.Email}?",
-   yesText: "Sí", cancelText: "Cancelar");
+        var confirmed = await DialogService.ShowMessageBox(
+            "Confirmar Reset de Contraseña",
+            $"¿Está seguro de resetear la contraseña de {userViewModel.Email}?\n\nSe enviará un correo con la nueva contraseña temporal.",
+            yesText: "Sí", cancelText: "Cancelar");
 
         if (confirmed != true)
-          return;
-
-      try
-        {
-   var user = await UserManager.FindByIdAsync(userViewModel.Id.ToString());
-       if (user == null)
-   {
-       Snackbar.Add("Usuario no encontrado", Severity.Error);
             return;
- }
 
-   // Generar nueva contraseña temporal
-     var newTempPassword = GenerateSecurePassword();
-
-        // Remover contraseña actual y establecer nueva
- var token = await UserManager.GeneratePasswordResetTokenAsync(user);
-   var result = await UserManager.ResetPasswordAsync(user, token, newTempPassword);
-
- if (!result.Succeeded)
-   {
-  Snackbar.Add($"Error al resetear contraseña: {string.Join("; ", result.Errors.Select(e => e.Description))}", Severity.Error);
-     return;
+        try
+        {
+            var user = await UserManager.FindByIdAsync(userViewModel.Id.ToString());
+            if (user == null)
+            {
+                Snackbar.Add("Usuario no encontrado", Severity.Error);
+                return;
             }
 
-// Reactivar flag de cambio de contraseña
-         user.MustChangePassword = true;
-       user.ActualizadoEn = DateTime.UtcNow;
-      await UserManager.UpdateAsync(user);
+            // Generar nueva contraseña temporal
+            var newTempPassword = GenerateSecurePassword();
 
-    Logger.LogInformation("Contraseña reseteada para usuario {Email}", user.Email);
+            // Remover contraseña actual y establecer nueva
+            var token = await UserManager.GeneratePasswordResetTokenAsync(user);
+            var result = await UserManager.ResetPasswordAsync(user, token, newTempPassword);
 
-        Snackbar.Add($"Contraseña reseteada. Nueva contraseña temporal: {newTempPassword}", Severity.Success);
-       await LoadUsuariosAsync();
-   }
+            if (!result.Succeeded)
+            {
+                Snackbar.Add($"Error al resetear contraseña: {string.Join("; ", result.Errors.Select(e => e.Description))}", Severity.Error);
+                return;
+            }
+
+            // Reactivar flag de cambio de contraseña
+            user.MustChangePassword = true;
+            user.ActualizadoEn = DateTime.UtcNow;
+            await UserManager.UpdateAsync(user);
+
+            Logger.LogInformation("Contraseña reseteada para usuario {Email}", user.Email);
+
+            // Enviar email con nueva contraseña
+            try
+            {
+                var userRoles = await UserManager.GetRolesAsync(user);
+                var rol = userRoles.FirstOrDefault() ?? "Usuario";
+
+                await EmailSender.SendPasswordResetWithCredentialsAsync(
+                    user,
+                    user.Email!,
+                    newTempPassword,
+                    rol
+                );
+
+                Snackbar.Add($"✅ Contraseña reseteada y enviada por email a {user.Email}", Severity.Success);
+            }
+            catch (Exception emailEx)
+            {
+                Logger.LogError(emailEx, "Error al enviar email de reset a {Email}", user.Email);
+                
+                // Si falla el email, mostrar la contraseña en snackbar
+                Snackbar.Add($"⚠️ Contraseña reseteada pero no se pudo enviar email. Contraseña temporal: {newTempPassword}", Severity.Warning);
+            }
+
+            await LoadUsuariosAsync();
+        }
         catch (Exception ex)
-    {
-  Logger.LogError(ex, "Error al resetear contraseña");
-        Snackbar.Add("Error al resetear contraseña", Severity.Error);
+        {
+            Logger.LogError(ex, "Error al resetear contraseña");
+            Snackbar.Add("Error al resetear contraseña", Severity.Error);
         }
     }
 

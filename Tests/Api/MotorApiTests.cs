@@ -105,7 +105,7 @@ Mensaje = "Alerta de prueba",
     public async Task POST_Motor_Ejecutar_SinAutenticacion_DebeRetornar401()
   {
         // Arrange
-        var request = new MotorRunDto(DateTime.Now, null);
+        var request = new MotorRunDto(null, DateTime.Now);
 
    // Act
         var response = await _client.PostAsJsonAsync("/api/motor/ejecutar", request);

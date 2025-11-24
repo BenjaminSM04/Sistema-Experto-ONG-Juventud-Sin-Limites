@@ -1,0 +1,347 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Operacion
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
+@using Microsoft.EntityFrameworkCore
+@using MudBlazor
+
+@inject ApplicationDbContext DbContext
+@inject ISnackbar Snackbar
+@inject ILogger<DialogoParticipante> Logger
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="@_isValid">
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudText Typo="Typo.h6" Style="color: #4D3935; margin-bottom: 1rem;">
+                        <MudIcon Icon="@Icons.Material.Filled.Person" Class="mr-2" />
+                        Información del Participante
+                    </MudText>
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_nombres"
+                                  Label="Nombres"
+                                  Variant="Variant.Outlined"
+                                  Required="true"
+                                  RequiredError="Los nombres son requeridos"
+                                  MaxLength="100" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_apellidos"
+                                  Label="Apellidos"
+                                  Variant="Variant.Outlined"
+                                  Required="true"
+                                  RequiredError="Los apellidos son requeridos"
+                                  MaxLength="100" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_telefono"
+                                  Label="Teléfono"
+                                  Variant="Variant.Outlined"
+                                  MaxLength="30" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudDatePicker @bind-Date="_fechaNacimiento"
+                                   Label="Fecha de Nacimiento"
+                                   Variant="Variant.Outlined"
+                                   MaxDate="DateTime.Today"
+                                   AutoClose="true" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudDivider Class="my-3" />
+                    <MudText Typo="Typo.h6" Style="color: #4D3935; margin-bottom: 1rem;">
+                        <MudIcon Icon="@Icons.Material.Filled.Settings" Class="mr-2" />
+                        Configuración
+                    </MudText>
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudSelect @bind-Value="_estadoParticipante"
+                               Label="Estado del Participante"
+                               Variant="Variant.Outlined"
+                               Required="true"
+                               T="EstadoGeneral">
+                        <MudSelectItem Value="@EstadoGeneral.Activo">Activo</MudSelectItem>
+                        <MudSelectItem Value="@EstadoGeneral.Inactivo">Inactivo</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudSelect @bind-Value="_estadoInscripcion"
+                               Label="Estado de Inscripción"
+                               Variant="Variant.Outlined"
+                               Required="true"
+                               T="EstadoInscripcion">
+                        <MudSelectItem Value="@EstadoInscripcion.Inscrito">Inscrito</MudSelectItem>
+                        <MudSelectItem Value="@EstadoInscripcion.Retirado">Retirado</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+
+                @if (!_esEdicion)
+                {
+                    <MudItem xs="12">
+                        <MudSelect @bind-Value="_actividadSeleccionada"
+                                   Label="Actividad (Opcional)"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   T="Actividad">
+                            @foreach (var actividad in _actividades)
+                            {
+                                <MudSelectItem Value="@actividad">
+                                    @actividad.Titulo (@actividad.FechaInicio.ToString("dd/MM/yyyy"))
+                                </MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudText Typo="Typo.caption" Class="mt-1">
+                            Si no selecciona ninguna actividad, se agregará a todas las actividades activas.
+                        </MudText>
+                    </MudItem>
+                }
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelar" Variant="Variant.Outlined">Cancelar</MudButton>
+        <MudButton Color="Color.Success" 
+                   Variant="Variant.Filled" 
+                   OnClick="OnGuardar" 
+                   Disabled="@(!_isValid || _procesando)">
+            @if (_procesando)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                <span>Guardando...</span>
+            }
+            else
+            {
+                <span>@(_esEdicion ? "Actualizar" : "Agregar")</span>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IDialogReference? MudDialog { get; set; }
+    
+    [Parameter] 
+    public int ProgramaId { get; set; }
+    
+    [Parameter] 
+    public Participante? ParticipanteExistente { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnClose { get; set; }
+
+    private MudForm? _form;
+    private bool _isValid;
+    private bool _procesando = false;
+    private bool _esEdicion => ParticipanteExistente != null;
+
+    private string _nombres = "";
+    private string _apellidos = "";
+    private string? _telefono;
+    private DateTime? _fechaNacimiento;
+    private EstadoGeneral _estadoParticipante = EstadoGeneral.Activo;
+    private EstadoInscripcion _estadoInscripcion = EstadoInscripcion.Inscrito;
+    private Actividad? _actividadSeleccionada;
+    private List<Actividad> _actividades = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _actividades = await DbContext.Actividades
+                .Where(a => a.ProgramaId == ProgramaId && 
+                           !a.IsDeleted &&
+                           a.Estado != EstadoActividad.Cancelada)
+                .OrderByDescending(a => a.FechaInicio)
+                .ToListAsync();
+
+            if (_esEdicion && ParticipanteExistente != null)
+            {
+                await CargarDatosParticipante();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error al inicializar diálogo");
+            Snackbar.Add("Error al cargar datos", Severity.Error);
+        }
+    }
+
+    private async Task CargarDatosParticipante()
+    {
+        if (ParticipanteExistente == null) return;
+
+        try
+        {
+            var participante = await DbContext.Participantes
+                .Include(p => p.Persona)
+                .FirstOrDefaultAsync(p => p.ParticipanteId == ParticipanteExistente.ParticipanteId);
+
+            if (participante?.Persona != null)
+            {
+                _nombres = participante.Persona.Nombres;
+                _apellidos = participante.Persona.Apellidos;
+                _telefono = participante.Persona.Telefono;
+                _fechaNacimiento = participante.Persona.FechaNacimiento;
+                _estadoParticipante = participante.Estado;
+
+                var inscripcion = await DbContext.ActividadParticipantes
+                    .Include(ap => ap.Actividad)
+                    .Where(ap => ap.ParticipanteId == participante.ParticipanteId &&
+                                ap.Actividad.ProgramaId == ProgramaId &&
+                                !ap.IsDeleted)
+                    .FirstOrDefaultAsync();
+
+                if (inscripcion != null)
+                {
+                    _estadoInscripcion = inscripcion.Estado;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error al cargar datos del participante");
+            Snackbar.Add("Error al cargar datos del participante", Severity.Error);
+        }
+    }
+
+    private async Task OnGuardar()
+    {
+        if (_procesando || !_isValid) return;
+        _procesando = true;
+
+        try
+        {
+            if (_esEdicion)
+            {
+                await ActualizarParticipante();
+            }
+            else
+            {
+                await CrearNuevoParticipante();
+            }
+
+            Snackbar.Add(_esEdicion ? "Participante actualizado exitosamente" : "Participante agregado exitosamente", Severity.Success);
+            MudDialog?.Close(DialogResult.Ok(true));
+            await OnClose.InvokeAsync(true);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error al guardar participante");
+            Snackbar.Add("Error al guardar el participante", Severity.Error);
+        }
+        finally
+        {
+            _procesando = false;
+        }
+    }
+
+    private async Task CrearNuevoParticipante()
+    {
+        var persona = new Persona
+        {
+            Nombres = _nombres,
+            Apellidos = _apellidos,
+            Telefono = _telefono,
+            FechaNacimiento = _fechaNacimiento,
+            CreadoEn = DateTime.UtcNow
+        };
+
+        DbContext.Personas.Add(persona);
+        await DbContext.SaveChangesAsync();
+
+        var participante = new Participante
+        {
+            PersonaId = persona.PersonaId,
+            Estado = _estadoParticipante,
+            FechaAlta = DateTime.Now,
+            CreadoEn = DateTime.UtcNow
+        };
+
+        DbContext.Participantes.Add(participante);
+        await DbContext.SaveChangesAsync();
+
+        if (_actividadSeleccionada != null)
+        {
+            var inscripcion = new ActividadParticipante
+            {
+                ActividadId = _actividadSeleccionada.ActividadId,
+                ParticipanteId = participante.ParticipanteId,
+                Estado = _estadoInscripcion,
+                CreadoEn = DateTime.UtcNow
+            };
+            DbContext.ActividadParticipantes.Add(inscripcion);
+        }
+        else
+        {
+            var actividadesActivas = _actividades
+                .Where(a => a.Estado != EstadoActividad.Cancelada)
+                .ToList();
+
+            foreach (var actividad in actividadesActivas)
+            {
+                var inscripcion = new ActividadParticipante
+                {
+                    ActividadId = actividad.ActividadId,
+                    ParticipanteId = participante.ParticipanteId,
+                    Estado = _estadoInscripcion,
+                    CreadoEn = DateTime.UtcNow
+                };
+                DbContext.ActividadParticipantes.Add(inscripcion);
+            }
+        }
+
+        await DbContext.SaveChangesAsync();
+    }
+
+    private async Task ActualizarParticipante()
+    {
+        if (ParticipanteExistente == null) return;
+
+        var participante = await DbContext.Participantes
+            .Include(p => p.Persona)
+            .FirstOrDefaultAsync(p => p.ParticipanteId == ParticipanteExistente.ParticipanteId);
+
+        if (participante?.Persona == null)
+            throw new InvalidOperationException("Participante no encontrado");
+
+        participante.Persona.Nombres = _nombres;
+        participante.Persona.Apellidos = _apellidos;
+        participante.Persona.Telefono = _telefono;
+        participante.Persona.FechaNacimiento = _fechaNacimiento;
+        participante.Persona.ActualizadoEn = DateTime.UtcNow;
+
+        participante.Estado = _estadoParticipante;
+        participante.ActualizadoEn = DateTime.UtcNow;
+
+        var inscripciones = await DbContext.ActividadParticipantes
+            .Include(ap => ap.Actividad)
+            .Where(ap => ap.ParticipanteId == participante.ParticipanteId &&
+                        ap.Actividad.ProgramaId == ProgramaId &&
+                        !ap.IsDeleted)
+            .ToListAsync();
+
+        foreach (var inscripcion in inscripciones)
+        {
+            inscripcion.Estado = _estadoInscripcion;
+            inscripcion.ActualizadoEn = DateTime.UtcNow;
+        }
+
+        await DbContext.SaveChangesAsync();
+    }
+
+    private async Task OnCancelar()
+    {
+        MudDialog?.Close(DialogResult.Cancel());
+        await OnClose.InvokeAsync(false);
+    }
+}

@@ -1,0 +1,258 @@
+﻿@page "/admin/motor/reglas"
+@attribute [Authorize(Roles = "Administrador")]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Motor
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services
+@inject ReglaAdminService ReglaService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<PageTitle>Gestión de Reglas</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <div class="mythra-header">
+        <MudText Typo="Typo.h4">
+            <MudIcon Icon="@Icons.Material.Filled.Rule" Class="mr-2" /> Gestión de Reglas del Motor
+        </MudText>
+        <MudText Typo="Typo.body1" Class="mt-2" Style="opacity: 0.9;">
+            Administra las reglas de inferencia del sistema experto
+        </MudText>
+    </div>
+
+    <MudPaper Class="mythra-card mt-4" Elevation="3">
+        <div class="mythra-toolbar">
+            <MudToolBar Style="background: transparent;">
+                <MudTextField @bind-Value="searchString"
+                              Placeholder="Buscar reglas..."
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium"
+                              Class="mt-0"
+                              Immediate="true"
+                              Style="background-color: #FEFEFD; border-radius: 4px;"></MudTextField>
+                <MudSpacer />
+                <MudButton Variant="Variant.Filled"
+                           Class="mythra-button-primary"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           Href="/admin/motor/reglas/crear"
+                           Size="Size.Large">
+                    Nueva Regla
+                </MudButton>
+            </MudToolBar>
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="pa-4 text-center">
+                <MudProgressCircular Indeterminate="true" />
+                <MudText Typo="Typo.body1" Class="mt-2">Cargando reglas...</MudText>
+            </div>
+        }
+        else
+        {
+            <MudTable Items="@reglas"
+                      Dense="true"
+                      Hover="true"
+                      Filter="new Func<Domain.Motor.Regla, bool>(FilterFunc)"
+                      Elevation="0">
+                <HeaderContent>
+                    <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Clave</MudTh>
+                    <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Nombre</MudTh>
+                    <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Descripción</MudTh>
+                    <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Severidad</MudTh>
+                    <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Objetivo</MudTh>
+                    <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Estado</MudTh>
+                    <MudTh Style="background-color: #4D3935; color: #FEFEFD;">Acciones</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Clave">
+                        <MudText Typo="Typo.body2" Style="font-family: monospace; font-weight: 600;">@context.Clave</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Nombre">
+                        <MudText Typo="Typo.body2">@context.Nombre</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Descripción">
+                        <MudText Typo="Typo.caption">@context.Descripcion</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Severidad">
+                        <MudChip T="string" Size="Size.Small" Color="GetSeveridadColor(context.Severidad)">
+                            @context.Severidad
+                        </MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Objetivo">
+                        <MudChip T="string" Size="Size.Small" Color="Color.Info">
+                            @context.Objetivo
+                        </MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Estado">
+                        @if (context.Activa)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Success">Activa</MudChip>
+                        }
+                        else
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Default">Inactiva</MudChip>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="Acciones">
+                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
+                            <MudMenuItem Icon="@Icons.Material.Filled.Edit"
+                                         Href="@($"/admin/motor/reglas/editar/{context.ReglaId}")">
+                                Editar
+                            </MudMenuItem>
+                            <MudMenuItem Icon="@(context.Activa ? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)"
+                                         OnClick="@(() => ToggleReglaEstado(context))">
+                                @(context.Activa ? "Desactivar" : "Activar")
+                            </MudMenuItem>
+                            <MudMenuItem Icon="@Icons.Material.Filled.Delete"
+                                         OnClick="@(() => EliminarRegla(context))">
+                                Eliminar
+                            </MudMenuItem>
+                        </MudMenu>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager />
+                </PagerContent>
+            </MudTable>
+        }
+    </MudPaper>
+</MudContainer>
+
+<style>
+    .mythra-header {
+        background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
+        color: #FEFEFD;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+
+    .mythra-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-left: 4px solid #4D3935;
+    }
+
+    .mythra-toolbar {
+        background-color: #F7C484;
+        border-radius: 8px 8px 0 0;
+        padding: 1rem;
+    }
+
+    .mythra-button-primary {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .mythra-button-primary:hover {
+        background: linear-gradient(135deg, #85C97C 0%, #9FD996 100%) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(159, 217, 150, 0.4) !important;
+    }
+</style>
+
+@code {
+    private List<Domain.Motor.Regla> reglas = new();
+    private string searchString = "";
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarReglas();
+    }
+
+    private async Task CargarReglas()
+    {
+        isLoading = true;
+        try
+        {
+            var result = await ReglaService.ListarAsync(CancellationToken.None);
+            reglas = result.Select(r => new Domain.Motor.Regla
+            {
+                ReglaId = r.ReglaId,
+                Clave = r.Clave,
+                Nombre = r.Nombre,
+                Descripcion = r.Descripcion,
+                Severidad = (Domain.Common.Severidad)r.Severidad,
+                Objetivo = (ObjetivoRegla)r.Objetivo,
+                Activa = r.Activa,
+                Prioridad = r.Prioridad,
+                Version = r.Version,
+                RowVersion = r.RowVersion
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cargar reglas: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private bool FilterFunc(Domain.Motor.Regla regla)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+
+        if (regla.Clave.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (regla.Nombre.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (regla.Descripcion?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+
+        return false;
+    }
+
+    private Color GetSeveridadColor(Domain.Common.Severidad severidad)
+    {
+        return severidad switch
+        {
+            Domain.Common.Severidad.Info => Color.Info,
+            Domain.Common.Severidad.Alta => Color.Error,
+            Domain.Common.Severidad.Critica => Color.Dark,
+            _ => Color.Default
+        };
+    }
+
+    private async Task ToggleReglaEstado(Domain.Motor.Regla regla)
+    {
+        try
+        {
+            await ReglaService.CambiarEstadoAsync(
+                regla.ReglaId,
+                !regla.Activa,
+                regla.RowVersion,
+                CancellationToken.None
+            );
+
+            Snackbar.Add($"Regla {(regla.Activa ? "desactivada" : "activada")} exitosamente", Severity.Success);
+            await CargarReglas();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cambiar estado: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task EliminarRegla(Domain.Motor.Regla regla)
+    {
+        try
+        {
+            await ReglaService.EliminarAsync(regla.ReglaId, regla.RowVersion, CancellationToken.None);
+            Snackbar.Add("Regla eliminada exitosamente", Severity.Success);
+            await CargarReglas();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al eliminar regla: {ex.Message}", Severity.Error);
+        }
+    }
+}

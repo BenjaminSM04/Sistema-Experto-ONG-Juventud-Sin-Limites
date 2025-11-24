@@ -2,7 +2,7 @@
 {
     public interface IMotorInferencia
     {
-        Task<EjecucionResumen> EjecutarAsync(DateOnly fechaCorte, int? programaId, CancellationToken ct);
+        Task<EjecucionResumen> EjecutarAsync(DateOnly fechaCorte, int? programaId, bool dryRun, CancellationToken ct);
     }
     public record EjecucionResumen(int ReglasEjecutadas, int AlertasGeneradas, int Errores);
 }

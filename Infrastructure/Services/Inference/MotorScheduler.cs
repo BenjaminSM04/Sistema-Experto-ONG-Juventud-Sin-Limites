@@ -18,7 +18,7 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Infer
                 {
                     using var scope = _sp.CreateScope();
                     var motor = scope.ServiceProvider.GetRequiredService<IMotorInferencia>();
-                    await motor.EjecutarAsync(DateOnly.FromDateTime(DateTime.UtcNow), null, stoppingToken);
+                    await motor.EjecutarAsync(DateOnly.FromDateTime(DateTime.UtcNow), null, false, stoppingToken);
                     await Task.Delay(TimeSpan.FromMinutes(61), stoppingToken); // evita doble corrida en la misma hora
                 }
                 await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);

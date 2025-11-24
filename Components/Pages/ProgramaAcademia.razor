@@ -758,35 +758,38 @@ return "N/A";
 
     private async Task ExportarReportePDF()
     {
-    if (_generandoPDF) return;
+        if (_generandoPDF) return;
 
-     try
-     {
-        _generandoPDF = true;
- StateHasChanged();
+        try
+        {
+            _generandoPDF = true;
+            StateHasChanged();
 
- Snackbar.Add("Generando reporte PDF...", Severity.Info);
+            Snackbar.Add("Generando reporte PDF...", Severity.Info);
 
-  var htmlReporte = await ReportesService.GenerarReporteHtmlAsync(ProgramaId, _filtroAnio);
-         
-       // Generar nombre de archivo
-    var nombreArchivo = $"Reporte_{_programa?.Clave}_{_filtroAnio}_{DateTime.Now:yyyyMMddHHmmss}.html";
-     
-    // Descargar el HTML (que se puede convertir a PDF en el navegador con Ctrl+P)
-await JS.InvokeVoidAsync("downloadFile", nombreArchivo, htmlReporte, "text/html");
-     
-       Snackbar.Add("Reporte HTML generado. Use Ctrl+P en su navegador para imprimir/guardar como PDF", Severity.Success);
-  }
-    catch (Exception ex)
-     {
-  Logger.LogError(ex, "Error al generar reporte");
-Snackbar.Add("Error al generar el reporte", Severity.Error);
-  }
+            var pdfBytes = await ReportesService.GenerarReportePdfAsync(ProgramaId, _filtroAnio);
+            
+            // Generar nombre de archivo
+            var nombreArchivo = $"Reporte_{_programa?.Clave}_{_filtroAnio}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
+            
+            // Convertir a Base64
+            var base64 = Convert.ToBase64String(pdfBytes);
+
+            // Descargar el PDF usando la función JS existente
+            await JS.InvokeVoidAsync("downloadFileFromBase64", base64, nombreArchivo, "application/pdf");
+            
+            Snackbar.Add("Reporte PDF generado y descargado exitosamente", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error al generar reporte");
+            Snackbar.Add("Error al generar el reporte", Severity.Error);
+        }
         finally
-      {
-   _generandoPDF = false;
-     StateHasChanged();
-      }
+        {
+            _generandoPDF = false;
+            StateHasChanged();
+        }
     }
 
  private string ObtenerNombreMes(int mes)

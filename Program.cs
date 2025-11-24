@@ -13,7 +13,10 @@ using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Interceptors;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Middleware;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Inference;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Security;
+using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Validation;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using AspNetCoreRateLimit;
 
 namespace Sistema_Experto_ONG_Juventud_Sin_Limites
 {
@@ -40,15 +43,29 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
             // Servicio de Permisos
             builder.Services.AddScoped<IPermissionProvider, PermissionProvider>();
 
+            // Servicios de Validación y Sanitización
+            builder.Services.AddSingleton<HtmlSanitizerService>();
+
+            // Servicios de Autenticación y Email
+            builder.Services.AddSingleton<EmailTwoFactorService>();
+            builder.Services.AddScoped<EmailSenderService>();
+
             // Servicio de Reportes
             builder.Services.AddScoped<Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.ReportesProgramaService>();
             builder.Services.AddScoped<Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.ReportesMotorService>();
 
             // Servicio del Motor
             builder.Services.AddScoped<Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.MotorService>();
+            builder.Services.AddScoped<Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.ReglaAdminService>();
 
             // Servicio del Clima
             builder.Services.AddScoped<Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.WeatherService>();
+            
+            // Servicio de POA
+            builder.Services.AddScoped<Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.POAService>();
+            
+            // Servicio de Exportación POA a PDF
+            builder.Services.AddScoped<Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.POAPdfExportService>();
 
          // MudBlazor
             builder.Services.AddMudServices();
@@ -56,6 +73,24 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
             // Configurar HttpClient para llamadas a la API desde Blazor
             builder.Services.AddHttpClient();
             builder.Services.AddHttpContextAccessor();
+            
+            // Configurar HttpClient con BaseAddress para componentes Blazor
+            builder.Services.AddScoped(sp =>
+            {
+                var accessor = sp.GetRequiredService<IHttpContextAccessor>();
+                var request = accessor.HttpContext?.Request;
+                var baseUrl = request != null 
+                    ? $"{request.Scheme}://{request.Host}" 
+                    : "https://localhost:7001"; // Fallback para desarrollo
+                return new HttpClient { BaseAddress = new Uri(baseUrl) };
+            });
+
+            // Configurar Rate Limiting
+            builder.Services.AddMemoryCache();
+            builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+            builder.Services.Configure<IpRateLimitPolicies>(builder.Configuration.GetSection("IpRateLimitPolicies"));
+            builder.Services.AddInMemoryRateLimiting();
+            builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
             // Agregar servicios para API
             builder.Services.AddControllers();
@@ -110,7 +145,9 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
       .AddSignInManager()
         .AddDefaultTokenProviders();
 
-            builder.Services.AddSingleton<IEmailSender<Usuario>, IdentityNoOpEmailSender>();
+            // Reemplazar el sender de emails por defecto con nuestro servicio personalizado
+            builder.Services.AddScoped<IEmailSender<Usuario>, EmailSenderService>();
+            builder.Services.AddScoped<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender, EmailSenderService>();
 
             var app = builder.Build();
 
@@ -147,7 +184,10 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
             app.UseAuthentication();
             app.UseAuthorization();
 
-            // ⚠️ IMPORTANTE: Middleware de cambio obligatorio de contraseña
+            // Rate Limiting Middleware
+            app.UseIpRateLimiting();
+
+            // 🔒 IMPORTANTE: Middleware de cambio obligatorio de contraseña
             // Debe estar después de UseAuthentication y UseAuthorization
             app.UseForceChangePassword();
 
@@ -157,6 +197,46 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
 
             var apiGroup = app.MapGroup("/api")
                  .RequireAuthorization();
+
+            // CRUD Reglas (solo Administrador)
+            var reglasGroup = apiGroup.MapGroup("/reglas");
+            reglasGroup.MapGet("", async (Infrastructure.Services.ReglaAdminService svc, ClaimsPrincipal user, CancellationToken ct) =>
+            {
+                if (!user.IsInRole("Administrador")) return Results.Forbid();
+                var lista = await svc.ListarAsync(ct);
+                return Results.Ok(lista);
+            });
+            reglasGroup.MapGet("/{id:int}", async (int id, Infrastructure.Services.ReglaAdminService svc, ClaimsPrincipal user, CancellationToken ct) =>
+            {
+                if (!user.IsInRole("Administrador")) return Results.Forbid();
+                var regla = await svc.ObtenerAsync(id, ct);
+                return regla == null ? Results.NotFound() : Results.Ok(regla);
+            });
+            reglasGroup.MapPost("", async ([FromBody] UpsertReglaRequest req, Infrastructure.Services.ReglaAdminService svc, ClaimsPrincipal user, CancellationToken ct) =>
+            {
+                if (!user.IsInRole("Administrador")) return Results.Forbid();
+                var dto = await svc.UpsertAsync(req, ct);
+                return Results.Created($"/api/reglas/{dto.ReglaId}", dto);
+            });
+            reglasGroup.MapPut("/{id:int}", async (int id, [FromBody] UpsertReglaRequest req, Infrastructure.Services.ReglaAdminService svc, ClaimsPrincipal user, CancellationToken ct) =>
+            {
+                if (!user.IsInRole("Administrador")) return Results.Forbid();
+                if (req.ReglaId != id) return Results.BadRequest(new { error = "Id mismatch" });
+                var dto = await svc.UpsertAsync(req, ct);
+                return Results.Ok(dto);
+            });
+            reglasGroup.MapPatch("/{id:int}/estado", async (int id, [FromBody] CambiarEstadoReglaRequest req, Infrastructure.Services.ReglaAdminService svc, ClaimsPrincipal user, CancellationToken ct) =>
+            {
+                if (!user.IsInRole("Administrador")) return Results.Forbid();
+                await svc.CambiarEstadoAsync(id, req.Activa, req.RowVersion, ct);
+                return Results.NoContent();
+            });
+            reglasGroup.MapDelete("/{id:int}", async (int id, [FromBody] byte[]? rowVersion, Infrastructure.Services.ReglaAdminService svc, ClaimsPrincipal user, CancellationToken ct) =>
+            {
+                if (!user.IsInRole("Administrador")) return Results.Forbid();
+                await svc.EliminarAsync(id, rowVersion, ct);
+                return Results.NoContent();
+            });
 
             // ========================================
             // 1) POST /api/motor/ejecutar
@@ -169,14 +249,14 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
            ILogger<Program> logger,
                  CancellationToken ct) =>
              {
-                 app.Logger.LogInformation("🔍 Endpoint /api/motor/ejecutar llamado");
+                 app.Logger.LogInformation("?? Endpoint /api/motor/ejecutar llamado");
                  app.Logger.LogInformation($"Usuario: {user.Identity?.Name}, Autenticado: {user.Identity?.IsAuthenticated}");
                  app.Logger.LogInformation($"Roles: {string.Join(", ", user.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value))}");
 
                  // Verificar roles permitidos
                  if (!user.IsInRole("Administrador") && !user.IsInRole("Coordinador"))
                  {
-                     app.Logger.LogWarning("❌ Usuario sin permisos suficientes");
+                     app.Logger.LogWarning("? Usuario sin permisos suficientes");
                      return Results.Forbid();
                  }
 
@@ -184,14 +264,14 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
                  var fechaCorte = request.FechaCorte ?? DateTime.UtcNow;
                  var fechaCorteOnly = DateOnly.FromDateTime(fechaCorte);
 
-                 app.Logger.LogInformation($"📅 Ejecutando motor: FechaCorte={fechaCorteOnly}, ProgramaId={request.ProgramaId}");
+                 app.Logger.LogInformation($"?? Ejecutando motor: FechaCorte={fechaCorteOnly}, ProgramaId={request.ProgramaId}, DryRun={request.DryRun}");
 
                  // Ejecutar motor
                  try
                  {
-                     var resumen = await motor.EjecutarAsync(fechaCorteOnly, request.ProgramaId, ct);
+                     var resumen = await motor.EjecutarAsync(fechaCorteOnly, request.ProgramaId, request.DryRun, ct);
 
-                     app.Logger.LogInformation($"✅ Motor ejecutado: Reglas={resumen.ReglasEjecutadas}, Alertas={resumen.AlertasGeneradas}, Errores={resumen.Errores}");
+                     app.Logger.LogInformation($"? Motor ejecutado: Reglas={resumen.ReglasEjecutadas}, Alertas={resumen.AlertasGeneradas}, Errores={resumen.Errores}");
 
                      // Obtener últimas 50 alertas generadas
                      var ultimasAlertas = await context.Alertas
@@ -212,7 +292,7 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
         ))
                .ToListAsync(ct);
 
-                     app.Logger.LogInformation($"📋 Obtenidas {ultimasAlertas.Count} alertas de la BD");
+                     app.Logger.LogInformation($"?? Obtenidas {ultimasAlertas.Count} alertas de la BD");
 
                      var response = new MotorRunResponseDto(
             fechaCorte,
@@ -229,7 +309,7 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
                  }
                  catch (Exception ex)
                  {
-                     app.Logger.LogError(ex, "❌ Error ejecutando motor");
+                     app.Logger.LogError(ex, "? Error ejecutando motor");
                      return Results.Problem(detail: ex.Message, statusCode: 500);
                  }
              })
@@ -423,6 +503,121 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
             }
 
             app.MapControllers();
+
+            // ========================================
+            // ENDPOINT PERSONALIZADO DE LOGIN CON 2FA
+            // ========================================
+            app.MapPost("/Account/PerformLogin", async (
+                HttpContext context,
+                [FromForm] string email,
+                [FromForm] string password,
+                [FromForm] bool? rememberMe,
+                [FromForm] string? returnUrl,
+                SignInManager<Usuario> signInManager,
+                UserManager<Usuario> userManager,
+                EmailTwoFactorService twoFactorService,
+                EmailSenderService emailSender,
+                ILogger<Program> logger) =>
+            {
+                logger.LogInformation("Intento de login para {Email}", email);
+
+                var user = await userManager.FindByEmailAsync(email);
+                if (user == null)
+                {
+                    logger.LogWarning("Usuario no encontrado: {Email}", email);
+                    return Results.Redirect($"/Account/Login?Message={Uri.EscapeDataString("Email o contraseña incorrectos")}");
+                }
+
+                // Verificar contraseña
+                var result = await signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure: true);
+
+                if (result.IsLockedOut)
+                {
+                    logger.LogWarning("Usuario bloqueado: {Email}", email);
+                    return Results.Redirect("/Account/Lockout");
+                }
+
+                if (!result.Succeeded)
+                {
+                    logger.LogWarning("Contraseña incorrecta para: {Email}", email);
+                    return Results.Redirect($"/Account/Login?Message={Uri.EscapeDataString("Email o contraseña incorrectos")}");
+                }
+
+                // Si 2FA está habilitado, generar y enviar código
+                if (user.TwoFactorEnabled)
+                {
+                    // Generar código de 6 caracteres
+                    var code = twoFactorService.GenerateCode();
+                    
+                    // Almacenar código y sesión temporal
+                    twoFactorService.StoreCode(email, code, user.Id, rememberMe ?? false);
+                    
+                    // Enviar código por email
+                    await emailSender.SendPasswordResetCodeAsync(user, email, code);
+                    
+                    logger.LogInformation("Código 2FA enviado a {Email}", email);
+
+                    return Results.Redirect($"/Account/VerifyTwoFactor?email={Uri.EscapeDataString(email)}&returnUrl={Uri.EscapeDataString(returnUrl ?? "/")}");
+                }
+
+                await signInManager.SignInAsync(user, isPersistent: rememberMe ?? false);
+                logger.LogInformation("Login exitoso para {Email}", email);
+                
+                return Results.Redirect(returnUrl ?? "/");
+            })
+            .DisableAntiforgery(); 
+
+            
+            app.MapPost("/Account/Complete2FA", async (
+                HttpContext context,
+                [FromForm] string email,
+                [FromForm] string code,
+                [FromForm] string? returnUrl,
+                SignInManager<Usuario> signInManager,
+                UserManager<Usuario> userManager,
+                EmailTwoFactorService twoFactorService,
+                ILogger<Program> logger) =>
+            {
+                logger.LogInformation("Verificando código 2FA para {Email}", email);
+
+                // Verificar que existe una sesión válida
+                var session = twoFactorService.GetUserSession(email);
+                if (session == null)
+                {
+                    logger.LogWarning("No hay sesión 2FA válida para {Email}", email);
+                    return Results.Redirect($"/Account/Login?Message={Uri.EscapeDataString("Sesión expirada. Por favor, inicia sesión nuevamente.")}");
+                }
+
+                // Verificar el código
+                if (!twoFactorService.VerifyCode(email, code))
+                {
+                    logger.LogWarning("Código 2FA incorrecto para {Email}", email);
+                    var errorReturnUrl = !string.IsNullOrEmpty(returnUrl) ? returnUrl : "/";
+                    return Results.Redirect($"/Account/VerifyTwoFactor?email={Uri.EscapeDataString(email)}&returnUrl={Uri.EscapeDataString(errorReturnUrl)}&error={Uri.EscapeDataString("Código incorrecto o expirado")}");
+                }
+
+                // Cargar usuario
+                var user = await userManager.FindByIdAsync(session.UserId.ToString());
+                if (user == null)
+                {
+                    logger.LogError("Usuario no encontrado: {UserId}", session.UserId);
+                    twoFactorService.ClearSession(email);
+                    return Results.Redirect($"/Account/Login?Message={Uri.EscapeDataString("Error al completar el login")}");
+                }
+
+                // Limpiar sesión temporal
+                twoFactorService.ClearSession(email);
+
+                // Iniciar sesión real
+                await signInManager.SignInAsync(user, isPersistent: session.RememberMe);
+                
+                logger.LogInformation("Usuario {Email} completó 2FA exitosamente", email);
+
+                // Redirigir al destino (asegurar que nunca sea null o vacío)
+                var finalReturnUrl = string.IsNullOrWhiteSpace(returnUrl) ? "/" : returnUrl;
+                return Results.Redirect(finalReturnUrl);
+            })
+            .DisableAntiforgery();
 
             app.MapRazorComponents<App>()
             .AddInteractiveServerRenderMode();

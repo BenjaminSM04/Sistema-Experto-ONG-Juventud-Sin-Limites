@@ -21,6 +21,7 @@
             <StatusMessage Message="@errorMessage" />
             <!-- Form HTML tradicional que hace POST real al endpoint -->
             <form action="/Account/PerformLogin" method="post">
+                <AntiforgeryToken />
                 <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
 
                 <h2>Accede al sistema con tu cuenta</h2>

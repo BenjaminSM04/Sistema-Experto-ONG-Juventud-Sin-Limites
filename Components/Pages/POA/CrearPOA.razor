@@ -1,0 +1,442 @@
+﻿@page "/poa/crear/{ProgramaId:int}"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Pages.POA
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Microsoft.EntityFrameworkCore
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Shared
+
+@inject POAService POAService
+@inject ApplicationDbContext DbContext
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Crear POA</PageTitle>
+
+<style>
+    .mythra-header {
+        background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
+        color: #FEFEFD;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+
+    .mythra-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-left: 4px solid #4D3935;
+    }
+
+    .mythra-section {
+        background: #F7F7F7;
+        border-left: 3px solid #9FD996;
+        padding: 1rem;
+        margin: 1.5rem 0;
+        border-radius: 4px;
+    }
+
+    .mythra-button-primary {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .mythra-button-secondary {
+        background-color: transparent !important;
+        border: 2px solid #4D3935 !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .metric-card {
+        background: white;
+        border-left: 3px solid #F7C484;
+        padding: 0.8rem;
+        border-radius: 4px;
+    }
+</style>
+
+<AutorizacionWrapper RolesRequeridos="Administrador">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <div class="mythra-header">
+        <MudText Typo="Typo.h4">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-2" />
+            Crear Nuevo POA
+        </MudText>
+        <MudText Typo="Typo.body1" Class="mt-2" Style="opacity: 0.9;">
+            Programa: @(_programa?.Nombre ?? "Cargando...")
+        </MudText>
+    </div>
+
+    @if (_cargando)
+    {
+        <div style="text-align: center; padding: 2rem;">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        </div>
+    }
+    else
+    {
+        <MudPaper Class="mythra-card pa-6" Elevation="3">
+            <MudGrid>
+                <!-- Información General -->
+                <MudItem xs="12">
+                    <div class="mythra-section">
+                        <MudText Typo="Typo.h6" Class="mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
+                            Información General
+                        </MudText>
+                        <MudGrid>
+                            <MudItem xs="12">
+                                <MudText Typo="Typo.body1" Class="mb-2">
+                                    <strong>Programa:</strong> @_programa?.Nombre
+                                </MudText>
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="6">
+                                <MudNumericField @bind-Value="_modelo.PeriodoAnio" 
+                                                T="short"
+                                                Label="Año" 
+                                                Min="2020" 
+                                                Max="2100"
+                                                Required="true"
+                                                Variant="Variant.Outlined" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="6">
+                                <MudSelect @bind-Value="_modelo.PeriodoMes" 
+                                          Label="Mes (opcional)" 
+                                          Clearable="true"
+                                          Variant="Variant.Outlined">
+                                    <MudSelectItem Value="@((byte?)1)">Enero</MudSelectItem>
+                                    <MudSelectItem Value="@((byte?)2)">Febrero</MudSelectItem>
+                                    <MudSelectItem Value="@((byte?)3)">Marzo</MudSelectItem>
+                                    <MudSelectItem Value="@((byte?)4)">Abril</MudSelectItem>
+                                    <MudSelectItem Value="@((byte?)5)">Mayo</MudSelectItem>
+                                    <MudSelectItem Value="@((byte?)6)">Junio</MudSelectItem>
+                                    <MudSelectItem Value="@((byte?)7)">Julio</MudSelectItem>
+                                    <MudSelectItem Value="@((byte?)8)">Agosto</MudSelectItem>
+                                    <MudSelectItem Value="@((byte?)9)">Septiembre</MudSelectItem>
+                                    <MudSelectItem Value="@((byte?)10)">Octubre</MudSelectItem>
+                                    <MudSelectItem Value="@((byte?)11)">Noviembre</MudSelectItem>
+                                    <MudSelectItem Value="@((byte?)12)">Diciembre</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                            
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="_modelo.Notas" 
+                                             Label="Notas / Descripción" 
+                                             Lines="3"
+                                             Variant="Variant.Outlined" />
+                            </MudItem>
+                        </MudGrid>
+                    </div>
+                </MudItem>
+
+                <!-- Planificación de Actividades -->
+                <MudItem xs="12">
+                    <div class="mythra-section">
+                        <MudText Typo="Typo.h6" Class="mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.EventNote" Class="mr-2" />
+                            Planificación de Actividades
+                        </MudText>
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudNumericField @bind-Value="_modelo.ActividadesPlanificadas" 
+                                                T="int"
+                                                Label="Actividades Planificadas" 
+                                                Min="0"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.Start"
+                                                AdornmentIcon="@Icons.Material.Filled.CalendarMonth" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="6">
+                                <MudNumericField @bind-Value="_modelo.ActividadesEjecutadas" 
+                                                T="int"
+                                                Label="Actividades Ejecutadas" 
+                                                Min="0"
+                                                Max="@_modelo.ActividadesPlanificadas"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.Start"
+                                                AdornmentIcon="@Icons.Material.Filled.CheckCircle" />
+                            </MudItem>
+
+                            @if (_modelo.ActividadesPlanificadas > 0)
+                            {
+                                <MudItem xs="12">
+                                    <div class="metric-card">
+                                        <MudText Typo="Typo.body2" Style="color: #6D534F;">
+                                            <strong>Cumplimiento de Actividades:</strong> 
+                                            @CalcularPorcentaje(_modelo.ActividadesEjecutadas, _modelo.ActividadesPlanificadas)%
+                                        </MudText>
+                                        <MudProgressLinear Color="Color.Success" 
+                                                          Value="@CalcularPorcentaje(_modelo.ActividadesEjecutadas, _modelo.ActividadesPlanificadas)" 
+                                                          Class="mt-2" />
+                                    </div>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </div>
+                </MudItem>
+
+                <!-- Presupuesto -->
+                <MudItem xs="12">
+                    <div class="mythra-section">
+                        <MudText Typo="Typo.h6" Class="mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Class="mr-2" />
+                            Presupuesto
+                        </MudText>
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudNumericField @bind-Value="_modelo.PresupuestoTotal" 
+                                                T="decimal?"
+                                                Label="Presupuesto Total" 
+                                                Min="0"
+                                                Format="N2"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.Start"
+                                                AdornmentText="$" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="6">
+                                <MudNumericField @bind-Value="_modelo.PresupuestoEjecutado" 
+                                                T="decimal?"
+                                                Label="Presupuesto Ejecutado" 
+                                                Min="0"
+                                                Max="@_modelo.PresupuestoTotal"
+                                                Format="N2"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.Start"
+                                                AdornmentText="$" />
+                            </MudItem>
+
+                            @if (_modelo.PresupuestoTotal.HasValue && _modelo.PresupuestoTotal.Value > 0)
+                            {
+                                <MudItem xs="12">
+                                    <div class="metric-card">
+                                        <MudText Typo="Typo.body2" Style="color: #6D534F;">
+                                            <strong>Ejecución Presupuestaria:</strong> 
+                                            @CalcularPorcentajeDecimal(_modelo.PresupuestoEjecutado ?? 0, _modelo.PresupuestoTotal.Value)%
+                                        </MudText>
+                                        <MudProgressLinear Color="Color.Info" 
+                                                          Value="@CalcularPorcentajeDecimal(_modelo.PresupuestoEjecutado ?? 0, _modelo.PresupuestoTotal.Value)" 
+                                                          Class="mt-2" />
+                                        <MudText Typo="Typo.caption" Class="mt-1">
+                                            Saldo: $@FormatearMoneda((_modelo.PresupuestoTotal ?? 0) - (_modelo.PresupuestoEjecutado ?? 0))
+                                        </MudText>
+                                    </div>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </div>
+                </MudItem>
+
+                <!-- Participantes -->
+                <MudItem xs="12">
+                    <div class="mythra-section">
+                        <MudText Typo="Typo.h6" Class="mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Groups" Class="mr-2" />
+                            Participantes / Beneficiarios
+                        </MudText>
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudNumericField @bind-Value="_modelo.TotalParticipantes" 
+                                                T="int?"
+                                                Label="Total Participantes" 
+                                                Min="0"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.Start"
+                                                AdornmentIcon="@Icons.Material.Filled.Person" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="6">
+                                <MudNumericField @bind-Value="_modelo.ParticipantesActivos" 
+                                                T="int?"
+                                                Label="Participantes Activos" 
+                                                Min="0"
+                                                Max="@_modelo.TotalParticipantes"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.Start"
+                                                AdornmentIcon="@Icons.Material.Filled.PersonAdd" />
+                            </MudItem>
+
+                            @if (_modelo.TotalParticipantes.HasValue && _modelo.TotalParticipantes.Value > 0)
+                            {
+                                <MudItem xs="12">
+                                    <div class="metric-card">
+                                        <MudText Typo="Typo.body2" Style="color: #6D534F;">
+                                            <strong>Retención de Participantes:</strong> 
+                                            @CalcularPorcentaje(_modelo.ParticipantesActivos ?? 0, _modelo.TotalParticipantes.Value)%
+                                        </MudText>
+                                        @if (_modelo.PresupuestoTotal.HasValue && _modelo.PresupuestoTotal.Value > 0)
+                                        {
+                                            <MudText Typo="Typo.caption" Class="mt-1">
+                                                Costo por participante: $@FormatearMoneda(_modelo.PresupuestoTotal.Value / _modelo.TotalParticipantes.Value)
+                                            </MudText>
+                                        }
+                                    </div>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </div>
+                </MudItem>
+
+                <!-- Indicadores de Calidad -->
+                <MudItem xs="12">
+                    <div class="mythra-section">
+                        <MudText Typo="Typo.h6" Class="mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Analytics" Class="mr-2" />
+                            Indicadores de Calidad
+                        </MudText>
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudNumericField @bind-Value="_modelo.PorcentajeAsistencia" 
+                                                T="decimal?"
+                                                Label="Porcentaje de Asistencia Promedio" 
+                                                Min="0"
+                                                Max="100"
+                                                Format="N2"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.End"
+                                                AdornmentText="%" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="6">
+                                <MudNumericField @bind-Value="_modelo.PorcentajeCumplimiento" 
+                                                T="decimal?"
+                                                Label="Porcentaje de Cumplimiento General" 
+                                                Min="0"
+                                                Max="100"
+                                                Format="N2"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.End"
+                                                AdornmentText="%" />
+                            </MudItem>
+                        </MudGrid>
+                    </div>
+                </MudItem>
+
+                <!-- Alerta informativa -->
+                <MudItem xs="12">
+                    <MudAlert Severity="Severity.Info" Dense="true">
+                        <MudText Typo="Typo.body2">
+                            <strong>Nota:</strong> Solo se puede crear un POA por año (o un POA por mes si especificas el mes). 
+                            Los campos marcados en las secciones son opcionales pero recomendados para un seguimiento completo del programa.
+                        </MudText>
+                    </MudAlert>
+                </MudItem>
+
+                <!-- Botones de acción -->
+                <MudItem xs="12" Class="d-flex gap-3 justify-end mt-4">
+                    <MudButton Variant="Variant.Outlined"
+                              Class="mythra-button-secondary"
+                              OnClick="Cancelar"
+                              StartIcon="@Icons.Material.Filled.Cancel"
+                              Disabled="_creando">
+                        Cancelar
+                    </MudButton>
+                    
+                    <MudButton Variant="Variant.Filled"
+                              Class="mythra-button-primary"
+                              OnClick="Crear"
+                              StartIcon="@Icons.Material.Filled.Save"
+                              Disabled="_creando">
+                        @if (_creando)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Creando POA...</span>
+                        }
+                        else
+                        {
+                            <span>Crear POA</span>
+                        }
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public int ProgramaId { get; set; }
+
+    private Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas.Programa? _programa;
+    private CrearPOAModel _modelo = new();
+    private bool _creando = false;
+    private bool _cargando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _programa = await DbContext.Programas
+                .FirstOrDefaultAsync(p => p.ProgramaId == ProgramaId && !p.IsDeleted);
+
+            if (_programa == null)
+            {
+                Snackbar.Add("Programa no encontrado", Severity.Error);
+                Navigation.NavigateTo("/poas");
+                return;
+            }
+
+            _modelo.ProgramaId = ProgramaId;
+            _modelo.PeriodoAnio = (short)DateTime.Now.Year;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cargar datos: {ex.Message}", Severity.Error);
+            Navigation.NavigateTo("/poas");
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task Crear()
+    {
+        if (_creando) return;
+
+        _creando = true;
+        try
+        {
+            var instanciaId = await POAService.CrearPOAAsync(_modelo);
+            Snackbar.Add("POA creado exitosamente", Severity.Success);
+            Navigation.NavigateTo($"/poa/{instanciaId}");
+        }
+        catch (InvalidOperationException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+            _creando = false;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al crear POA: {ex.Message}", Severity.Error);
+            _creando = false;
+        }
+    }
+
+    private void Cancelar()
+    {
+        Navigation.NavigateTo($"/poas/{ProgramaId}");
+    }
+
+    private double CalcularPorcentaje(int valor, int total)
+    {
+        if (total == 0) return 0;
+        return Math.Round((valor * 100.0) / total, 2);
+    }
+
+    private double CalcularPorcentajeDecimal(decimal valor, decimal total)
+    {
+        if (total == 0) return 0;
+        return (double)Math.Round((valor * 100) / total, 2);
+    }
+
+    private string FormatearMoneda(decimal valor)
+    {
+        return valor.ToString("N2");
+    }
+}
+</AutorizacionWrapper>

@@ -1,0 +1,154 @@
+﻿@page "/admin/motor/reglas/editar/{ReglaIdParam:int}"
+@rendermode InteractiveServer
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Api.Models
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Shared
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Pages.Admin.Motor
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services
+@inject ReglaAdminService ReglaService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Editar Regla - Motor de Inferencia</PageTitle>
+
+<AutorizacionWrapper RolesRequeridos="Administrador">
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <div class="mythra-header">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudText Typo="Typo.h4">
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2" />
+                    Editar Regla del Motor
+                </MudText>
+                <MudText Typo="Typo.body1" Class="mt-2" Style="opacity: 0.9;">
+                    Modificar regla y sus parámetros
+                </MudText>
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    @if (_cargando)
+    {
+        <div style="text-align: center; padding: 4rem;">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+            <MudText Typo="Typo.body1" Class="mt-2">Cargando regla...</MudText>
+        </div>
+    }
+    else if (_regla == null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-4">
+            Regla no encontrada
+        </MudAlert>
+    }
+    else
+    {
+        <div class="mt-4">
+            <ReglaFormulario @ref="_formulario"
+                            ReglaId="_regla.ReglaId"
+                            Clave="_regla.Clave"
+                            Nombre="_regla.Nombre"
+                            Descripcion="_regla.Descripcion"
+                            Severidad="_regla.Severidad"
+                            Objetivo="_regla.Objetivo"
+                            Activa="_regla.Activa"
+                            Prioridad="_regla.Prioridad"
+                            Version="_regla.Version"
+                            Parametros="_regla.Parametros.ToList()"
+                            RowVersion="_regla.RowVersion"
+                            Guardando="_guardando"
+                            OnGuardar="GuardarCambios"
+                            OnCancelar="Cancelar" />
+        </div>
+    }
+</MudContainer>
+</AutorizacionWrapper>
+
+@code {
+    [Parameter] public int ReglaIdParam { get; set; }
+    
+    private ReglaFormulario? _formulario;
+    private ReglaDto? _regla;
+    private bool _cargando = true;
+    private bool _guardando = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarReglaAsync();
+    }
+
+    private async Task CargarReglaAsync()
+    {
+        _cargando = true;
+        try
+        {
+            _regla = await ReglaService.ObtenerAsync(ReglaIdParam, CancellationToken.None);
+            
+            if (_regla == null)
+            {
+                Snackbar.Add("Regla no encontrada", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cargar regla: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task GuardarCambios()
+    {
+        if (_formulario == null || _regla == null) return;
+
+        var request = _formulario.ObtenerRequest();
+
+        // Validaciones básicas
+        if (string.IsNullOrWhiteSpace(request.Clave))
+        {
+            Snackbar.Add("La clave es requerida", Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Nombre))
+        {
+            Snackbar.Add("El nombre es requerido", Severity.Warning);
+            return;
+        }
+
+        if (request.Parametros.Any(p => string.IsNullOrWhiteSpace(p.Nombre) || string.IsNullOrWhiteSpace(p.Valor)))
+        {
+            Snackbar.Add("Todos los parámetros deben tener nombre y valor", Severity.Warning);
+            return;
+        }
+
+        _guardando = true;
+        StateHasChanged();
+
+        try
+        {
+            await ReglaService.UpsertAsync(request, CancellationToken.None);
+            Snackbar.Add($"Regla '{request.Nombre}' actualizada exitosamente", Severity.Success);
+            Navigation.NavigateTo("/admin/motor/reglas");
+        }
+        catch (InvalidOperationException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+            await CargarReglaAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al actualizar regla: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _guardando = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Cancelar()
+    {
+        Navigation.NavigateTo("/admin/motor/reglas");
+    }
+}

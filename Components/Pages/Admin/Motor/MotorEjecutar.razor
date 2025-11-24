@@ -132,13 +132,13 @@
 
     private async Task OnLimpiarDuplicadosClick()
     {
-        Logger.LogInformation("🧹 Limpiar duplicados - ProgramaId seleccionado: {ProgramaId}", ProgramaId);
+        Logger.LogInformation("Limpiar duplicados - ProgramaId seleccionado: {ProgramaId}", ProgramaId);
         await OnLimpiarDuplicados.InvokeAsync();
     }
 
     private async Task OnProgramaChanged(int? value)
     {
-        Logger.LogInformation("📝 Programa seleccionado cambiado a: {ProgramaId}", value);
+        Logger.LogInformation("Programa seleccionado cambiado a: {ProgramaId}", value);
         await ProgramaIdChanged.InvokeAsync(value);
     }
 

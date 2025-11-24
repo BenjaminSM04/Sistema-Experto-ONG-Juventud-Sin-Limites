@@ -1,4 +1,4 @@
-@page "/admin/motor"
+Ôªø@page "/admin/motor"
 @rendermode InteractiveServer
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Api.Models
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
@@ -157,7 +157,7 @@
 </style>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <!-- TÌtulo -->
+    <!-- T√≠tulo -->
     <div class="mythra-header">
         <MudText Typo="Typo.h4">
             <MudIcon Icon="@Icons.Material.Filled.Psychology" Class="mr-2" />
@@ -172,7 +172,7 @@
         </MudText>
     </div>
 
-    <!-- Mensajes de Error y …xito -->
+    <!-- Mensajes de Error y √âxito -->
     @if (!string.IsNullOrEmpty(_error))
     {
         <MudPaper Class="mythra-alert-error mb-4" Elevation="2">
@@ -333,7 +333,7 @@
             };
 
             _severidadData = new double[] { estadisticas.SeveridadInfo, estadisticas.SeveridadAlta, estadisticas.SeveridadCritica };
-            _severidadLabels = new[] { "Info", "Alta", "CrÌtica" };
+            _severidadLabels = new[] { "Info", "Alta", "Cr√≠tica" };
 
             _estadoData = new double[] { estadisticas.EstadoAbiertas, estadisticas.EstadoResueltas, estadisticas.EstadoDescartadas };
             _estadoLabels = new[] { "Abiertas", "Resueltas", "Descartadas" };
@@ -486,7 +486,7 @@
             Logger.LogInformation("?? Ejecutando motor: FechaCorte={FechaCorte}, ProgramaId={ProgramaId}", 
                 fechaCorteOnly, _programaId);
             
-            var resumen = await MotorInferencia.EjecutarAsync(fechaCorteOnly, _programaId, CancellationToken.None);
+            var resumen = await MotorInferencia.EjecutarAsync(fechaCorteOnly, _programaId, false, CancellationToken.None);
 
             Logger.LogInformation("? Motor ejecutado: Reglas={Reglas}, Alertas={Alertas}, Errores={Errores}",
                 resumen.ReglasEjecutadas, resumen.AlertasGeneradas, resumen.Errores);
@@ -574,7 +574,7 @@
             }
             catch (DbUpdateConcurrencyException)
             {
-                var errorMsg = "La alerta fue modificada por otro usuario. Por favor, recargue la p·gina.";
+                var errorMsg = "La alerta fue modificada por otro usuario. Por favor, recargue la p√°gina.";
                 Logger.LogWarning("?? {Error}", errorMsg);
                 _error = errorMsg;
             }

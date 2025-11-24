@@ -3,41 +3,56 @@
 
 @using Microsoft.AspNetCore.Authorization
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Identity
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security
 
 @attribute [Authorize]
 
 @inject ApplicationDbContext DbContext
 @inject NavigationManager Navigation
+@inject UserManager<Usuario> UserManager
+@inject AuthenticationStateProvider AuthProvider
 
 <PageTitle>Programas</PageTitle>
 
 <style>
     .mythra-header {
         background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
-  color: #FEFEFD;
+        color: #FEFEFD;
         padding: 2rem;
-border-radius: 8px;
-      margin-bottom: 2rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
     }
 
     .program-card {
         transition: all 0.3s ease;
         cursor: pointer;
         height: 100%;
+        overflow: hidden;
     }
 
     .program-card:hover {
         transform: translateY(-8px);
-     box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+    }
+
+    .program-logo {
+        width: 100%;
+        height: 150px;
+        object-fit: contain;
+        object-position: center;
+        padding: 20px;
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
     }
 
     .card-edv:hover {
-   border: 2px solid #F7C484;
+        border: 2px solid #9FD996;
     }
 
     .card-academia:hover {
- border: 2px solid #9FD996;
+        border: 2px solid #F7C484;
     }
 
     .card-juventud:hover {
@@ -45,189 +60,234 @@ border-radius: 8px;
     }
 
     .card-bernabe:hover {
-        border: 2px solid #4D3935;
+        border: 2px solid #00A0B0;
+    }
+
+    .no-programs-message {
+        text-align: center;
+        padding: 3rem;
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-radius: 12px;
+        border: 2px dashed #9FD996;
     }
 </style>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
     <div class="mythra-header">
-  <MudText Typo="Typo.h3" Style="font-weight: 600;">
-        <MudIcon Icon="@Icons.Material.Filled.Folder" Class="mr-3" Size="Size.Large" />
-      Programas de la ONG
+        <MudText Typo="Typo.h3" Style="font-weight: 600;">
+            <MudIcon Icon="@Icons.Material.Filled.Folder" Class="mr-3" Size="Size.Large" />
+            Programas de la ONG
         </MudText>
         <MudText Typo="Typo.body1" Class="mt-2" Style="opacity: 0.9;">
-            Selecciona un programa para gestionar actividades, participantes y evidencias
- </MudText>
+            @if (_esAdministrador)
+            {
+                <span>Gestionar actividades, participantes y evidencias de todos los programas</span>
+            }
+            else
+            {
+                <span>Programas asignados - Gestionar actividades, participantes y evidencias</span>
+            }
+        </MudText>
+        @if (_programasAccesibles.Any())
+        {
+            <div class="mt-3">
+                <MudChip T="string" Size="Size.Small" Style="background-color: #9FD996; color: #4D3935; font-weight: 600;">
+                    @_programasAccesibles.Count programa(s) disponible(s)
+                </MudChip>
+            </div>
+        }
     </div>
 
-    <MudGrid>
-        <!-- EDV -->
-        <MudItem xs="12" sm="6" md="3">
-            <MudCard Elevation="3" Class="card-edv program-card" @onclick="@(() => NavegarPrograma("EDV"))">
-     <MudCardHeader>
-          <CardHeaderContent>
-      <MudText Typo="Typo.h6" Style="font-weight: 600;">EDV</MudText>
- </CardHeaderContent>
-  <CardHeaderAvatar>
-        <MudAvatar Style="background-color: #F7C484" Size="Size.Large">
-       <MudIcon Icon="@Icons.Material.Filled.School" Style="color: white;" Size="Size.Large" />
-      </MudAvatar>
-     </CardHeaderAvatar>
-            </MudCardHeader>
-          <MudCardContent>
-       <MudText Typo="Typo.body2" Style="color: #6D534F;">
-        Escuelas de Valores
-          </MudText>
-       <MudText Typo="Typo.caption" Class="mt-2">
-Programa de formación en valores para jóvenes
-          </MudText>
-    </MudCardContent>
-      <MudCardActions>
-     <MudButton Variant="Variant.Text" 
-         Color="Color.Primary" 
-       Size="Size.Small"
-    OnClick="@(() => NavegarPrograma("EDV"))"
-      StartIcon="@Icons.Material.Filled.ArrowForward">
-    Ir al Programa
-    </MudButton>
-    </MudCardActions>
-            </MudCard>
-    </MudItem>
-
-        <!-- Academia -->
-        <MudItem xs="12" sm="6" md="3">
-            <MudCard Elevation="3" Class="card-academia program-card" @onclick="@(() => NavegarPrograma("ACADEMIA"))">
- <MudCardHeader>
-     <CardHeaderContent>
-    <MudText Typo="Typo.h6" Style="font-weight: 600;">Academia</MudText>
-    </CardHeaderContent>
-      <CardHeaderAvatar>
-   <MudAvatar Style="background-color: #9FD996" Size="Size.Large">
-<MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Style="color: white;" Size="Size.Large" />
-          </MudAvatar>
-       </CardHeaderAvatar>
-     </MudCardHeader>
-    <MudCardContent>
-      <MudText Typo="Typo.body2" Style="color: #6D534F;">
-        Academia de Liderazgo
-   </MudText>
-    <MudText Typo="Typo.caption" Class="mt-2">
-  Desarrollo de habilidades de liderazgo
- </MudText>
-       </MudCardContent>
-   <MudCardActions>
-  <MudButton Variant="Variant.Text" 
-            Color="Color.Primary" 
-     Size="Size.Small"
-       OnClick="@(() => NavegarPrograma("ACADEMIA"))"
-            StartIcon="@Icons.Material.Filled.ArrowForward">
-      Ir al Programa
-         </MudButton>
-  </MudCardActions>
-     </MudCard>
-        </MudItem>
-
-        <!-- Juventud Segura -->
-        <MudItem xs="12" sm="6" md="3">
-     <MudCard Elevation="3" Class="card-juventud program-card" @onclick="@(() => NavegarPrograma("JUVENTUD_SEGURA"))">
-         <MudCardHeader>
-          <CardHeaderContent>
-   <MudText Typo="Typo.h6" Style="font-weight: 600;">Juventud Segura</MudText>
-  </CardHeaderContent>
- <CardHeaderAvatar>
-     <MudAvatar Style="background-color: #F3C95A" Size="Size.Large">
-        <MudIcon Icon="@Icons.Material.Filled.Shield" Style="color: white;" Size="Size.Large" />
-   </MudAvatar>
-         </CardHeaderAvatar>
-  </MudCardHeader>
-       <MudCardContent>
-   <MudText Typo="Typo.body2" Style="color: #6D534F;">
-         Prevención y Seguridad
-         </MudText>
-          <MudText Typo="Typo.caption" Class="mt-2">
- Programa de prevención y seguridad juvenil
-   </MudText>
- </MudCardContent>
-        <MudCardActions>
-     <MudButton Variant="Variant.Text" 
-        Color="Color.Primary" 
-           Size="Size.Small"
-     OnClick="@(() => NavegarPrograma("JUVENTUD_SEGURA"))"
-        StartIcon="@Icons.Material.Filled.ArrowForward">
-     Ir al Programa
-       </MudButton>
- </MudCardActions>
-</MudCard>
-    </MudItem>
-
-        <!-- Bernabé -->
-        <MudItem xs="12" sm="6" md="3">
-            <MudCard Elevation="3" Class="card-bernabe program-card" @onclick="@(() => NavegarPrograma("BERNABE"))">
-       <MudCardHeader>
-        <CardHeaderContent>
-       <MudText Typo="Typo.h6" Style="font-weight: 600;">Bernabé</MudText>
-   </CardHeaderContent>
-          <CardHeaderAvatar>
-     <MudAvatar Style="background-color: #4D3935" Size="Size.Large">
-     <MudIcon Icon="@Icons.Material.Filled.Handshake" Style="color: white;" Size="Size.Large" />
-        </MudAvatar>
-</CardHeaderAvatar>
-      </MudCardHeader>
-  <MudCardContent>
-        <MudText Typo="Typo.body2" Style="color: #6D534F;">
-      Acompañamiento Integral
-       </MudText>
-  <MudText Typo="Typo.caption" Class="mt-2">
-  Programa de acompañamiento integral a jóvenes
-        </MudText>
-        </MudCardContent>
-     <MudCardActions>
-     <MudButton Variant="Variant.Text" 
-     Color="Color.Primary" 
-         Size="Size.Small"
-OnClick="@(() => NavegarPrograma("BERNABE"))"
-    StartIcon="@Icons.Material.Filled.ArrowForward">
-          Ir al Programa
-     </MudButton>
-    </MudCardActions>
-  </MudCard>
-   </MudItem>
- </MudGrid>
+    @if (_cargando)
+    {
+        <div style="text-align: center; padding: 2rem;">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+            <MudText Typo="Typo.body1" Class="mt-2">Cargando programas...</MudText>
+        </div>
+    }
+    else if (!_programasAccesibles.Any())
+    {
+        <div class="no-programs-message">
+            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Large" Style="color: #9FD996; margin-bottom: 1rem;" />
+            <MudText Typo="Typo.h5" Style="color: #4D3935; font-weight: 600; margin-bottom: 1rem;">
+                No tienes programas asignados
+            </MudText>
+            <MudText Typo="Typo.body1" Style="color: #6D534F;">
+                Contacta al administrador para obtener acceso a los programas de la ONG.
+            </MudText>
+        </div>
+    }
+    else
+    {
+        <MudGrid>
+            @foreach (var programa in _programasAccesibles)
+            {
+                var columnas = _programasAccesibles.Count >= 4 ? 3 : 4;
+                <MudItem xs="12" sm="6" md="@columnas">
+                    <MudCard Elevation="3" Class="@($"{ObtenerClaseCard(programa.Clave)} program-card")" @onclick="@(() => NavegarPrograma(programa))">
+                        <!-- Logo del programa -->
+                        <div style="background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%); padding: 20px; text-align: center;">
+                            <img src="@ObtenerRutaLogo(programa.Clave)" 
+                                 alt="@programa.Nombre" 
+                                 class="program-logo"
+                                 style="max-width: 100%; height: 150px; object-fit: contain;" />
+                        </div>
+                        
+                        <MudCardContent>
+                            <MudText Typo="Typo.h6" Style="font-weight: 600; color: #4D3935;">
+                                @programa.Nombre
+                            </MudText>
+                            <MudText Typo="Typo.body2" Style="color: #6D534F;" Class="mt-2">
+                                @(programa.Descripcion ?? "Programa de la ONG Juventud Sin Límites")
+                            </MudText>
+                            <div class="mt-3">
+                                <MudChip T="string" Size="Size.Small" Style="@ObtenerEstiloEstado(programa.Estado)">
+                                    @programa.Estado
+                                </MudChip>
+                                @if (programa.InferenciaActiva)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Style="background-color: #9FD996; color: #4D3935; margin-left: 0.5rem;">
+                                        IA Activa
+                                    </MudChip>
+                                }
+                            </div>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Variant="Variant.Text" 
+                                      Color="Color.Primary" 
+                                      Size="Size.Small"
+                                      OnClick="@(() => NavegarPrograma(programa))"
+                                      StartIcon="@Icons.Material.Filled.ArrowForward">
+                                Ir al Programa
+                            </MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
 </MudContainer>
 
 @code {
-    private Dictionary<string, int?> _programasIds = new();
+    private bool _cargando = true;
+    private bool _esAdministrador = false;
+    private List<Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas.Programa> _programasAccesibles = new();
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-         // Obtener IDs de todos los programas
-     var programas = await DbContext.Programas
-         .Where(p => !p.IsDeleted)
-            .Select(p => new { p.Clave, p.ProgramaId })
-       .ToListAsync();
-
-    _programasIds = programas.ToDictionary(p => p.Clave, p => (int?)p.ProgramaId);
+            var authState = await AuthProvider.GetAuthenticationStateAsync();
+            var usuario = await UserManager.GetUserAsync(authState.User);
+            
+            if (usuario != null)
+            {
+                var roles = await UserManager.GetRolesAsync(usuario);
+                _esAdministrador = roles.Contains("Administrador");
+                
+                if (_esAdministrador)
+                {
+                    // Administrador ve todos los programas
+                    _programasAccesibles = await DbContext.Programas
+                        .Where(p => !p.IsDeleted)
+                        .OrderBy(p => p.Nombre)
+                        .ToListAsync();
+                }
+                else
+                {
+                    // Usuarios normales solo ven programas asignados
+                    _programasAccesibles = await DbContext.UsuarioProgramas
+                        .Where(up => up.UsuarioId == usuario.Id && !up.IsDeleted)
+                        .Include(up => up.Programa)
+                        .Where(up => !up.Programa.IsDeleted)
+                        .Select(up => up.Programa)
+                        .Distinct()
+                        .OrderBy(p => p.Nombre)
+                        .ToListAsync();
+                }
+            }
         }
-      catch (Exception ex)
+        catch (Exception ex)
         {
-            // Loguear error si es necesario
-  Console.WriteLine($"Error al cargar programas: {ex.Message}");
-      }
+            Console.WriteLine($"Error al cargar programas: {ex.Message}");
+        }
+        finally
+        {
+            _cargando = false;
+        }
     }
 
-    private void NavegarPrograma(string clavePrograma)
+    private void NavegarPrograma(Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Programas.Programa programa)
     {
-if (_programasIds.TryGetValue(clavePrograma, out var id) && id.HasValue)
+        // Navegar a la página específica del programa usando una ruta genérica
+        Navigation.NavigateTo($"/programa/{programa.ProgramaId}");
+    }
+
+    private string ObtenerNombreCorto(string clave)
+    {
+        return clave switch
         {
-Navigation.NavigateTo($"/programa/academia/{id.Value}");
-        }
-        else
+            "EDV" => "EDV",
+            "ACADEMIA" => "Academia",
+            "JUVENTUD_SEGURA" => "Juventud Segura",
+            "BERNABE" => "Bernabé",
+            _ => clave
+        };
+    }
+
+    private string ObtenerClaseCard(string clave)
+    {
+        return clave switch
         {
-            // Si no se encuentra el programa, volver a la lista
-       Navigation.NavigateTo("/programas");
-        }
- }
+            "EDV" => "card-edv",
+            "ACADEMIA" => "card-academia",
+            "JUVENTUD_SEGURA" => "card-juventud",
+            "BERNABE" => "card-bernabe",
+            _ => "card-edv"
+        };
+    }
+
+    private string ObtenerColorAvatar(string clave)
+    {
+        return clave switch
+        {
+            "EDV" => "background-color: #F7C484",
+            "ACADEMIA" => "background-color: #9FD996",
+            "JUVENTUD_SEGURA" => "background-color: #F3C95A",
+            "BERNABE" => "background-color: #4D3935",
+            _ => "background-color: #9FD996"
+        };
+    }
+
+    private string ObtenerIconoPrograma(string clave)
+    {
+        return clave switch
+        {
+            "EDV" => Icons.Material.Filled.School,
+            "ACADEMIA" => Icons.Material.Filled.EmojiEvents,
+            "JUVENTUD_SEGURA" => Icons.Material.Filled.Shield,
+            "BERNABE" => Icons.Material.Filled.Handshake,
+            _ => Icons.Material.Filled.Folder
+        };
+    }
+
+    private string ObtenerRutaLogo(string clave)
+    {
+        return clave switch
+        {
+            "EDV" => "/images/escueladevida.png",
+            "ACADEMIA" => "/images/Academias.png",
+            "JUVENTUD_SEGURA" => "/images/JuventudSegura.png",
+            "BERNABE" => "/images/bernabe.png",
+            _ => "/images/bernabe.png"
+        };
+    }
+
+    private string ObtenerEstiloEstado(Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common.EstadoGeneral estado)
+    {
+        return estado == Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common.EstadoGeneral.Activo 
+            ? "background-color: #9FD996; color: #4D3935; font-weight: 600;" 
+            : "background-color: #F7C484; color: #4D3935; font-weight: 600;";
+    }
 }
 
