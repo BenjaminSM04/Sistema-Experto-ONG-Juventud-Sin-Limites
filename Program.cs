@@ -172,9 +172,15 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
             }
             else
             {
-                app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+                // En producción, usar middleware global de excepciones
+                app.UseGlobalExceptionHandler();
                 app.UseHsts();
+            }
+
+            // Middleware global de manejo de excepciones (también en desarrollo para consistencia)
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseGlobalExceptionHandler();
             }
 
             app.UseHttpsRedirection();
@@ -625,6 +631,29 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
 
             // Add additional endpoints required by the Identity /Account Razor components.
             app.MapAdditionalIdentityEndpoints();
+
+            // ========================================
+            // MANEJO DE RUTAS NO ENCONTRADAS (404)
+            // ========================================
+            // Este debe ser el ÚLTIMO MapFallback para capturar todas las rutas no manejadas
+            app.MapFallback(async (HttpContext context) =>
+            {
+                // Excluir rutas de API y archivos estáticos
+                if (context.Request.Path.StartsWithSegments("/api") ||
+                    context.Request.Path.StartsWithSegments("/_framework") ||
+                    context.Request.Path.StartsWithSegments("/_content") ||
+                    context.Request.Path.Value?.Contains('.') == true) // Archivos estáticos
+                {
+                    context.Response.StatusCode = 404;
+                    return;
+                }
+
+                // Guardar la ruta original
+                context.Items["OriginalPath"] = context.Request.Path.Value;
+                
+                // Redirigir a la página NotFound
+                context.Response.Redirect("/NotFound");
+            });
 
             app.Run();
         }

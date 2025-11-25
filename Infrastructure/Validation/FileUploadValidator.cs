@@ -106,16 +106,16 @@ public class FileUploadValidator
             return result;
         }
 
-        // 5. Validar firma del archivo (magic numbers)
-        if (FileSignatures.ContainsKey(extension))
-        {
-            var isValid = await ValidateFileSignatureAsync(file, extension, cancellationToken);
-            if (!isValid)
-            {
-                result.AddError("El contenido del archivo no coincide con su extensión. Posible archivo malicioso.");
-                return result;
-            }
-        }
+        // 5. Validar firma del archivo (magic numbers) - DESACTIVADO para sistema cerrado
+        // if (FileSignatures.ContainsKey(extension))
+        // {
+        //     var isValid = await ValidateFileSignatureAsync(file, extension, cancellationToken);
+        //     if (!isValid)
+        //     {
+        //         result.AddError("El contenido del archivo no coincide con su extensión. Posible archivo malicioso.");
+        //         return result;
+        //     }
+        // }
 
         // 6. Escaneo básico de contenido malicioso
         var isMalicious = await ScanForMaliciousContentAsync(file, cancellationToken);

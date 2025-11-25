@@ -23,118 +23,181 @@
 
 <PageTitle>Crear Usuario</PageTitle>
 
-<div class="container mt-4">
-    <div class="row">
-<div class="col-md-10 offset-md-1">
-  <div class="card">
-   <div class="card-header bg-primary text-white">
-            <h4><i class="bi bi-person-plus-fill"></i> Crear Nuevo Usuario</h4>
-         </div>
-   <div class="card-body">
+<style>
+    .mythra-header {
+        background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
+        color: #FEFEFD;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+
+    .mythra-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-left: 4px solid #4D3935;
+    }
+
+    .mythra-button-primary {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .mythra-button-secondary {
+        background-color: transparent !important;
+        border: 2px solid #4D3935 !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .mythra-section-title {
+        color: #4D3935;
+        border-bottom: 2px solid #9FD996;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+
+    .mythra-alert-success {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%);
+        border: 1px solid #85C97C;
+        color: #4D3935;
+        border-radius: 8px;
+    }
+
+    .mythra-alert-warning {
+        background: linear-gradient(135deg, #FFE5B4 0%, #FFD89B 100%);
+        border: 1px solid #FFD89B;
+        color: #4D3935;
+        border-radius: 8px;
+    }
+
+    .mythra-alert-info {
+        background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+        border: 1px solid #90CAF9;
+        color: #4D3935;
+        border-radius: 8px;
+    }
+</style>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <div class="mythra-header">
+        <MudText Typo="Typo.h4">
+            <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Class="mr-2" />
+            Crear Nuevo Usuario
+        </MudText>
+    </div>
+
+    <MudPaper Class="mythra-card pa-6" Elevation="3">
      @if (!string.IsNullOrEmpty(errorMessage))
          {
-      <div class="alert alert-danger alert-dismissible fade show" role="alert">
-    <i class="bi bi-exclamation-triangle-fill"></i> @errorMessage
-    <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
-  </div>
+            <MudAlert Severity="Severity.Error" Class="mb-3" CloseIcon="@Icons.Material.Filled.Close" CloseIconClicked="@(() => errorMessage = null)">
+                @errorMessage
+            </MudAlert>
        }
 
     @if (!string.IsNullOrEmpty(successMessage))
    {
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
- <i class="bi bi-check-circle-fill"></i> @successMessage
-        <button type="button" class="btn-close" @onclick="() => successMessage = null"></button>
-  </div>
+            <MudAlert Severity="Severity.Success" Class="mb-3" CloseIcon="@Icons.Material.Filled.Close" CloseIconClicked="@(() => successMessage = null)">
+                @successMessage
+            </MudAlert>
   }
 
-   @if (!string.IsNullOrEmpty(generatedPassword))
+       @if (!string.IsNullOrEmpty(generatedPassword))
      {
-       <div class="card border-success mb-3">
-    <div class="card-header bg-success text-white">
-  <h5 class="mb-0"><i class="bi bi-check-circle-fill"></i> Usuario Creado Exitosamente</h5>
-   </div>
-      <div class="card-body">
+            <MudPaper Class="mythra-alert-success pa-4 mb-3" Elevation="2">
+                <MudText Typo="Typo.h6" Class="mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="mr-2" />
+                    Usuario Creado Exitosamente
+                </MudText>
    <p class="mb-2"><strong>Email:</strong> @model.Email</p>
       <p class="mb-3"><strong>Nombre:</strong> @model.Nombres @model.Apellidos</p>
       
        @if (emailEnviado)
        {
-           <div class="alert alert-success mb-3">
-               <i class="bi bi-envelope-check-fill"></i> 
-               <strong>¡Credenciales enviadas por email!</strong><br/>
-               Se ha enviado un correo electrónico a <strong>@model.Email</strong> con las credenciales de acceso.
-           </div>
+                    <MudAlert Severity="Severity.Success" Class="mb-3" Icon="@Icons.Material.Filled.Email">
+                        <MudText Typo="Typo.subtitle1" Class="font-weight-bold">¡Credenciales enviadas por email!</MudText>
+                        <MudText Typo="Typo.body2">Se ha enviado un correo electrónico a <strong>@model.Email</strong> con las credenciales de acceso.</MudText>
+                    </MudAlert>
        }
        else
        {
-           <div class="alert alert-warning mb-3">
-               <i class="bi bi-exclamation-triangle-fill"></i> 
-               <strong>Credenciales generadas</strong><br/>
-               Se intentó enviar las credenciales por email, pero ocurrió un problema. 
-               Puede copiar la contraseña temporal y enviarla manualmente.
-           </div>
+                    <MudAlert Severity="Severity.Warning" Class="mb-3" Icon="@Icons.Material.Filled.Warning">
+                        <MudText Typo="Typo.subtitle1" Class="font-weight-bold">Credenciales generadas</MudText>
+                        <MudText Typo="Typo.body2">Se intentó enviar las credenciales por email, pero ocurrió un problema. Puede copiar la contraseña temporal y enviarla manualmente.</MudText>
+                    </MudAlert>
        }
 
        @if (!emailEnviado)
        {
-           <div class="input-group input-group-lg mb-3">
-               <span class="input-group-text bg-dark text-white"><i class="bi bi-lock-fill"></i></span>
-               <input id="passwordField" type="@(showPassword ? "text" : "password")" 
-                   class="form-control font-monospace fw-bold text-center" 
-                   value="@generatedPassword" 
-                   readonly 
-                   style="letter-spacing: 2px; font-size: 1.2rem;" />
-               <button class="btn btn-outline-secondary" type="button" @onclick="TogglePasswordVisibility">
-                   @if (showPassword)
-                   {
-                       <i class="bi bi-eye-slash-fill"></i>
-                   }
-                   else
-                   {
-                       <i class="bi bi-eye-fill"></i>
-                   }
-               </button>
-               <button class="btn btn-primary" type="button" @onclick="CopyPassword">
-                   <i class="bi bi-clipboard-fill"></i> Copiar
-               </button>
-           </div>
+                    <MudPaper Class="pa-3 mb-3" Elevation="1">
+                        <MudTextField @bind-Value="@generatedPassword"
+                                      Label="Contraseña Temporal"
+                                      Variant="Variant.Outlined"
+                                      ReadOnly="true"
+                                      InputType="@(showPassword ? InputType.Text : InputType.Password)"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.Lock"
+                                      Class="font-monospace"
+                                      Style="font-size: 1.2rem; letter-spacing: 2px;" />
+                        <div class="d-flex gap-2 mt-3">
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Default"
+                                       OnClick="TogglePasswordVisibility"
+                                       StartIcon="@(showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)">
+                                @(showPassword ? "Ocultar" : "Mostrar")
+                            </MudButton>
+                            <MudButton Variant="Variant.Filled"
+                                       Class="mythra-button-primary"
+                                       OnClick="CopyPassword"
+                                       StartIcon="@Icons.Material.Filled.ContentCopy">
+                                Copiar
+                            </MudButton>
+                        </div>
+                    </MudPaper>
 
            @if (passwordCopied)
            {
-               <div class="alert alert-success">
-                   <i class="bi bi-check-circle-fill"></i> Contraseña copiada al portapapeles
-               </div>
+                        <MudAlert Severity="Severity.Success" Icon="@Icons.Material.Filled.CheckCircle" Class="mb-3">
+                            Contraseña copiada al portapapeles
+                        </MudAlert>
            }
        }
 
-       <div class="alert alert-info mb-0">
-           <h6><i class="bi bi-info-circle-fill"></i> Próximos pasos:</h6>
-           <ol class="mb-0">
-               @if (emailEnviado)
-               {
-                   <li>El usuario recibirá un email con sus credenciales de acceso</li>
-                   <li>Debe revisar su bandeja de entrada (y spam)</li>
-               }
-               else
-               {
-                   <li>Envíe estas credenciales al usuario de forma segura</li>
-               }
-               <li>El usuario debe cambiar la contraseña en su primer inicio de sesión</li>
-               <li>Asegúrese de que el usuario haya recibido y entendido las instrucciones</li>
-           </ol>
-       </div>
-   </div>
-        <div class="card-footer">
-       <div class="d-flex justify-content-between">
-        <button type="button" class="btn btn-secondary" @onclick="CrearOtroUsuario">
- <i class="bi bi-person-plus"></i> Crear Otro Usuario
-   </button>
-    <button type="button" class="btn btn-success" @onclick="VolverALista">
-<i class="bi bi-list-ul"></i> Volver a la Lista
-   </button>
-      </div>
- </div>
-  </div>
+                <MudAlert Severity="Severity.Info" Class="mb-0" Icon="@Icons.Material.Filled.Info">
+                    <MudText Typo="Typo.subtitle2" Class="font-weight-bold mb-2">Próximos pasos:</MudText>
+                    <ol class="mb-0">
+                        @if (emailEnviado)
+                        {
+                            <li>El usuario recibirá un email con sus credenciales de acceso</li>
+                            <li>Debe revisar su bandeja de entrada (y spam)</li>
+                        }
+                        else
+                        {
+                            <li>Envíe estas credenciales al usuario de forma segura</li>
+                        }
+                        <li>El usuario debe cambiar la contraseña en su primer inicio de sesión</li>
+                        <li>Asegúrese de que el usuario haya recibido y entendido las instrucciones</li>
+                    </ol>
+                </MudAlert>
+
+                <MudDivider Class="my-4" />
+
+                <div class="d-flex justify-content-between gap-3">
+                    <MudButton Variant="Variant.Outlined"
+                               Class="mythra-button-secondary"
+                               OnClick="CrearOtroUsuario"
+                               StartIcon="@Icons.Material.Filled.PersonAdd">
+                        Crear Otro Usuario
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Class="mythra-button-primary"
+                               OnClick="VolverALista"
+                               StartIcon="@Icons.Material.Filled.List">
+                        Volver a la Lista
+                    </MudButton>
+                </div>
+            </MudPaper>
         }
 
    @if (string.IsNullOrEmpty(generatedPassword))
@@ -143,7 +206,10 @@
   <DataAnnotationsValidator />
    
 <!-- Sección: Información de Cuenta -->
-      <h5 class="border-bottom pb-2 mb-3"><i class="bi bi-person-badge"></i> Información de Cuenta</h5>
+                <MudText Typo="Typo.h6" Class="mythra-section-title">
+                    <MudIcon Icon="@Icons.Material.Filled.Badge" Size="Size.Small" Class="mr-2" />
+                    Información de Cuenta
+                </MudText>
 
       <div class="mb-3">
   <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
@@ -153,7 +219,10 @@
       </div>
 
   <!-- Sección: Datos Personales -->
-    <h5 class="border-bottom pb-2 mb-3 mt-4"><i class="bi bi-person"></i> Datos Personales</h5>
+                <MudText Typo="Typo.h6" Class="mythra-section-title mt-4">
+                    <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-2" />
+                    Datos Personales
+                </MudText>
   
       <div class="row">
         <div class="col-md-6 mb-3">
@@ -175,7 +244,10 @@
       </div>
 
       <!-- Sección: Rol y Permisos -->
-      <h5 class="border-bottom pb-2 mb-3 mt-4"><i class="bi bi-shield-fill-check"></i> Rol y Permisos</h5>
+                <MudText Typo="Typo.h6" Class="mythra-section-title mt-4">
+                    <MudIcon Icon="@Icons.Material.Filled.Shield" Size="Size.Small" Class="mr-2" />
+                    Rol y Permisos
+                </MudText>
 
       <div class="mb-3">
         <label for="rol" class="form-label">Rol Principal <span class="text-danger">*</span></label>
@@ -191,7 +263,10 @@
     </div>
 
       <!-- Sección: Programas Asignados -->
-      <h5 class="border-bottom pb-2 mb-3 mt-4"><i class="bi bi-folder-fill"></i> Programas Asignados</h5>
+                <MudText Typo="Typo.h6" Class="mythra-section-title mt-4">
+                    <MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Small" Class="mr-2" />
+                    Programas Asignados
+                </MudText>
       
       <div class="mb-3">
     <label class="form-label">Seleccione los programas a los que tiene acceso</label>
@@ -225,29 +300,40 @@
         }
       </div>
 
-     <div class="alert alert-info">
- <i class="bi bi-info-circle-fill"></i> Se generará una contraseña temporal segura automáticamente. El usuario deberá cambiarla en su primer inicio de sesión.
-     </div>
+                <MudAlert Severity="Severity.Info" Class="mt-4" Icon="@Icons.Material.Filled.Info">
+                    Se generará una contraseña temporal segura automáticamente. El usuario deberá cambiarla en su primer inicio de sesión.
+                </MudAlert>
 
-          <div class="d-flex justify-content-between mt-4">
-    <button type="button" class="btn btn-secondary" @onclick="Cancelar" disabled="@isSubmitting">
- <i class="bi bi-x-circle"></i> Cancelar
-       </button>
-    <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
-     @if (isSubmitting)
-   {
-     <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-}
-       <i class="bi bi-check-circle"></i> Crear Usuario
-     </button>
-     </div>
-  </EditForm>
-     }
- </div>
-  </div>
-</div>
- </div>
-</div>
+                <MudDivider Class="my-4" />
+
+                <div class="d-flex justify-content-between gap-3">
+                    <MudButton Variant="Variant.Outlined"
+                               Class="mythra-button-secondary"
+                               OnClick="Cancelar"
+                               Disabled="@isSubmitting"
+                               StartIcon="@Icons.Material.Filled.Cancel">
+                        Cancelar
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Class="mythra-button-primary"
+                               ButtonType="ButtonType.Submit"
+                               Disabled="@isSubmitting"
+                               StartIcon="@Icons.Material.Filled.Save">
+                        @if (isSubmitting)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Creando...</span>
+                        }
+                        else
+                        {
+                            <span>Crear Usuario</span>
+                        }
+                    </MudButton>
+                </div>
+            </EditForm>
+        }
+    </MudPaper>
+</MudContainer>
 
 @code {
  private CreateUserModel model = new();

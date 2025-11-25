@@ -1,0 +1,250 @@
+﻿@page "/NotFound"
+@layout Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Layout.AuthLayout
+@using MudBlazor
+
+<PageTitle>Página No Encontrada - Sistema ONG</PageTitle>
+
+<style>
+    .mythra-notfound-container {
+        background: linear-gradient(135deg, #4D3935 0%, #9FD996 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+
+    .mythra-notfound-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-left: 8px solid #9FD996;
+        border-radius: 12px;
+        max-width: 700px;
+        width: 100%;
+    }
+
+    .mythra-404-number {
+        font-size: 120px;
+        font-weight: 900;
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1;
+    }
+
+    .mythra-notfound-icon {
+        font-size: 100px !important;
+        color: #9FD996;
+        opacity: 0.8;
+    }
+
+    .mythra-notfound-title {
+        color: #4D3935;
+        font-weight: 700;
+        font-size: 2rem;
+    }
+
+    .mythra-notfound-subtitle {
+        color: #6D534F;
+        font-size: 1.1rem;
+    }
+
+    .mythra-button-primary {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .mythra-button-secondary {
+        background-color: transparent !important;
+        border: 2px solid #4D3935 !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .mythra-suggestion-card {
+        background-color: #FEFEFD;
+        border: 2px solid #9FD996;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .mythra-suggestion-card:hover {
+        background-color: #9FD99610;
+        transform: translateX(5px);
+        box-shadow: 0 4px 12px rgba(159, 217, 150, 0.3);
+    }
+
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+
+    @@keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+</style>
+
+<div class="mythra-notfound-container">
+    <MudPaper Class="mythra-notfound-card pa-8" Elevation="10">
+        <div class="text-center mb-6">
+            <div class="mythra-404-number mb-4">404</div>
+            <MudIcon Icon="@Icons.Material.Filled.SearchOff" Class="mythra-notfound-icon pulse-animation mb-4" />
+            
+            <MudText Typo="Typo.h3" Class="mythra-notfound-title mb-3">
+                Página No Encontrada
+            </MudText>
+            <MudText Typo="Typo.h6" Class="mythra-notfound-subtitle">
+                Lo sentimos, la página que buscas no existe o ha sido movida
+            </MudText>
+        </div>
+
+        <MudDivider Class="my-4" />
+
+        @if (!string.IsNullOrEmpty(RequestedPath))
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-4" Icon="@Icons.Material.Filled.Link">
+                <MudText Typo="Typo.body2">
+                    <strong>Ruta solicitada:</strong> <code>@RequestedPath</code>
+                </MudText>
+            </MudAlert>
+        }
+
+        <MudText Typo="Typo.subtitle1" Class="mb-3 font-weight-bold" Style="color: #4D3935;">
+            <MudIcon Icon="@Icons.Material.Filled.Lightbulb" Size="Size.Small" Class="mr-2" />
+            Sugerencias:
+        </MudText>
+
+        <MudStack Spacing="3" Class="mb-4">
+            <MudPaper Class="mythra-suggestion-card pa-3" Elevation="0">
+                <MudText Typo="Typo.body2">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Color="Color.Success" Class="mr-2" />
+                    Verifica que la URL esté escrita correctamente
+                </MudText>
+            </MudPaper>
+
+            <MudPaper Class="mythra-suggestion-card pa-3" Elevation="0">
+                <MudText Typo="Typo.body2">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Color="Color.Success" Class="mr-2" />
+                    Es posible que la página haya sido movida o eliminada
+                </MudText>
+            </MudPaper>
+
+            <MudPaper Class="mythra-suggestion-card pa-3" Elevation="0">
+                <MudText Typo="Typo.body2">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Color="Color.Success" Class="mr-2" />
+                    Usa el menú de navegación para encontrar lo que buscas
+                </MudText>
+            </MudPaper>
+        </MudStack>
+
+        <MudDivider Class="my-4" />
+
+        <MudText Typo="Typo.subtitle2" Class="mb-3 font-weight-bold" Style="color: #4D3935;">
+            Enlaces Útiles:
+        </MudText>
+
+        <MudGrid Class="mb-4">
+            <MudItem xs="12" sm="6">
+                <MudButton Variant="Variant.Text"
+                           FullWidth="true"
+                           Href="/"
+                           StartIcon="@Icons.Material.Filled.Dashboard"
+                           Style="justify-content: flex-start; color: #6D534F;">
+                    Dashboard
+                </MudButton>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudButton Variant="Variant.Text"
+                           FullWidth="true"
+                           Href="/programas"
+                           StartIcon="@Icons.Material.Filled.School"
+                           Style="justify-content: flex-start; color: #6D534F;">
+                    Programas
+                </MudButton>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudButton Variant="Variant.Text"
+                           FullWidth="true"
+                           Href="/participantes"
+                           StartIcon="@Icons.Material.Filled.People"
+                           Style="justify-content: flex-start; color: #6D534F;">
+                    Participantes
+                </MudButton>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudButton Variant="Variant.Text"
+                           FullWidth="true"
+                           Href="/poas"
+                           StartIcon="@Icons.Material.Filled.Assignment"
+                           Style="justify-content: flex-start; color: #6D534F;">
+                    POAs
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+        <MudDivider Class="my-4" />
+
+        <div class="d-flex flex-column gap-3">
+            <MudButton Variant="Variant.Filled"
+                       Class="mythra-button-primary"
+                       FullWidth="true"
+                       Size="Size.Large"
+                       Href="/"
+                       StartIcon="@Icons.Material.Filled.Home">
+                Ir al Inicio
+            </MudButton>
+
+            <MudButton Variant="Variant.Outlined"
+                       Class="mythra-button-secondary"
+                       FullWidth="true"
+                       Size="Size.Large"
+                       OnClick="GoBack"
+                       StartIcon="@Icons.Material.Filled.ArrowBack">
+                Volver Atrás
+            </MudButton>
+
+            <MudButton Variant="Variant.Text"
+                       FullWidth="true"
+                       Href="mailto:benjaminsaenz17@gmail.com"
+                       StartIcon="@Icons.Material.Filled.Email"
+                       Style="color: #6D534F;">
+                ¿Necesitas ayuda? Contacta soporte
+            </MudButton>
+        </div>
+
+        <MudDivider Class="my-4" />
+
+        <div class="text-center">
+            <MudText Typo="Typo.caption" Style="color: #6D534F;">
+                ONG Juventud Sin Límites - Sistema de Gestión
+            </MudText>
+            <MudText Typo="Typo.caption" Style="color: #9FD996;">
+                Transformando vidas, construyendo futuro 🌟
+            </MudText>
+        </div>
+    </MudPaper>
+</div>
+
+@code {
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? RequestedPath { get; set; }
+
+    protected override void OnInitialized()
+    {
+        // Obtener la ruta solicitada si está disponible
+        RequestedPath = HttpContext?.Items["OriginalPath"] as string 
+                       ?? HttpContext?.Request.Path.Value 
+                       ?? Navigation.Uri.Replace(Navigation.BaseUri, "/");
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/");
+    }
+}

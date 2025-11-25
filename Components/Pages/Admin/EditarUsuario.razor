@@ -20,52 +20,88 @@
 
 <PageTitle>Editar Usuario</PageTitle>
 
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-10 offset-md-1">
-      <div class="card">
-<div class="card-header bg-warning text-dark">
-  <h4><i class="bi bi-pencil-square"></i> Editar Usuario</h4>
-     </div>
-   <div class="card-body">
+<style>
+    .mythra-header {
+        background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
+        color: #FEFEFD;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+
+    .mythra-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-left: 4px solid #4D3935;
+    }
+
+    .mythra-button-primary {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .mythra-button-secondary {
+        background-color: transparent !important;
+        border: 2px solid #4D3935 !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .mythra-section-title {
+        color: #4D3935;
+        border-bottom: 2px solid #9FD996;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+</style>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <div class="mythra-header">
+        <MudText Typo="Typo.h4">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2" />
+            Editar Usuario
+        </MudText>
+    </div>
+
+    <MudPaper Class="mythra-card pa-6" Elevation="3">
     @if (isLoading)
      {
-           <div class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-<span class="visually-hidden">Cargando...</span>
-  </div>
-  <p class="mt-2">Cargando información del usuario...</p>
-  </div>
+            <div class="text-center py-5">
+                <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+                <MudText Typo="Typo.body1" Class="mt-3">Cargando información del usuario...</MudText>
+            </div>
    }
      else if (model == null)
      {
-         <div class="alert alert-danger">
-         <i class="bi bi-exclamation-triangle-fill"></i> Usuario no encontrado
-         </div>
+            <MudAlert Severity="Severity.Error" Icon="@Icons.Material.Filled.Error">
+                Usuario no encontrado
+            </MudAlert>
     }
     else
        {
      @if (!string.IsNullOrEmpty(errorMessage))
     {
-      <div class="alert alert-danger alert-dismissible fade show" role="alert">
-     <i class="bi bi-exclamation-triangle-fill"></i> @errorMessage
-    <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
-  </div>
+            <MudAlert Severity="Severity.Error" Class="mb-3" CloseIcon="@Icons.Material.Filled.Close" CloseIconClicked="@(() => errorMessage = null)">
+                @errorMessage
+            </MudAlert>
       }
 
    @if (!string.IsNullOrEmpty(successMessage))
            {
-      <div class="alert alert-success alert-dismissible fade show" role="alert">
-         <i class="bi bi-check-circle-fill"></i> @successMessage
-         <button type="button" class="btn-close" @onclick="() => successMessage = null"></button>
-   </div>
+            <MudAlert Severity="Severity.Success" Class="mb-3" CloseIcon="@Icons.Material.Filled.Close" CloseIconClicked="@(() => successMessage = null)">
+                @successMessage
+            </MudAlert>
        }
 
     <EditForm Model="@model" OnValidSubmit="HandleValidSubmit">
       <DataAnnotationsValidator />
 
           <!-- Sección: Información de Cuenta -->
-<h5 class="border-bottom pb-2 mb-3"><i class="bi bi-person-badge"></i> Información de Cuenta</h5>
+            <MudText Typo="Typo.h6" Class="mythra-section-title">
+                <MudIcon Icon="@Icons.Material.Filled.Badge" Size="Size.Small" Class="mr-2" />
+                Información de Cuenta
+            </MudText>
       
  <div class="row">
      <div class="col-md-6 mb-3">
@@ -94,7 +130,10 @@
  </div>
 
     <!-- Sección: Datos Personales -->
- <h5 class="border-bottom pb-2 mb-3 mt-4"><i class="bi bi-person"></i> Datos Personales</h5>
+            <MudText Typo="Typo.h6" Class="mythra-section-title mt-4">
+                <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-2" />
+                Datos Personales
+            </MudText>
            
      <div class="row">
     <div class="col-md-6 mb-3">
@@ -116,7 +155,10 @@
         </div>
 
 <!-- Sección: Rol y Permisos -->
-<h5 class="border-bottom pb-2 mb-3 mt-4"><i class="bi bi-shield-fill-check"></i> Rol y Permisos</h5>
+<MudText Typo="Typo.h6" Class="mythra-section-title mt-4">
+    <MudIcon Icon="@Icons.Material.Filled.Shield" Size="Size.Small" Class="mr-2" />
+    Rol y Permisos
+</MudText>
          
        <div class="mb-3">
    <label for="rol" class="form-label">Rol Principal <span class="text-danger">*</span></label>
@@ -132,7 +174,10 @@
        </div>
 
   <!-- Sección: Programas Asignados -->
-             <h5 class="border-bottom pb-2 mb-3 mt-4"><i class="bi bi-folder-fill"></i> Programas Asignados</h5>
+            <MudText Typo="Typo.h6" Class="mythra-section-title mt-4">
+                <MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Small" Class="mr-2" />
+                Programas Asignados
+            </MudText>
    
       <div class="mb-3">
  <label class="form-label">Seleccione los programas a los que tiene acceso</label>
@@ -166,29 +211,40 @@
               }
    </div>
 
-     <div class="alert alert-info mt-4">
-  <i class="bi bi-info-circle-fill"></i> Los cambios se aplicarán inmediatamente. Si cambia el rol o programas, el usuario verá los cambios en su próximo inicio de sesión.
-         </div>
+            <MudAlert Severity="Severity.Info" Class="mt-4" Icon="@Icons.Material.Filled.Info">
+                Los cambios se aplicarán inmediatamente. Si cambia el rol o programas, el usuario verá los cambios en su próximo inicio de sesión.
+            </MudAlert>
 
-  <div class="d-flex justify-content-between mt-4">
-           <button type="button" class="btn btn-secondary" @onclick="Cancelar" disabled="@isSubmitting">
-    <i class="bi bi-x-circle"></i> Cancelar
-           </button>
-     <button type="submit" class="btn btn-warning text-dark" disabled="@isSubmitting">
-  @if (isSubmitting)
-        {
-    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-         }
-        <i class="bi bi-save"></i> Guardar Cambios
-     </button>
-    </div>
-         </EditForm>
-  }
- </div>
-       </div>
-        </div>
-    </div>
-</div>
+            <MudDivider Class="my-4" />
+
+            <div class="d-flex justify-content-between gap-3">
+                <MudButton Variant="Variant.Outlined"
+                           Class="mythra-button-secondary"
+                           OnClick="Cancelar"
+                           Disabled="@isSubmitting"
+                           StartIcon="@Icons.Material.Filled.Cancel">
+                    Cancelar
+                </MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Class="mythra-button-primary"
+                           ButtonType="ButtonType.Submit"
+                           Disabled="@isSubmitting"
+                           StartIcon="@Icons.Material.Filled.Save">
+                    @if (isSubmitting)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        <span>Guardando...</span>
+                    }
+                    else
+                    {
+                        <span>Guardar Cambios</span>
+                    }
+                </MudButton>
+            </div>
+        </EditForm>
+    }
+    </MudPaper>
+</MudContainer>
 
 @code {
     [Parameter]

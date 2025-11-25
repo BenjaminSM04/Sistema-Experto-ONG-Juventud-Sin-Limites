@@ -1,36 +1,205 @@
 ﻿@page "/Error"
+@layout Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Layout.AuthLayout
 @using System.Diagnostics
+@using MudBlazor
 
-<PageTitle>Error</PageTitle>
+<PageTitle>Error - Sistema ONG</PageTitle>
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<style>
+    .mythra-error-container {
+        background: linear-gradient(135deg, #4D3935 0%, #F7C484 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
 
-@if (ShowRequestId)
-{
-    <p>
-        <strong>Request ID:</strong> <code>@RequestId</code>
-    </p>
-}
+    .mythra-error-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-left: 8px solid #F7C484;
+        border-radius: 12px;
+        max-width: 600px;
+        width: 100%;
+    }
 
-<h3>Development Mode</h3>
-<p>
-    Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
-</p>
-<p>
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
-</p>
+    .mythra-error-icon {
+        font-size: 80px !important;
+        color: #F3C95A;
+    }
 
-@code{
+    .mythra-error-title {
+        color: #4D3935;
+        font-weight: 700;
+        font-size: 2rem;
+    }
+
+    .mythra-error-subtitle {
+        color: #6D534F;
+        font-size: 1.1rem;
+    }
+
+    .mythra-button-primary {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%) !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .mythra-button-secondary {
+        background-color: transparent !important;
+        border: 2px solid #4D3935 !important;
+        color: #4D3935 !important;
+        font-weight: 600 !important;
+    }
+
+    .mythra-alert-warning {
+        background: linear-gradient(135deg, #FFE5B4 0%, #FFD89B 100%);
+        border-left: 4px solid #F3C95A;
+        color: #4D3935;
+        border-radius: 8px;
+    }
+
+    .mythra-code-block {
+        background-color: #4D3935;
+        color: #9FD996;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.875rem;
+        overflow-x: auto;
+    }
+</style>
+
+<div class="mythra-error-container">
+    <MudPaper Class="mythra-error-card pa-8" Elevation="10">
+        <div class="text-center mb-6">
+            <MudIcon Icon="@Icons.Material.Filled.Error" Class="mythra-error-icon mb-4" />
+            <MudText Typo="Typo.h3" Class="mythra-error-title mb-3">
+                ¡Algo salió mal!
+            </MudText>
+            <MudText Typo="Typo.h6" Class="mythra-error-subtitle">
+                Ha ocurrido un error inesperado al procesar tu solicitud
+            </MudText>
+        </div>
+
+        <MudDivider Class="my-4" />
+
+        @if (ShowRequestId)
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-4" Icon="@Icons.Material.Filled.Info">
+                <MudText Typo="Typo.body2">
+                    <strong>ID de Solicitud:</strong> <code>@RequestId</code>
+                </MudText>
+                <MudText Typo="Typo.caption" Class="mt-2">
+                    Por favor, proporciona este ID al soporte técnico si necesitas ayuda.
+                </MudText>
+            </MudAlert>
+        }
+
+        @if (IsDevelopment)
+        {
+            <MudPaper Class="mythra-alert-warning pa-3 mb-4" Elevation="0">
+                <MudText Typo="Typo.subtitle2" Class="font-weight-bold mb-2">
+                    <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="mr-2" />
+                    Modo Desarrollo Activo
+                </MudText>
+                <MudText Typo="Typo.body2" Class="mb-2">
+                    Estás viendo información detallada porque la aplicación está en modo <strong>Development</strong>.
+                </MudText>
+                <MudText Typo="Typo.caption">
+                    ⚠️ <strong>Importante:</strong> Desactiva el modo Development en producción para evitar exponer información sensible.
+                </MudText>
+            </MudPaper>
+
+            @if (!string.IsNullOrEmpty(ExceptionMessage))
+            {
+                <MudText Typo="Typo.subtitle2" Class="mb-2 font-weight-bold" Style="color: #4D3935;">
+                    Detalles del Error:
+                </MudText>
+                <div class="mythra-code-block mb-4">
+                    @ExceptionMessage
+                </div>
+            }
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Normal" Class="mb-4">
+                <MudText Typo="Typo.body2">
+                    Nuestro equipo ha sido notificado y estamos trabajando para resolver el problema.
+                </MudText>
+            </MudAlert>
+        }
+
+        <MudDivider Class="my-4" />
+
+        <div class="d-flex flex-column gap-3">
+            <MudButton Variant="Variant.Filled"
+                       Class="mythra-button-primary"
+                       FullWidth="true"
+                       Size="Size.Large"
+                       Href="/"
+                       StartIcon="@Icons.Material.Filled.Home">
+                Ir al Inicio
+            </MudButton>
+
+            <MudButton Variant="Variant.Outlined"
+                       Class="mythra-button-secondary"
+                       FullWidth="true"
+                       Size="Size.Large"
+                       OnClick="GoBack"
+                       StartIcon="@Icons.Material.Filled.ArrowBack">
+                Volver Atrás
+            </MudButton>
+
+            <MudButton Variant="Variant.Text"
+                       FullWidth="true"
+                       Href="mailto:benjaminsaenz17@gmail.com"
+                       StartIcon="@Icons.Material.Filled.Email"
+                       Style="color: #6D534F;">
+                Contactar Soporte
+            </MudButton>
+        </div>
+
+        <MudDivider Class="my-4" />
+
+        <div class="text-center">
+            <MudText Typo="Typo.caption" Style="color: #6D534F;">
+                ONG Juventud Sin Límites - Sistema de Gestión
+            </MudText>
+        </div>
+    </MudPaper>
+</div>
+
+@code {
     [CascadingParameter]
     private HttpContext? HttpContext { get; set; }
 
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    [Inject]
+    private IWebHostEnvironment Environment { get; set; } = default!;
+
     private string? RequestId { get; set; }
     private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+    private bool IsDevelopment { get; set; }
+    private string? ExceptionMessage { get; set; }
 
-    protected override void OnInitialized() =>
+    protected override void OnInitialized()
+    {
         RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+        IsDevelopment = Environment.IsDevelopment();
+
+        // En modo desarrollo, intentar obtener detalles del error
+        if (IsDevelopment && HttpContext?.Items["OriginalException"] is Exception ex)
+        {
+            ExceptionMessage = $"{ex.GetType().Name}: {ex.Message}";
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/");
+    }
 }
+
