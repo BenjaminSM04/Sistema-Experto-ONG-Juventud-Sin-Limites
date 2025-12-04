@@ -261,6 +261,26 @@
                                                 AdornmentIcon="@Icons.Material.Filled.PersonAdd" />
                             </MudItem>
 
+                            <MudItem xs="12" md="6">
+                                <MudNumericField @bind-Value="_modelo.NuevosParticipantes" 
+                                                T="int?"
+                                                Label="Nuevos Participantes (este periodo)" 
+                                                Min="0"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.Start"
+                                                AdornmentIcon="@Icons.Material.Filled.GroupAdd" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="6">
+                                <MudNumericField @bind-Value="_modelo.ParticipantesRetirados" 
+                                                T="int?"
+                                                Label="Participantes Retirados" 
+                                                Min="0"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.Start"
+                                                AdornmentIcon="@Icons.Material.Filled.PersonRemove" />
+                            </MudItem>
+
                             @if (_modelo.TotalParticipantes.HasValue && _modelo.TotalParticipantes.Value > 0)
                             {
                                 <MudItem xs="12">
@@ -282,36 +302,257 @@
                     </div>
                 </MudItem>
 
-                <!-- Indicadores de Calidad -->
+                <!-- Recursos Humanos -->
                 <MudItem xs="12">
                     <div class="mythra-section">
                         <MudText Typo="Typo.h6" Class="mb-3">
-                            <MudIcon Icon="@Icons.Material.Filled.Analytics" Class="mr-2" />
-                            Indicadores de Calidad
+                            <MudIcon Icon="@Icons.Material.Filled.Engineering" Class="mr-2" />
+                            Recursos Humanos
+                        </MudText>
+                        <MudGrid>
+                            <MudItem xs="12" md="4">
+                                <MudNumericField @bind-Value="_modelo.TotalFacilitadores" 
+                                                T="int?"
+                                                Label="Total Facilitadores" 
+                                                Min="0"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.Start"
+                                                AdornmentIcon="@Icons.Material.Filled.School" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="4">
+                                <MudNumericField @bind-Value="_modelo.TotalVoluntarios" 
+                                                T="int?"
+                                                Label="Total Voluntarios" 
+                                                Min="0"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.Start"
+                                                AdornmentIcon="@Icons.Material.Filled.VolunteerActivism" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="4">
+                                <MudNumericField @bind-Value="_modelo.HorasVoluntariado" 
+                                                T="int?"
+                                                Label="Horas de Voluntariado" 
+                                                Min="0"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.Start"
+                                                AdornmentIcon="@Icons.Material.Filled.Schedule" />
+                            </MudItem>
+
+                            @if ((_modelo.TotalFacilitadores ?? 0) + (_modelo.TotalVoluntarios ?? 0) > 0)
+                            {
+                                <MudItem xs="12">
+                                    <div class="metric-card">
+                                        <MudText Typo="Typo.body2" Style="color: #6D534F;">
+                                            <strong>Equipo Total:</strong> @((_modelo.TotalFacilitadores ?? 0) + (_modelo.TotalVoluntarios ?? 0)) personas
+                                        </MudText>
+                                        @if (_modelo.TotalParticipantes.HasValue && _modelo.TotalParticipantes.Value > 0)
+                                        {
+                                            var ratio = (decimal)_modelo.TotalParticipantes.Value / ((_modelo.TotalFacilitadores ?? 0) + (_modelo.TotalVoluntarios ?? 0) == 0 ? 1 : ((_modelo.TotalFacilitadores ?? 0) + (_modelo.TotalVoluntarios ?? 0)));
+                                            <MudText Typo="Typo.caption" Class="mt-1">
+                                                Ratio participantes/equipo: @ratio.ToString("N1"):1
+                                            </MudText>
+                                        }
+                                    </div>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </div>
+                </MudItem>
+
+                <!-- Impacto y Resultados -->
+                <MudItem xs="12">
+                    <div class="mythra-section">
+                        <MudText Typo="Typo.h6" Class="mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Class="mr-2" />
+                            Impacto y Resultados
                         </MudText>
                         <MudGrid>
                             <MudItem xs="12" md="6">
-                                <MudNumericField @bind-Value="_modelo.PorcentajeAsistencia" 
-                                                T="decimal?"
-                                                Label="Porcentaje de Asistencia Promedio" 
+                                <MudNumericField @bind-Value="_modelo.ObjetivosTotales" 
+                                                T="int?"
+                                                Label="Objetivos Planteados" 
                                                 Min="0"
-                                                Max="100"
-                                                Format="N2"
                                                 Variant="Variant.Outlined"
-                                                Adornment="Adornment.End"
-                                                AdornmentText="%" />
+                                                Adornment="Adornment.Start"
+                                                AdornmentIcon="@Icons.Material.Filled.Flag" />
                             </MudItem>
                             
                             <MudItem xs="12" md="6">
-                                <MudNumericField @bind-Value="_modelo.PorcentajeCumplimiento" 
-                                                T="decimal?"
-                                                Label="Porcentaje de Cumplimiento General" 
+                                <MudNumericField @bind-Value="_modelo.ObjetivosCumplidos" 
+                                                T="int?"
+                                                Label="Objetivos Cumplidos" 
                                                 Min="0"
-                                                Max="100"
+                                                Max="@_modelo.ObjetivosTotales"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.Start"
+                                                AdornmentIcon="@Icons.Material.Filled.CheckCircle" />
+                            </MudItem>
+
+                            <MudItem xs="12" md="6">
+                                <MudNumericField @bind-Value="_modelo.FamiliasImpactadas" 
+                                                T="int?"
+                                                Label="Familias Impactadas" 
+                                                Min="0"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.Start"
+                                                AdornmentIcon="@Icons.Material.Filled.FamilyRestroom" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="6">
+                                <MudNumericField @bind-Value="_modelo.ComunidadesAlcanzadas" 
+                                                T="int?"
+                                                Label="Comunidades Alcanzadas" 
+                                                Min="0"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.Start"
+                                                AdornmentIcon="@Icons.Material.Filled.LocationCity" />
+                            </MudItem>
+
+                            @if (_modelo.ObjetivosTotales.HasValue && _modelo.ObjetivosTotales.Value > 0)
+                            {
+                                <MudItem xs="12">
+                                    <div class="metric-card">
+                                        <MudText Typo="Typo.body2" Style="color: #6D534F;">
+                                            <strong>Cumplimiento de Objetivos:</strong> 
+                                            @CalcularPorcentaje(_modelo.ObjetivosCumplidos ?? 0, _modelo.ObjetivosTotales.Value)%
+                                        </MudText>
+                                        <MudProgressLinear Color="Color.Primary" 
+                                                          Value="@CalcularPorcentaje(_modelo.ObjetivosCumplidos ?? 0, _modelo.ObjetivosTotales.Value)" 
+                                                          Class="mt-2" />
+                                    </div>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </div>
+                </MudItem>
+
+                <!-- Alianzas y Colaboraciones -->
+                <MudItem xs="12">
+                    <div class="mythra-section">
+                        <MudText Typo="Typo.h6" Class="mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Handshake" Class="mr-2" />
+                            Alianzas y Colaboraciones
+                        </MudText>
+                        <MudGrid>
+                            <MudItem xs="12" md="4">
+                                <MudNumericField @bind-Value="_modelo.AlianzasActivas" 
+                                                T="int?"
+                                                Label="Alianzas Activas" 
+                                                Min="0"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.Start"
+                                                AdornmentIcon="@Icons.Material.Filled.Hub" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="4">
+                                <MudNumericField @bind-Value="_modelo.NuevasAlianzas" 
+                                                T="int?"
+                                                Label="Nuevas Alianzas" 
+                                                Min="0"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.Start"
+                                                AdornmentIcon="@Icons.Material.Filled.AddCircle" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="4">
+                                <MudNumericField @bind-Value="_modelo.AportesEnEspecie" 
+                                                T="decimal?"
+                                                Label="Aportes en Especie (valor estimado)" 
+                                                Min="0"
                                                 Format="N2"
                                                 Variant="Variant.Outlined"
-                                                Adornment="Adornment.End"
-                                                AdornmentText="%" />
+                                                Adornment="Adornment.Start"
+                                                AdornmentText="$" />
+                            </MudItem>
+                        </MudGrid>
+                    </div>
+                </MudItem>
+
+                <!-- Capacitaciones -->
+                <MudItem xs="12">
+                    <div class="mythra-section">
+                        <MudText Typo="Typo.h6" Class="mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.School" Class="mr-2" />
+                            Formación y Capacitación
+                        </MudText>
+                        <MudGrid>
+                            <MudItem xs="12" md="4">
+                                <MudNumericField @bind-Value="_modelo.CapacitacionesRealizadas" 
+                                                T="int?"
+                                                Label="Capacitaciones Realizadas" 
+                                                Min="0"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.Start"
+                                                AdornmentIcon="@Icons.Material.Filled.Class" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="4">
+                                <MudNumericField @bind-Value="_modelo.PersonasCapacitadas" 
+                                                T="int?"
+                                                Label="Personas Capacitadas" 
+                                                Min="0"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.Start"
+                                                AdornmentIcon="@Icons.Material.Filled.People" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="4">
+                                <MudNumericField @bind-Value="_modelo.CertificadosEmitidos" 
+                                                T="int?"
+                                                Label="Certificados Emitidos" 
+                                                Min="0"
+                                                Variant="Variant.Outlined"
+                                                Adornment="Adornment.Start"
+                                                AdornmentIcon="@Icons.Material.Filled.CardMembership" />
+                            </MudItem>
+                        </MudGrid>
+                    </div>
+                </MudItem>
+
+                <!-- Narrativa - Logros y Retos -->
+                <MudItem xs="12">
+                    <div class="mythra-section">
+                        <MudText Typo="Typo.h6" Class="mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Description" Class="mr-2" />
+                            Análisis Cualitativo
+                        </MudText>
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="_modelo.LogrosPrincipales" 
+                                             Label="Logros Principales" 
+                                             Lines="3"
+                                             Placeholder="Describa los principales logros alcanzados en este periodo..."
+                                             Variant="Variant.Outlined"
+                                             HelperText="Resuma los logros más significativos" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="_modelo.RetosEnfrentados" 
+                                             Label="Retos Enfrentados" 
+                                             Lines="3"
+                                             Placeholder="Describa los principales desafíos o dificultades..."
+                                             Variant="Variant.Outlined"
+                                             HelperText="Identifique los obstáculos encontrados" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="_modelo.LeccionesAprendidas" 
+                                             Label="Lecciones Aprendidas" 
+                                             Lines="3"
+                                             Placeholder="¿Qué aprendizajes se obtuvieron?"
+                                             Variant="Variant.Outlined"
+                                             HelperText="Conocimiento adquirido para mejorar" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="_modelo.ProximosPasos" 
+                                             Label="Próximos Pasos" 
+                                             Lines="3"
+                                             Placeholder="¿Qué acciones se planean para el siguiente periodo?"
+                                             Variant="Variant.Outlined"
+                                             HelperText="Plan de acción futuro" />
                             </MudItem>
                         </MudGrid>
                     </div>

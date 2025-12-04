@@ -6,33 +6,44 @@
     .mythra-kpi-card {
         background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
         border-left: 4px solid #9FD996;
-        padding: 1.5rem;
+        padding: 1.25rem;
         border-radius: 8px;
         transition: all 0.3s ease;
+        height: 100%;
     }
 
     .mythra-kpi-card:hover {
-        transform: translateY(-5px);
+        transform: translateY(-3px);
         box-shadow: 0 8px 24px rgba(159, 217, 150, 0.3);
     }
 
     .kpi-value {
-        font-size: 2.5rem;
+        font-size: 2rem;
+        font-weight: 700;
+        color: #4D3935;
+        line-height: 1;
+    }
+
+    .kpi-value-small {
+        font-size: 1.5rem;
         font-weight: 700;
         color: #4D3935;
         line-height: 1;
     }
 
     .kpi-label {
-        font-size: 0.875rem;
+        font-size: 0.75rem;
         color: #6D534F;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
     }
 
     .kpi-subtitle {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         color: #9FD996;
         font-weight: 600;
         margin-top: 0.5rem;
@@ -43,12 +54,64 @@
         border-radius: 8px;
         padding: 1rem;
         border-left: 3px solid #F7C484;
+        height: 100%;
     }
 
     .metric-value-large {
-        font-size: 2rem;
+        font-size: 1.75rem;
         font-weight: 700;
         color: #4D3935;
+    }
+
+    .section-header {
+        background: linear-gradient(90deg, #4D3935 0%, #6D534F 100%);
+        color: #FEFEFD;
+        padding: 0.75rem 1rem;
+        border-radius: 8px 8px 0 0;
+        margin: -16px -16px 16px -16px;
+    }
+
+    .impact-card {
+        background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%);
+        color: #4D3935;
+        padding: 1rem;
+        border-radius: 8px;
+        text-align: center;
+        height: 100%;
+    }
+
+    .impact-value {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+
+    .team-card {
+        background: linear-gradient(135deg, #F7C484 0%, #E5B06D 100%);
+        color: #4D3935;
+        padding: 1rem;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .narrative-card {
+        background: #F7F7F7;
+        border-left: 4px solid #4D3935;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin-bottom: 1rem;
+    }
+
+    .progress-container {
+        background: #E0E0E0;
+        border-radius: 10px;
+        height: 10px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.5s ease;
     }
 </style>
 
@@ -56,166 +119,390 @@
 {
     <div style="text-align: center; padding: 2rem;">
         <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        <MudText Typo="Typo.body2" Class="mt-2">Cargando métricas...</MudText>
     </div>
 }
 else if (_metricas != null)
 {
-    <!-- KPIs Principales -->
+    <!-- KPIs Principales - Primera Fila -->
     <MudGrid Class="mb-4">
-        <!-- Presupuesto Total -->
         <MudItem xs="12" sm="6" md="3">
             <div class="mythra-kpi-card">
                 <div class="kpi-label">
-                    <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Size="Size.Small" Class="mr-1" />
-                    Presupuesto Total
+                    <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Size="Size.Small" />
+                    Presupuesto
                 </div>
                 <div class="kpi-value">@_metricas.PresupuestoTotal.ToString("C0")</div>
+                <div class="progress-container mt-2">
+                    <div class="progress-bar" style="width: @(GetPorcentajeEjecucion())%; background: #9FD996;"></div>
+                </div>
                 <div class="kpi-subtitle">
-                    Fondos asignados
+                    Ejecutado: @_metricas.PresupuestoEjecutado.ToString("C0") (@GetPorcentajeEjecucion().ToString("F0")%)
                 </div>
             </div>
         </MudItem>
 
-        <!-- Total Participantes -->
         <MudItem xs="12" sm="6" md="3">
             <div class="mythra-kpi-card" style="border-left-color: #F7C484;">
                 <div class="kpi-label">
-                    <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" Class="mr-1" />
-                    Total Participantes
+                    <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" />
+                    Participantes
                 </div>
                 <div class="kpi-value">@_metricas.TotalParticipantes</div>
+                <div class="d-flex justify-space-between mt-2" style="font-size: 0.75rem;">
+                    <span style="color: #9FD996;">✓ Activos: @_metricas.ParticipantesActivos</span>
+                    <span style="color: #F7C484;">+ Nuevos: @_metricas.NuevosParticipantes</span>
+                </div>
                 <div class="kpi-subtitle">
-                    Beneficiarios
+                    Retención: @_metricas.TasaRetencion.ToString("F1")%
                 </div>
             </div>
         </MudItem>
 
-        <!-- Costo por Participante -->
         <MudItem xs="12" sm="6" md="3">
             <div class="mythra-kpi-card" style="border-left-color: #F3C95A;">
                 <div class="kpi-label">
-                    <MudIcon Icon="@Icons.Material.Filled.Calculate" Size="Size.Small" Class="mr-1" />
-                    Costo por Participante
+                    <MudIcon Icon="@Icons.Material.Filled.EventNote" Size="Size.Small" />
+                    Actividades
                 </div>
-                <div class="kpi-value">@_metricas.CostoPorParticipante.ToString("C2")</div>
+                <div class="kpi-value">@_metricas.ActividadesEjecutadas / @_metricas.ActividadesPlanificadas</div>
+                <MudProgressLinear Value="@((double)_metricas.PorcentajeCumplimiento)" Color="Color.Success" Class="mt-2" Style="height: 8px; border-radius: 4px;" />
                 <div class="kpi-subtitle">
-                    @(_metricas.PresupuestoTotal.ToString("C0")) ÷ @_metricas.TotalParticipantes
+                    @_metricas.PorcentajeCumplimiento.ToString("F1")% completado
                 </div>
             </div>
         </MudItem>
 
-        <!-- Cumplimiento -->
         <MudItem xs="12" sm="6" md="3">
             <div class="mythra-kpi-card" style="border-left-color: #4D3935;">
                 <div class="kpi-label">
-                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Class="mr-1" />
-                    % Cumplimiento
+                    <MudIcon Icon="@Icons.Material.Filled.Flag" Size="Size.Small" />
+                    Objetivos
                 </div>
-                <div class="kpi-value">@_metricas.PorcentajeCumplimiento.ToString("F1")%</div>
-                <MudProgressLinear Value="@((double)_metricas.PorcentajeCumplimiento)" Color="Color.Success" Class="mt-2" />
+                <div class="kpi-value">@_metricas.ObjetivosCumplidos / @_metricas.ObjetivosTotales</div>
+                <MudProgressLinear Value="@((double)_metricas.PorcentajeObjetivos)" Color="Color.Primary" Class="mt-2" Style="height: 8px; border-radius: 4px;" />
                 <div class="kpi-subtitle">
-                    @_metricas.ActividadesEjecutadas / @_metricas.ActividadesPlanificadas actividades
+                    @_metricas.PorcentajeObjetivos.ToString("F1")% alcanzado
                 </div>
             </div>
         </MudItem>
     </MudGrid>
 
-    <!-- Balance Financiero -->
-    <MudPaper Class="pa-4 mb-4" Elevation="3" Style="border-left: 4px solid #9FD996;">
-        <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 600;" Class="mb-3">
-            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="mr-2" />
-            Balance Financiero
-        </MudText>
-        <MudGrid>
-            <MudItem xs="12" md="4">
-                <div class="metric-card">
-                    <MudText Typo="Typo.caption" Style="color: #6D534F;">Ingresos</MudText>
-                    <div class="metric-value-large" style="color: #9FD996;">
-                        @_metricas.TotalIngresos.ToString("C0")
-                    </div>
-                </div>
-            </MudItem>
-            <MudItem xs="12" md="4">
-                <div class="metric-card" style="border-left-color: #F7C484;">
-                    <MudText Typo="Typo.caption" Style="color: #6D534F;">Egresos</MudText>
-                    <div class="metric-value-large" style="color: #F7C484;">
-                        @_metricas.TotalEgresos.ToString("C0")
-                    </div>
-                </div>
-            </MudItem>
-            <MudItem xs="12" md="4">
-                <div class="metric-card" style="border-left-color: @(_metricas.Balance >= 0 ? "#9FD996" : "#E57373");">
-                    <MudText Typo="Typo.caption" Style="color: #6D534F;">Balance</MudText>
-                    <div class="metric-value-large" style="color: @(_metricas.Balance >= 0 ? "#9FD996" : "#E57373");">
-                        @_metricas.Balance.ToString("C0")
-                    </div>
-                </div>
-            </MudItem>
-        </MudGrid>
-    </MudPaper>
-
-    <!-- Métricas Dinámicas -->
-    @if (_metricas.MetricasDinamicas.Any())
+    <!-- Impacto Social -->
+    @if (_metricas.FamiliasImpactadas > 0 || _metricas.ComunidadesAlcanzadas > 0 || _metricas.PersonasCapacitadas > 0)
     {
-        <MudPaper Class="pa-4" Elevation="3" Style="border-left: 4px solid #F7C484;">
-            <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 600;" Class="mb-3">
-                <MudIcon Icon="@Icons.Material.Filled.BarChart" Class="mr-2" />
-                Métricas Adicionales
-            </MudText>
+        <MudPaper Class="pa-4 mb-4" Elevation="3">
+            <div class="section-header">
+                <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">
+                    <MudIcon Icon="@Icons.Material.Filled.Public" Class="mr-2" Size="Size.Small" />
+                    Impacto Social
+                </MudText>
+            </div>
             <MudGrid>
-                @foreach (var metrica in _metricas.MetricasDinamicas.Take(12))
+                @if (_metricas.FamiliasImpactadas > 0)
                 {
-                    <MudItem xs="12" sm="6" md="4" lg="3">
-                        <MudCard Elevation="0" Class="metric-card">
-                            <MudCardContent Class="pa-3">
-                                <MudText Typo="Typo.caption" Style="color: #6D534F; text-transform: uppercase;">
-                                    @metrica.Etiqueta
-                                </MudText>
-                                <MudText Typo="Typo.h5" Style="color: #4D3935; font-weight: 700;">
-                                    @metrica.Valor.ToString("N2") @(metrica.Unidad ?? "")
-                                </MudText>
-                            </MudCardContent>
-                        </MudCard>
+                    <MudItem xs="6" sm="4" md="2">
+                        <div class="impact-card">
+                            <MudIcon Icon="@Icons.Material.Filled.FamilyRestroom" Size="Size.Large" />
+                            <div class="impact-value">@_metricas.FamiliasImpactadas</div>
+                            <MudText Typo="Typo.caption">Familias</MudText>
+                        </div>
+                    </MudItem>
+                }
+                @if (_metricas.ComunidadesAlcanzadas > 0)
+                {
+                    <MudItem xs="6" sm="4" md="2">
+                        <div class="impact-card">
+                            <MudIcon Icon="@Icons.Material.Filled.LocationCity" Size="Size.Large" />
+                            <div class="impact-value">@_metricas.ComunidadesAlcanzadas</div>
+                            <MudText Typo="Typo.caption">Comunidades</MudText>
+                        </div>
+                    </MudItem>
+                }
+                @if (_metricas.PersonasCapacitadas > 0)
+                {
+                    <MudItem xs="6" sm="4" md="2">
+                        <div class="impact-card">
+                            <MudIcon Icon="@Icons.Material.Filled.School" Size="Size.Large" />
+                            <div class="impact-value">@_metricas.PersonasCapacitadas</div>
+                            <MudText Typo="Typo.caption">Capacitados</MudText>
+                        </div>
+                    </MudItem>
+                }
+                @if (_metricas.CapacitacionesRealizadas > 0)
+                {
+                    <MudItem xs="6" sm="4" md="2">
+                        <div class="impact-card">
+                            <MudIcon Icon="@Icons.Material.Filled.Class" Size="Size.Large" />
+                            <div class="impact-value">@_metricas.CapacitacionesRealizadas</div>
+                            <MudText Typo="Typo.caption">Capacitaciones</MudText>
+                        </div>
+                    </MudItem>
+                }
+                @if (_metricas.CertificadosEmitidos > 0)
+                {
+                    <MudItem xs="6" sm="4" md="2">
+                        <div class="impact-card">
+                            <MudIcon Icon="@Icons.Material.Filled.CardMembership" Size="Size.Large" />
+                            <div class="impact-value">@_metricas.CertificadosEmitidos</div>
+                            <MudText Typo="Typo.caption">Certificados</MudText>
+                        </div>
+                    </MudItem>
+                }
+                @if (_metricas.AlianzasActivas > 0)
+                {
+                    <MudItem xs="6" sm="4" md="2">
+                        <div class="impact-card">
+                            <MudIcon Icon="@Icons.Material.Filled.Handshake" Size="Size.Large" />
+                            <div class="impact-value">@_metricas.AlianzasActivas</div>
+                            <MudText Typo="Typo.caption">Alianzas</MudText>
+                        </div>
                     </MudItem>
                 }
             </MudGrid>
         </MudPaper>
     }
 
+    <!-- Recursos Humanos y Finanzas -->
+    <MudGrid Class="mb-4">
+        <!-- Recursos Humanos -->
+        @if (_metricas.TotalEquipo > 0)
+        {
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4" Elevation="3" Style="height: 100%;">
+                    <div class="section-header" style="background: linear-gradient(90deg, #F7C484 0%, #E5B06D 100%);">
+                        <MudText Typo="Typo.subtitle1" Style="font-weight: 600; color: #4D3935;">
+                            <MudIcon Icon="@Icons.Material.Filled.Groups" Class="mr-2" Size="Size.Small" />
+                            Recursos Humanos
+                        </MudText>
+                    </div>
+                    <MudGrid>
+                        <MudItem xs="4">
+                            <div class="team-card">
+                                <MudIcon Icon="@Icons.Material.Filled.School" />
+                                <div style="font-size: 1.5rem; font-weight: 700;">@_metricas.TotalFacilitadores</div>
+                                <MudText Typo="Typo.caption">Facilitadores</MudText>
+                            </div>
+                        </MudItem>
+                        <MudItem xs="4">
+                            <div class="team-card" style="background: linear-gradient(135deg, #F3C95A 0%, #E5B84A 100%);">
+                                <MudIcon Icon="@Icons.Material.Filled.VolunteerActivism" />
+                                <div style="font-size: 1.5rem; font-weight: 700;">@_metricas.TotalVoluntarios</div>
+                                <MudText Typo="Typo.caption">Voluntarios</MudText>
+                            </div>
+                        </MudItem>
+                        <MudItem xs="4">
+                            <div class="team-card" style="background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%);">
+                                <MudIcon Icon="@Icons.Material.Filled.Schedule" />
+                                <div style="font-size: 1.5rem; font-weight: 700;">@_metricas.HorasVoluntariado</div>
+                                <MudText Typo="Typo.caption">Horas Vol.</MudText>
+                            </div>
+                        </MudItem>
+                    </MudGrid>
+                    <MudText Typo="Typo.body2" Class="mt-3" Style="color: #6D534F;">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="mr-1" />
+                        Ratio participantes/equipo: <strong>@(_metricas.TotalEquipo > 0 ? (_metricas.TotalParticipantes / _metricas.TotalEquipo) : 0):1</strong>
+                    </MudText>
+                </MudPaper>
+            </MudItem>
+        }
+
+        <!-- Balance Financiero -->
+        <MudItem xs="12" md="@(_metricas.TotalEquipo > 0 ? 6 : 12)">
+            <MudPaper Class="pa-4" Elevation="3" Style="height: 100%;">
+                <div class="section-header" style="background: linear-gradient(90deg, #9FD996 0%, #85C97C 100%);">
+                    <MudText Typo="Typo.subtitle1" Style="font-weight: 600; color: #4D3935;">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="mr-2" Size="Size.Small" />
+                        Balance Financiero
+                    </MudText>
+                </div>
+                <MudGrid>
+                    <MudItem xs="4">
+                        <div class="metric-card" style="border-left-color: #9FD996;">
+                            <MudText Typo="Typo.caption" Style="color: #6D534F;">Presupuesto</MudText>
+                            <div class="metric-value-large" style="color: #9FD996;">
+                                @_metricas.TotalIngresos.ToString("C0")
+                            </div>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="4">
+                        <div class="metric-card" style="border-left-color: #F7C484;">
+                            <MudText Typo="Typo.caption" Style="color: #6D534F;">Ejecutado</MudText>
+                            <div class="metric-value-large" style="color: #F7C484;">
+                                @_metricas.TotalEgresos.ToString("C0")
+                            </div>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="4">
+                        <div class="metric-card" style="border-left-color: @(_metricas.Balance >= 0 ? "#9FD996" : "#E57373");">
+                            <MudText Typo="Typo.caption" Style="color: #6D534F;">Saldo</MudText>
+                            <div class="metric-value-large" style="color: @(_metricas.Balance >= 0 ? "#9FD996" : "#E57373");">
+                                @_metricas.Balance.ToString("C0")
+                            </div>
+                        </div>
+                    </MudItem>
+                </MudGrid>
+                @if (_metricas.AportesEnEspecie > 0)
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3">
+                        <strong>Aportes en especie:</strong> @_metricas.AportesEnEspecie.ToString("C0")
+                    </MudAlert>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
     <!-- Gráficos -->
-    <MudGrid Class="mt-4">
+    <MudGrid Class="mb-4">
         <MudItem xs="12" md="6">
-            <MudPaper Class="pa-4" Elevation="3" Style="border-left: 4px solid #9FD996;">
-                <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 600;" Class="mb-3">
+            <MudPaper Class="pa-4" Elevation="3">
+                <MudText Typo="Typo.subtitle1" Style="color: #4D3935; font-weight: 600;" Class="mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.DonutLarge" Class="mr-2" />
                     Cumplimiento de Actividades
                 </MudText>
-                <MudChart ChartType="ChartType.Donut" 
-                         Width="100%" 
-                         Height="300px"
-                         InputData="@(new double[] { _metricas.ActividadesEjecutadas, _metricas.ActividadesPlanificadas - _metricas.ActividadesEjecutadas })"
-                         InputLabels="@(new string[] { "Ejecutadas", "Pendientes" })"
-                         ChartOptions="@_chartOptions" />
+                @if (_metricas.ActividadesPlanificadas > 0)
+                {
+                    <MudChart ChartType="ChartType.Donut" 
+                             Width="100%" 
+                             Height="250px"
+                             InputData="@(new double[] { _metricas.ActividadesEjecutadas, Math.Max(0, _metricas.ActividadesPlanificadas - _metricas.ActividadesEjecutadas) })"
+                             InputLabels="@(new string[] { $"Ejecutadas ({_metricas.ActividadesEjecutadas})", $"Pendientes ({Math.Max(0, _metricas.ActividadesPlanificadas - _metricas.ActividadesEjecutadas)})" })"
+                             ChartOptions="@_chartOptions" />
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true">Sin actividades planificadas</MudAlert>
+                }
             </MudPaper>
         </MudItem>
 
         <MudItem xs="12" md="6">
-            <MudPaper Class="pa-4" Elevation="3" Style="border-left: 4px solid #F7C484;">
-                <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 600;" Class="mb-3">
-                    Distribución Financiera
+            <MudPaper Class="pa-4" Elevation="3">
+                <MudText Typo="Typo.subtitle1" Style="color: #4D3935; font-weight: 600;" Class="mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.PieChart" Class="mr-2" />
+                    Ejecución Presupuestaria
                 </MudText>
-                <MudChart ChartType="ChartType.Pie" 
-                         Width="100%" 
-                         Height="300px"
-                         InputData="@(new double[] { (double)_metricas.TotalIngresos, (double)_metricas.TotalEgresos })"
-                         InputLabels="@(new string[] { "Ingresos", "Egresos" })"
-                         ChartOptions="@_chartOptions" />
+                @if (_metricas.PresupuestoTotal > 0)
+                {
+                    <MudChart ChartType="ChartType.Pie" 
+                             Width="100%" 
+                             Height="250px"
+                             InputData="@(new double[] { (double)_metricas.PresupuestoEjecutado, (double)Math.Max(0, _metricas.PresupuestoTotal - _metricas.PresupuestoEjecutado) })"
+                             InputLabels="@(new string[] { "Ejecutado", "Disponible" })"
+                             ChartOptions="@_chartOptions" />
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true">Sin presupuesto asignado</MudAlert>
+                }
             </MudPaper>
         </MudItem>
     </MudGrid>
+
+    <!-- Análisis Cualitativo -->
+    @if (!string.IsNullOrWhiteSpace(_metricas.LogrosPrincipales) || 
+         !string.IsNullOrWhiteSpace(_metricas.RetosEnfrentados) ||
+         !string.IsNullOrWhiteSpace(_metricas.LeccionesAprendidas) ||
+         !string.IsNullOrWhiteSpace(_metricas.ProximosPasos))
+    {
+        <MudPaper Class="pa-4 mb-4" Elevation="3">
+            <div class="section-header" style="background: linear-gradient(90deg, #6D534F 0%, #4D3935 100%);">
+                <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">
+                    <MudIcon Icon="@Icons.Material.Filled.Analytics" Class="mr-2" Size="Size.Small" />
+                    Análisis Cualitativo
+                </MudText>
+            </div>
+            <MudGrid>
+                @if (!string.IsNullOrWhiteSpace(_metricas.LogrosPrincipales))
+                {
+                    <MudItem xs="12" md="6">
+                        <div class="narrative-card" style="border-left-color: #9FD996;">
+                            <MudText Typo="Typo.subtitle2" Style="color: #9FD996; font-weight: 600;">
+                                <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Size="Size.Small" Class="mr-1" />
+                                Logros Principales
+                            </MudText>
+                            <MudText Typo="Typo.body2" Style="color: #4D3935;" Class="mt-2">
+                                @_metricas.LogrosPrincipales
+                            </MudText>
+                        </div>
+                    </MudItem>
+                }
+                @if (!string.IsNullOrWhiteSpace(_metricas.RetosEnfrentados))
+                {
+                    <MudItem xs="12" md="6">
+                        <div class="narrative-card" style="border-left-color: #F7C484;">
+                            <MudText Typo="Typo.subtitle2" Style="color: #F7C484; font-weight: 600;">
+                                <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="mr-1" />
+                                Retos Enfrentados
+                            </MudText>
+                            <MudText Typo="Typo.body2" Style="color: #4D3935;" Class="mt-2">
+                                @_metricas.RetosEnfrentados
+                            </MudText>
+                        </div>
+                    </MudItem>
+                }
+                @if (!string.IsNullOrWhiteSpace(_metricas.LeccionesAprendidas))
+                {
+                    <MudItem xs="12" md="6">
+                        <div class="narrative-card" style="border-left-color: #F3C95A;">
+                            <MudText Typo="Typo.subtitle2" Style="color: #F3C95A; font-weight: 600;">
+                                <MudIcon Icon="@Icons.Material.Filled.Lightbulb" Size="Size.Small" Class="mr-1" />
+                                Lecciones Aprendidas
+                            </MudText>
+                            <MudText Typo="Typo.body2" Style="color: #4D3935;" Class="mt-2">
+                                @_metricas.LeccionesAprendidas
+                            </MudText>
+                        </div>
+                    </MudItem>
+                }
+                @if (!string.IsNullOrWhiteSpace(_metricas.ProximosPasos))
+                {
+                    <MudItem xs="12" md="6">
+                        <div class="narrative-card" style="border-left-color: #4D3935;">
+                            <MudText Typo="Typo.subtitle2" Style="color: #4D3935; font-weight: 600;">
+                                <MudIcon Icon="@Icons.Material.Filled.NextPlan" Size="Size.Small" Class="mr-1" />
+                                Próximos Pasos
+                            </MudText>
+                            <MudText Typo="Typo.body2" Style="color: #4D3935;" Class="mt-2">
+                                @_metricas.ProximosPasos
+                            </MudText>
+                        </div>
+                    </MudItem>
+                }
+            </MudGrid>
+        </MudPaper>
+    }
+
+    <!-- Métricas Adicionales Dinámicas -->
+    @if (_metricas.MetricasDinamicas.Any())
+    {
+        <MudExpansionPanels Class="mb-4">
+            <MudExpansionPanel Text="Ver todas las métricas detalladas" Icon="@Icons.Material.Filled.TableChart">
+                <MudGrid>
+                    @foreach (var metrica in _metricas.MetricasDinamicas)
+                    {
+                        <MudItem xs="12" sm="6" md="4" lg="3">
+                            <MudCard Elevation="1" Class="pa-3">
+                                <MudText Typo="Typo.caption" Style="color: #6D534F; text-transform: uppercase;">
+                                    @metrica.Etiqueta
+                                </MudText>
+                                <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 700;">
+                                    @FormatearValorMetrica(metrica)
+                                </MudText>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+    }
 }
 else
 {
-    <MudAlert Severity="Severity.Info">No hay métricas disponibles para este POA</MudAlert>
+    <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.Info">
+        <MudText Typo="Typo.body1">No hay métricas disponibles para este POA</MudText>
+        <MudText Typo="Typo.body2">Complete los campos del formulario POA para ver el dashboard de métricas.</MudText>
+    </MudAlert>
 }
 
 @code {
@@ -231,17 +518,24 @@ else
         await CargarMetricasAsync();
     }
 
+    protected override async Task OnParametersSetAsync()
+    {
+        await CargarMetricasAsync();
+    }
+
     private void ConfigurarOpcionesGraficas()
     {
         _chartOptions = new ChartOptions
         {
-            ChartPalette = new[] { "#9FD996", "#F7C484", "#F3C95A", "#4D3935", "#85C97C" }
+            ChartPalette = new[] { "#9FD996", "#F7C484", "#F3C95A", "#4D3935", "#85C97C", "#E5B06D" }
         };
     }
 
     private async Task CargarMetricasAsync()
     {
         _cargando = true;
+        StateHasChanged();
+        
         try
         {
             _metricas = await POAService.CalcularMetricasAsync(InstanciaId);
@@ -253,6 +547,25 @@ else
         finally
         {
             _cargando = false;
+            StateHasChanged();
         }
+    }
+
+    private double GetPorcentajeEjecucion()
+    {
+        if (_metricas == null || _metricas.PresupuestoTotal == 0)
+            return 0;
+        return (double)(_metricas.PresupuestoEjecutado * 100 / _metricas.PresupuestoTotal);
+    }
+
+    private string FormatearValorMetrica(MetricaDinamica metrica)
+    {
+        if (metrica.Unidad == "%" || metrica.Etiqueta.Contains("Porcentaje"))
+            return $"{metrica.Valor:F1}%";
+        if (metrica.Unidad == "$" || metrica.Etiqueta.Contains("Presupuesto") || metrica.Etiqueta.Contains("Costo"))
+            return metrica.Valor.ToString("C0");
+        if (metrica.Valor == Math.Floor(metrica.Valor))
+            return metrica.Valor.ToString("N0");
+        return $"{metrica.Valor:N2} {metrica.Unidad ?? ""}".Trim();
     }
 }

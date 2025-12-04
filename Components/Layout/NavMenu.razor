@@ -2,6 +2,7 @@
 @using Microsoft.AspNetCore.Components.Web
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Account.Shared
 @using Microsoft.AspNetCore.Authorization
+@using MudBlazor
 
 @implements IDisposable
 
@@ -11,7 +12,8 @@
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">
-            Juventud Sin Límites
+            <MudIcon Icon="@Icons.Material.Filled.Grass" Size="Size.Small" Class="brand-icon" />
+            <span class="brand-text">Juventud Sin Límites</span>
         </a>
     </div>
 </div>
@@ -20,27 +22,32 @@
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
+        <!-- Principal -->
+        <div class="nav-section-header px-3">
+            <span class="nav-section-title">Principal</span>
+        </div>
+
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Inicio
+                <MudIcon Icon="@Icons.Material.Filled.Home" Size="Size.Small" Class="nav-icon" /> Inicio
             </NavLink>
         </div>
 
         <AuthorizeView Context="mainAuth">
             <Authorized>
-                <!-- Programas (separado de POAs) -->
+                <!-- Programas -->
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="programas">
-                        <span class="bi bi-folder-nav-menu" aria-hidden="true"></span> Programas
+                        <MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Small" Class="nav-icon" /> Programas
                     </NavLink>
                 </div>
 
-                <!-- POAs (separado de Programas) -->
-                <AuthorizeView Roles="Administrador" Context="poaAuth">
+                <!-- POAs -->
+                <AuthorizeView Roles="Administrador,Coordinador" Context="poaAuth">
                     <Authorized>
                         <div class="nav-item px-3">
                             <NavLink class="nav-link" href="poas">
-                                <span class="bi bi-journal-text-nav-menu" aria-hidden="true"></span> POAs
+                                <MudIcon Icon="@Icons.Material.Filled.Assessment" Size="Size.Small" Class="nav-icon" /> Plan Operativo
                             </NavLink>
                         </div>
                     </Authorized>
@@ -49,9 +56,13 @@
                 <!-- Motor de Inferencia -->
                 <AuthorizeView Roles="Administrador,Coordinador" Context="motorAuth">
                     <Authorized>
+                        <div class="nav-section-header px-3">
+                            <span class="nav-section-title">Sistema Experto</span>
+                        </div>
+
                         <div class="nav-item px-3">
                             <NavLink class="nav-link" href="admin/motor">
-                                <span class="bi bi-cpu-nav-menu" aria-hidden="true"></span> Motor IA
+                                <MudIcon Icon="@Icons.Material.Filled.Psychology" Size="Size.Small" Class="nav-icon" /> Motor IA
                             </NavLink>
                         </div>
                     </Authorized>
@@ -60,26 +71,23 @@
                 <!-- Administración -->
                 <AuthorizeView Roles="Administrador" Context="adminAuth">
                     <Authorized>
-                        <hr class="nav-divider" />
                         <div class="nav-section-header px-3">
                             <span class="nav-section-title">Administración</span>
                         </div>
                         
                         <div class="nav-item px-3">
                             <NavLink class="nav-link" href="admin/usuarios">
-                                <span class="bi bi-people-nav-menu" aria-hidden="true"></span> Usuarios
+                                <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" Class="nav-icon" /> Usuarios
                             </NavLink>
                         </div>
 
                         <div class="nav-item px-3">
                             <NavLink class="nav-link" href="admin/motor/reglas">
-                                <span class="bi bi-gear-nav-menu" aria-hidden="true"></span> Reglas Motor
+                                <MudIcon Icon="@Icons.Material.Filled.Rule" Size="Size.Small" Class="nav-icon" /> Reglas Motor
                             </NavLink>
                         </div>
                     </Authorized>
                 </AuthorizeView>
-
-                <hr class="nav-divider" />
 
                 <!-- Mi Cuenta -->
                 <div class="nav-section-header px-3">
@@ -88,7 +96,7 @@
 
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="Account/Manage">
-                        <span class="bi bi-person-circle-nav-menu" aria-hidden="true"></span> Mi Perfil
+                        <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="nav-icon" /> Mi Perfil
                     </NavLink>
                 </div>
 
@@ -96,8 +104,8 @@
                     <form action="Account/Logout" method="post">
                         <AntiforgeryToken />
                         <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                        <button type="submit" class="nav-link">
-                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Cerrar Sesión
+                        <button type="submit" class="nav-link logout-btn">
+                            <MudIcon Icon="@Icons.Material.Filled.Logout" Size="Size.Small" Class="nav-icon" /> Cerrar Sesión
                         </button>
                     </form>
                 </div>
@@ -105,11 +113,18 @@
             <NotAuthorized>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="Account/Login">
-                        <span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> Iniciar Sesión
+                        <MudIcon Icon="@Icons.Material.Filled.Login" Size="Size.Small" Class="nav-icon" /> Iniciar Sesión
                     </NavLink>
                 </div>
             </NotAuthorized>
         </AuthorizeView>
+
+        <!-- Footer del sidebar -->
+        <div class="nav-footer px-3">
+            <div class="version-info">
+                <span>v1.0.0</span>
+            </div>
+        </div>
     </nav>
 </div>
 

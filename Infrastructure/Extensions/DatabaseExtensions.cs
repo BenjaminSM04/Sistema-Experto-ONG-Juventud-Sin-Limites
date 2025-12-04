@@ -28,6 +28,11 @@ public static class DatabaseExtensions
             logger.LogInformation("Ejecutando seeder de datos iniciales...");
             await DatabaseSeeder.SeedAsync(context, userManager, roleManager);
             logger.LogInformation("Datos iniciales cargados exitosamente");
+
+            // Ejecutar POA Seeder para configurar campos completos de POA
+            logger.LogInformation("Ejecutando POA Seeder...");
+            await POASeeder.SeedAsync(context);
+            logger.LogInformation("POA Seeder completado exitosamente");
         }
         catch (Exception ex)
         {

@@ -210,7 +210,9 @@
                 SeveridadLabels="_severidadLabels"
                 EstadoData="_estadoData"
                 EstadoLabels="_estadoLabels"
-                ChartOptions="_mudChartOptions" />
+                ChartOptions="_mudChartOptions"
+                AlertasRecientes="_alertasRecientes"
+                AlertasPorPrograma="_alertasPorPrograma" />
         </MudTabPanel>
 
         <!-- TAB 2: Ejecutar Motor -->
@@ -235,51 +237,54 @@
                 Cargando="_cargando"
                 GenerandoPDF="_generandoPDF"
                 OnExportarPDF="ExportarReportePDF"
-                OnCambiarEstado="HandleCambiarEstado" />
+                OnCambiarEstado="HandleCambiarEstado"
+                OnAlertaResuelta="HandleAlertaResuelta" />
         </MudTabPanel>
     </MudTabs>
 </MudContainer>
 
 @code {
-    private DateTime? _fechaCorte = DateTime.Now;
-    private int? _programaId;
-    private bool _ejecutando = false;
-    private bool _cargando = false;
-    private bool _generandoPDF = false;
-    private bool _limpiandoDuplicados = false;
-    private int _tabActivo = 0;
-    private ResumenEjecucion? _resumen;
-    private List<AlertaDto> _alertas = new();
-    private string? _error;
-    private string? _successMessage;
-    private bool _esCoordinador = false;
-    private List<ProgramaInfo> _programasDisponibles = new();
-    private Usuario? _usuarioActual;
+private DateTime? _fechaCorte = DateTime.Now;
+private int? _programaId;
+private bool _ejecutando = false;
+private bool _cargando = false;
+private bool _generandoPDF = false;
+private bool _limpiandoDuplicados = false;
+private int _tabActivo = 0;
+private ResumenEjecucion? _resumen;
+private List<AlertaDto> _alertas = new();
+private string? _error;
+private string? _successMessage;
+private bool _esCoordinador = false;
+private List<ProgramaInfo> _programasDisponibles = new();
+private Usuario? _usuarioActual;
 
-    // Dashboard
-    private MotorDashboardData _dashboardEstadisticas = new();
-    private double[] _severidadData = Array.Empty<double>();
-    private string[] _severidadLabels = Array.Empty<string>();
-    private double[] _estadoData = Array.Empty<double>();
-    private string[] _estadoLabels = Array.Empty<string>();
-    private ChartOptions _mudChartOptions = new();
+// Dashboard
+private MotorDashboardData _dashboardEstadisticas = new();
+private double[] _severidadData = Array.Empty<double>();
+private string[] _severidadLabels = Array.Empty<string>();
+private double[] _estadoData = Array.Empty<double>();
+private string[] _estadoLabels = Array.Empty<string>();
+private ChartOptions _mudChartOptions = new();
+private List<AlertaDto> _alertasRecientes = new();
+private List<AlertaPorProgramaDto> _alertasPorPrograma = new();
 
-    protected override async Task OnInitializedAsync()
-    {
-        Logger.LogInformation("?? Motor.razor inicializado");
+protected override async Task OnInitializedAsync()
+{
+    Logger.LogInformation("🔧 Motor.razor inicializado");
         
-        ConfigurarOpcionesGraficas();
-        await CargarUsuarioYProgramasAsync();
-        await CargarDashboardAsync();
-    }
+    ConfigurarOpcionesGraficas();
+    await CargarUsuarioYProgramasAsync();
+    await CargarDashboardAsync();
+}
 
-    private void ConfigurarOpcionesGraficas()
+private void ConfigurarOpcionesGraficas()
+{
+    _mudChartOptions = new ChartOptions
     {
-        _mudChartOptions = new ChartOptions
-        {
-            ChartPalette = new[] { "#F7C484", "#F3C95A", "#9FD996", "#4D3935" }
-        };
-    }
+        ChartPalette = new[] { "#9FD996", "#F7C484", "#EF5350", "#4D3935" }
+    };
+}
 
     private async Task CargarUsuarioYProgramasAsync()
     {
@@ -329,7 +334,15 @@
                 TotalAlertas = estadisticas.TotalAlertas,
                 AlertasAbiertas = estadisticas.AlertasAbiertas,
                 AlertasResueltas = estadisticas.AlertasResueltas,
-                AlertasCriticas = estadisticas.AlertasCriticas
+                AlertasCriticas = estadisticas.AlertasCriticas,
+                AlertasDescartadas = estadisticas.AlertasDescartadas,
+                ReglasActivas = estadisticas.ReglasActivas,
+                TasaResolucion = estadisticas.TasaResolucion,
+                UltimaEjecucion = estadisticas.UltimaEjecucion,
+                ProgramasMonitoreados = estadisticas.ProgramasMonitoreados,
+                AlertasHoy = estadisticas.AlertasHoy,
+                AlertasSemana = estadisticas.AlertasSemana,
+                TiempoPromedioResolucion = estadisticas.TiempoPromedioResolucion
             };
 
             _severidadData = new double[] { estadisticas.SeveridadInfo, estadisticas.SeveridadAlta, estadisticas.SeveridadCritica };
@@ -338,11 +351,21 @@
             _estadoData = new double[] { estadisticas.EstadoAbiertas, estadisticas.EstadoResueltas, estadisticas.EstadoDescartadas };
             _estadoLabels = new[] { "Abiertas", "Resueltas", "Descartadas" };
 
+            // Cargar alertas por programa
+            _alertasPorPrograma = await MotorService.ObtenerAlertasPorProgramaAsync(_usuarioActual, _esCoordinador);
+
             await CargarAlertasAsync();
+            
+            // Alertas recientes (últimas 5 abiertas)
+            _alertasRecientes = _alertas
+                .Where(a => a.Estado == (byte)EstadoAlerta.Abierta)
+                .OrderByDescending(a => a.GeneradaEn)
+                .Take(5)
+                .ToList();
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "? Error al cargar dashboard");
+            Logger.LogError(ex, "❌ Error al cargar dashboard");
             _error = "Error al cargar el dashboard";
         }
     }
@@ -515,75 +538,83 @@
     }
 
     private async Task HandleCambiarEstado(CambioEstadoArgs args)
-    {
-        Logger.LogInformation("?? Cambiando estado de alerta {AlertaId} a {Estado}", args.AlertaId, args.NuevoEstado);
-
-        try
         {
-            var alerta = await DbContext.Alertas
-                .Where(a => a.AlertaId == args.AlertaId && !a.IsDeleted)
-                .FirstOrDefaultAsync();
-
-            if (alerta == null)
-            {
-                Logger.LogWarning("?? Alerta {AlertaId} no encontrada", args.AlertaId);
-                _error = "Alerta no encontrada.";
-                _alertas.RemoveAll(a => a.AlertaId == args.AlertaId);
-                StateHasChanged();
-                return;
-            }
-
-            if (args.RowVersion != null && args.RowVersion.Length > 0)
-            {
-                DbContext.Entry(alerta).Property(a => a.RowVersion).OriginalValue = args.RowVersion;
-            }
-
-            var comentario = args.NuevoEstado == EstadoAlerta.Resuelta 
-                ? "Alerta resuelta desde el panel del motor" 
-                : "Alerta descartada desde el panel del motor";
-
-            alerta.Estado = args.NuevoEstado;
-            if (!string.IsNullOrWhiteSpace(comentario))
-            {
-                alerta.Notas = comentario;
-            }
-            alerta.ActualizadoEn = DateTime.UtcNow;
-
-            if (args.NuevoEstado == EstadoAlerta.Resuelta)
-            {
-                alerta.ResueltaEn = DateTime.UtcNow;
-            }
+            Logger.LogInformation("?? Cambiando estado de alerta {AlertaId} a {Estado}", args.AlertaId, args.NuevoEstado);
 
             try
             {
-                await DbContext.SaveChangesAsync();
+                var alerta = await DbContext.Alertas
+                    .Where(a => a.AlertaId == args.AlertaId && !a.IsDeleted)
+                    .FirstOrDefaultAsync();
 
-                var alertaDto = _alertas.FirstOrDefault(a => a.AlertaId == args.AlertaId);
-                if (alertaDto != null)
+                if (alerta == null)
                 {
-                    var index = _alertas.IndexOf(alertaDto);
-                    _alertas[index] = alertaDto with { Estado = (byte)args.NuevoEstado };
+                    Logger.LogWarning("?? Alerta {AlertaId} no encontrada", args.AlertaId);
+                    _error = "Alerta no encontrada.";
+                    _alertas.RemoveAll(a => a.AlertaId == args.AlertaId);
+                    StateHasChanged();
+                    return;
                 }
 
-                var mensaje = args.NuevoEstado == EstadoAlerta.Resuelta ? "Alerta resuelta" : "Alerta descartada";
-                Logger.LogInformation("? {Mensaje}", mensaje);
-                _successMessage = mensaje;
+                if (args.RowVersion != null && args.RowVersion.Length > 0)
+                {
+                    DbContext.Entry(alerta).Property(a => a.RowVersion).OriginalValue = args.RowVersion;
+                }
 
-                await CargarDashboardAsync();
-                StateHasChanged();
+                var comentario = args.NuevoEstado == EstadoAlerta.Resuelta 
+                    ? "Alerta resuelta desde el panel del motor" 
+                    : "Alerta descartada desde el panel del motor";
+
+                alerta.Estado = args.NuevoEstado;
+                if (!string.IsNullOrWhiteSpace(comentario))
+                {
+                    alerta.Notas = comentario;
+                }
+                alerta.ActualizadoEn = DateTime.UtcNow;
+
+                if (args.NuevoEstado == EstadoAlerta.Resuelta)
+                {
+                    alerta.ResueltaEn = DateTime.UtcNow;
+                }
+
+                try
+                {
+                    await DbContext.SaveChangesAsync();
+
+                    var alertaDto = _alertas.FirstOrDefault(a => a.AlertaId == args.AlertaId);
+                    if (alertaDto != null)
+                    {
+                        var index = _alertas.IndexOf(alertaDto);
+                        _alertas[index] = alertaDto with { Estado = (byte)args.NuevoEstado };
+                    }
+
+                    var mensaje = args.NuevoEstado == EstadoAlerta.Resuelta ? "Alerta resuelta" : "Alerta descartada";
+                    Logger.LogInformation("? {Mensaje}", mensaje);
+                    _successMessage = mensaje;
+
+                    await CargarDashboardAsync();
+                    StateHasChanged();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    var errorMsg = "La alerta fue modificada por otro usuario. Por favor, recargue la página.";
+                    Logger.LogWarning("?? {Error}", errorMsg);
+                    _error = errorMsg;
+                }
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception ex)
             {
-                var errorMsg = "La alerta fue modificada por otro usuario. Por favor, recargue la página.";
-                Logger.LogWarning("?? {Error}", errorMsg);
-                _error = errorMsg;
+                Logger.LogError(ex, "? Error en CambiarEstadoAlerta");
+                _error = $"Error inesperado: {ex.Message}";
             }
         }
-        catch (Exception ex)
+
+        private async Task HandleAlertaResuelta()
         {
-            Logger.LogError(ex, "? Error en CambiarEstadoAlerta");
-            _error = $"Error inesperado: {ex.Message}";
+            Logger.LogInformation("✅ Alerta resuelta desde el diálogo, recargando datos...");
+            _successMessage = "Alerta resuelta exitosamente";
+            await CargarDashboardAsync();
+            StateHasChanged();
         }
     }
-}
 

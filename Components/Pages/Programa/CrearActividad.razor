@@ -43,6 +43,41 @@
         color: #4D3935 !important;
         font-weight: 600 !important;
     }
+
+    .participantes-section {
+        background-color: #F7F7F7;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .participante-item {
+        background-color: #FEFEFD;
+        border: 1px solid #E0E0E0;
+        border-radius: 6px;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.2s ease;
+    }
+
+    .participante-item:hover {
+        border-color: #9FD996;
+        box-shadow: 0 2px 4px rgba(159, 217, 150, 0.2);
+    }
+
+    .participante-item.selected {
+        border-color: #9FD996;
+        background-color: rgba(159, 217, 150, 0.1);
+    }
+
+    .participantes-counter {
+        background-color: #9FD996;
+        color: #4D3935;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
 </style>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
@@ -144,6 +179,72 @@
      </MudSelect>
          </MudItem>
 
+                <!-- Sección de Participantes -->
+                <MudItem xs="12" Class="mt-4">
+                    <MudDivider Class="mb-4" />
+                    <div class="d-flex align-center justify-space-between mb-3">
+                        <MudText Typo="Typo.h6" Style="color: #4D3935;">
+                            <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-2" />
+                            Participantes
+                        </MudText>
+                        <span class="participantes-counter">@_participantesSeleccionados.Count seleccionados</span>
+                    </div>
+
+                    <MudTextField @bind-Value="_busquedaParticipante"
+                                  Placeholder="Buscar participante por nombre..."
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  Variant="Variant.Outlined"
+                                  Immediate="true"
+                                  Class="mb-3" />
+
+                    <div class="d-flex gap-2 mb-3">
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="SeleccionarTodos">
+                            Seleccionar Todos
+                        </MudButton>
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="DeseleccionarTodos">
+                            Deseleccionar Todos
+                        </MudButton>
+                    </div>
+
+                    <div class="participantes-section" style="max-height: 400px; overflow-y: auto;">
+                        @if (!_participantesDisponibles.Any())
+                        {
+                            <MudAlert Severity="Severity.Info" Dense="true">
+                                No hay participantes registrados. Puede crearlos desde la sección de Participantes del programa.
+                            </MudAlert>
+                        }
+                        else
+                        {
+                            @foreach (var participante in ParticipantesFiltrados)
+                            {
+                                var isSelected = _participantesSeleccionados.Contains(participante.ParticipanteId);
+                                <div class="participante-item @(isSelected ? "selected" : "")">
+                                    <MudCheckBox T="bool" 
+                                                 Value="@isSelected"
+                                                 ValueChanged="@((bool val) => ToggleParticipante(participante.ParticipanteId, val))"
+                                                 Color="Color.Success"
+                                                 Dense="true">
+                                        <div class="d-flex align-center gap-3">
+                                            <MudAvatar Size="Size.Small" Style="background: linear-gradient(135deg, #9FD996 0%, #85C97C 100%); color: #4D3935;">
+                                                @GetIniciales(participante.Persona.Nombres, participante.Persona.Apellidos)
+                                            </MudAvatar>
+                                            <div>
+                                                <MudText Typo="Typo.body2" Style="font-weight: 600;">
+                                                    @participante.Persona.Nombres @participante.Persona.Apellidos
+                                                </MudText>
+                                                <MudText Typo="Typo.caption" Style="color: #6D534F;">
+                                                    @(participante.Persona.Telefono ?? "Sin teléfono")
+                                                </MudText>
+                                            </div>
+                                        </div>
+                                    </MudCheckBox>
+                                </div>
+                            }
+                        }
+                    </div>
+                </MudItem>
+
 <MudItem xs="12" Class="d-flex gap-3 justify-end mt-4">
        <MudButton Variant="Variant.Outlined"
         Class="mythra-button-secondary"
@@ -182,6 +283,17 @@
     private bool _cargando = true;
     private bool _guardando = false;
     private ActividadModel _model = new();
+    
+    // Participantes
+    private List<Participante> _participantesDisponibles = new();
+    private HashSet<int> _participantesSeleccionados = new();
+    private string _busquedaParticipante = "";
+
+    private IEnumerable<Participante> ParticipantesFiltrados => string.IsNullOrWhiteSpace(_busquedaParticipante)
+        ? _participantesDisponibles
+        : _participantesDisponibles.Where(p => 
+            p.Persona.Nombres.Contains(_busquedaParticipante, StringComparison.OrdinalIgnoreCase) ||
+            p.Persona.Apellidos.Contains(_busquedaParticipante, StringComparison.OrdinalIgnoreCase));
 
     protected override async Task OnInitializedAsync()
     {
@@ -201,6 +313,14 @@
        _model.Estado = EstadoActividad.Planificada;
        _model.FechaInicio = DateTime.Today;
    _model.HoraInicio = new TimeSpan(18, 0, 0); // 6:00 PM
+
+            // Cargar participantes disponibles
+            _participantesDisponibles = await DbContext.Participantes
+                .Include(p => p.Persona)
+                .Where(p => !p.IsDeleted && !p.Persona.IsDeleted && p.Estado == EstadoGeneral.Activo)
+                .OrderBy(p => p.Persona.Apellidos)
+                .ThenBy(p => p.Persona.Nombres)
+                .ToListAsync();
  }
    catch (Exception ex)
         {
@@ -242,7 +362,26 @@ CreadoEn = DateTime.UtcNow
   DbContext.Actividades.Add(actividad);
  await DbContext.SaveChangesAsync();
 
-            Snackbar.Add("Actividad creada exitosamente", Severity.Success);
+            // Agregar participantes seleccionados
+            foreach (var participanteId in _participantesSeleccionados)
+            {
+                var actividadParticipante = new ActividadParticipante
+                {
+                    ActividadId = actividad.ActividadId,
+                    ParticipanteId = participanteId,
+                    Rol = RolParticipante.Asistente,
+                    Estado = EstadoInscripcion.Inscrito,
+                    CreadoEn = DateTime.UtcNow
+                };
+                DbContext.ActividadParticipantes.Add(actividadParticipante);
+            }
+            
+            if (_participantesSeleccionados.Count > 0)
+            {
+                await DbContext.SaveChangesAsync();
+            }
+
+            Snackbar.Add($"Actividad creada exitosamente con {_participantesSeleccionados.Count} participantes", Severity.Success);
             NavigationManager.NavigateTo($"/programa/academia/{ProgramaId}");
    }
         catch (Exception ex)
@@ -261,16 +400,48 @@ CreadoEn = DateTime.UtcNow
         NavigationManager.NavigateTo($"/programa/academia/{ProgramaId}");
     }
 
+    private void ToggleParticipante(int participanteId, bool seleccionado)
+    {
+        if (seleccionado)
+        {
+            _participantesSeleccionados.Add(participanteId);
+        }
+        else
+        {
+            _participantesSeleccionados.Remove(participanteId);
+        }
+    }
+
+    private void SeleccionarTodos()
+    {
+        foreach (var p in ParticipantesFiltrados)
+        {
+            _participantesSeleccionados.Add(p.ParticipanteId);
+        }
+    }
+
+    private void DeseleccionarTodos()
+    {
+        _participantesSeleccionados.Clear();
+    }
+
+    private string GetIniciales(string nombres, string apellidos)
+    {
+        var inicialesNombres = string.IsNullOrEmpty(nombres) ? "" : nombres.Trim()[0].ToString();
+        var inicialesApellidos = string.IsNullOrEmpty(apellidos) ? "" : apellidos.Trim()[0].ToString();
+        return $"{inicialesNombres}{inicialesApellidos}".ToUpper();
+    }
+
     private class ActividadModel
     {
-    public string? Titulo { get; set; }
+        public string? Titulo { get; set; }
         public string? Descripcion { get; set; }
-  public DateTime? FechaInicio { get; set; }
+        public DateTime? FechaInicio { get; set; }
         public TimeSpan? HoraInicio { get; set; }
         public DateTime? FechaFin { get; set; }
-   public TimeSpan? HoraFin { get; set; }
+        public TimeSpan? HoraFin { get; set; }
         public string? Lugar { get; set; }
-      public TipoActividad Tipo { get; set; }
-public EstadoActividad Estado { get; set; }
+        public TipoActividad Tipo { get; set; }
+        public EstadoActividad Estado { get; set; }
     }
 }

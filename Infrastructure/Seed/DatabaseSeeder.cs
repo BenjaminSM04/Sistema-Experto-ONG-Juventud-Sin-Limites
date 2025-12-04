@@ -106,7 +106,7 @@ public static class DatabaseSeeder
 
     private static async Task SeedAdminUserAsync(ApplicationDbContext context, UserManager<Usuario> userManager)
     {
-        Console.WriteLine("👤 Seeding Usuario Administrador...");
+        Console.WriteLine("👤 Seeding Usuarios Administradores...");
 
         if (await userManager.Users.AnyAsync())
         {
@@ -114,8 +114,8 @@ public static class DatabaseSeeder
             return;
         }
 
-        // Crear persona
-        var personaAdmin = new Persona
+        // ========== USUARIO ADMIN 1: Benjamín ==========
+        var personaAdmin1 = new Persona
         {
             Nombres = "Benjamín",
             Apellidos = "Saenz",
@@ -124,50 +124,98 @@ public static class DatabaseSeeder
             CreadoEn = DateTime.UtcNow
         };
 
-        context.Personas.Add(personaAdmin);
+        context.Personas.Add(personaAdmin1);
         await context.SaveChangesAsync();
 
-        // Crear usuario
-        var adminUser = new Usuario
+        var adminUser1 = new Usuario
         {
-            PersonaId = personaAdmin.PersonaId,
+            PersonaId = personaAdmin1.PersonaId,
             UserName = "benjaminspsn@outlook.com",
             Email = "benjaminspsn@outlook.com",
             EmailConfirmed = true,
             Estado = EstadoGeneral.Activo,
-            MustChangePassword = false, // Admin no necesita cambiar password en primer login
-            TwoFactorEnabled = true, // Habilitar 2FA por defecto
+            MustChangePassword = false,
+            TwoFactorEnabled = true,
             CreatedBy = "Sistema",
             CreatedAtUtc = DateTime.UtcNow,
             CreadoEn = DateTime.UtcNow
         };
 
-        // Nueva contraseña: 12+ caracteres, mayúsculas, minúsculas, números y caracteres especiales
-        var result = await userManager.CreateAsync(adminUser, "Administrador@2025!");
-        if (result.Succeeded)
+        var result1 = await userManager.CreateAsync(adminUser1, "Administrador@2025!");
+        if (result1.Succeeded)
         {
-            await userManager.AddToRoleAsync(adminUser, "Administrador");
-
-            // Asignar a programas EDV y ACADEMIA
-            var programas = await context.Programas.Where(p => p.Clave == "EDV" || p.Clave == "ACADEMIA").ToListAsync();
-            foreach (var prog in programas)
-            {
-                context.UsuarioProgramas.Add(new UsuarioPrograma
-                {
-                    UsuarioId = adminUser.Id,
-                    ProgramaId = prog.ProgramaId,
-                    Desde = new DateTime(2025, 10, 1),
-                    CreadoEn = DateTime.UtcNow
-                });
-            }
-            await context.SaveChangesAsync();
-
+            await userManager.AddToRoleAsync(adminUser1, "Administrador");
             Console.WriteLine("✅ Usuario administrador creado (benjaminspsn@outlook.com / Administrador@2025!)");
         }
         else
         {
-            Console.WriteLine($"❌ Error creando admin user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            Console.WriteLine($"❌ Error creando admin user 1: {string.Join(", ", result1.Errors.Select(e => e.Description))}");
         }
+
+        // ========== USUARIO ADMIN 2: Brisa ==========
+        var personaAdmin2 = new Persona
+        {
+            Nombres = "Brisa",
+            Apellidos = "Criales",
+            FechaNacimiento = new DateTime(1995, 1, 1),
+            Telefono = "0000-0000",
+            CreadoEn = DateTime.UtcNow
+        };
+
+        context.Personas.Add(personaAdmin2);
+        await context.SaveChangesAsync();
+
+        var adminUser2 = new Usuario
+        {
+            PersonaId = personaAdmin2.PersonaId,
+            UserName = "maytasindel@gmail.com",
+            Email = "maytasindel@gmail.com",
+            EmailConfirmed = true,
+            Estado = EstadoGeneral.Activo,
+            MustChangePassword = false,
+            TwoFactorEnabled = true,
+            CreatedBy = "Sistema",
+            CreatedAtUtc = DateTime.UtcNow,
+            CreadoEn = DateTime.UtcNow
+        };
+
+        var result2 = await userManager.CreateAsync(adminUser2, "Administrador@2025!");
+        if (result2.Succeeded)
+        {
+            await userManager.AddToRoleAsync(adminUser2, "Administrador");
+            Console.WriteLine("✅ Usuario administrador creado (maytasindel@gmail.com / Administrador@2025!)");
+        }
+        else
+        {
+            Console.WriteLine($"❌ Error creando admin user 2: {string.Join(", ", result2.Errors.Select(e => e.Description))}");
+        }
+
+        // ========== ASIGNAR PROGRAMAS A AMBOS ADMINS ==========
+        var programas = await context.Programas.Where(p => p.Clave == "EDV" || p.Clave == "ACADEMIA").ToListAsync();
+        
+        foreach (var prog in programas)
+        {
+            // Asignar a Benjamín
+            context.UsuarioProgramas.Add(new UsuarioPrograma
+            {
+                UsuarioId = adminUser1.Id,
+                ProgramaId = prog.ProgramaId,
+                Desde = new DateTime(2025, 10, 1),
+                CreadoEn = DateTime.UtcNow
+            });
+
+            // Asignar a Brisa
+            context.UsuarioProgramas.Add(new UsuarioPrograma
+            {
+                UsuarioId = adminUser2.Id,
+                ProgramaId = prog.ProgramaId,
+                Desde = new DateTime(2025, 10, 1),
+                CreadoEn = DateTime.UtcNow
+            });
+        }
+        
+        await context.SaveChangesAsync();
+        Console.WriteLine("✅ Programas asignados a ambos administradores");
     }
 
     private static async Task SeedProgramasAsync(ApplicationDbContext context)

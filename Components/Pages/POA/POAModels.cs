@@ -100,7 +100,9 @@ public class POADashboardViewModel
 public class MetricasPOAViewModel
 {
     public decimal PresupuestoTotal { get; set; }
+    public decimal PresupuestoEjecutado { get; set; }
     public int TotalParticipantes { get; set; }
+    public int ParticipantesActivos { get; set; }
     public decimal CostoPorParticipante => TotalParticipantes > 0 
         ? PresupuestoTotal / TotalParticipantes 
         : 0;
@@ -114,6 +116,43 @@ public class MetricasPOAViewModel
     public decimal TotalIngresos { get; set; }
     public decimal TotalEgresos { get; set; }
     public decimal Balance => TotalIngresos - TotalEgresos;
+    
+    // Recursos Humanos
+    public int TotalFacilitadores { get; set; }
+    public int TotalVoluntarios { get; set; }
+    public int HorasVoluntariado { get; set; }
+    public int TotalEquipo => TotalFacilitadores + TotalVoluntarios;
+    
+    // Impacto
+    public int ObjetivosCumplidos { get; set; }
+    public int ObjetivosTotales { get; set; }
+    public decimal PorcentajeObjetivos => ObjetivosTotales > 0 
+        ? (ObjetivosCumplidos * 100m / ObjetivosTotales) 
+        : 0;
+    public int FamiliasImpactadas { get; set; }
+    public int ComunidadesAlcanzadas { get; set; }
+    
+    // Alianzas
+    public int AlianzasActivas { get; set; }
+    public decimal AportesEnEspecie { get; set; }
+    
+    // Capacitación
+    public int CapacitacionesRealizadas { get; set; }
+    public int PersonasCapacitadas { get; set; }
+    public int CertificadosEmitidos { get; set; }
+    
+    // Retención
+    public int NuevosParticipantes { get; set; }
+    public int ParticipantesRetirados { get; set; }
+    public decimal TasaRetencion => TotalParticipantes > 0 
+        ? ((TotalParticipantes - ParticipantesRetirados) * 100m / TotalParticipantes) 
+        : 100;
+    
+    // Narrativa
+    public string? LogrosPrincipales { get; set; }
+    public string? RetosEnfrentados { get; set; }
+    public string? LeccionesAprendidas { get; set; }
+    public string? ProximosPasos { get; set; }
     
     public List<MetricaDinamica> MetricasDinamicas { get; set; } = new();
 }
@@ -164,14 +203,35 @@ public class CrearPOAModel
     // Participantes
     public int? TotalParticipantes { get; set; }
     public int? ParticipantesActivos { get; set; }
+    public int? NuevosParticipantes { get; set; }
+    public int? ParticipantesRetirados { get; set; }
     
     // Recursos Humanos
     public int? TotalFacilitadores { get; set; }
     public int? TotalVoluntarios { get; set; }
+    public int? HorasVoluntariado { get; set; }
     
-    // Indicadores de cumplimiento
-    public decimal? PorcentajeAsistencia { get; set; }
-    public decimal? PorcentajeCumplimiento { get; set; }
+    // Impacto y Resultados
+    public int? ObjetivosCumplidos { get; set; }
+    public int? ObjetivosTotales { get; set; }
+    public int? FamiliasImpactadas { get; set; }
+    public int? ComunidadesAlcanzadas { get; set; }
+    
+    // Alianzas y Colaboraciones
+    public int? AlianzasActivas { get; set; }
+    public int? NuevasAlianzas { get; set; }
+    public decimal? AportesEnEspecie { get; set; }
+    
+    // Capacitaciones
+    public int? CapacitacionesRealizadas { get; set; }
+    public int? PersonasCapacitadas { get; set; }
+    public int? CertificadosEmitidos { get; set; }
+    
+    // Narrativa/Cualitativo
+    public string? LogrosPrincipales { get; set; }
+    public string? RetosEnfrentados { get; set; }
+    public string? LeccionesAprendidas { get; set; }
+    public string? ProximosPasos { get; set; }
 }
 
 public class EditarPOAModel
@@ -191,12 +251,33 @@ public class EditarPOAModel
     // Participantes
     public int? TotalParticipantes { get; set; }
     public int? ParticipantesActivos { get; set; }
+    public int? NuevosParticipantes { get; set; }
+    public int? ParticipantesRetirados { get; set; }
     
     // Recursos Humanos
     public int? TotalFacilitadores { get; set; }
     public int? TotalVoluntarios { get; set; }
+    public int? HorasVoluntariado { get; set; }
     
-    // Indicadores de cumplimiento
-    public decimal? PorcentajeAsistencia { get; set; }
-    public decimal? PorcentajeCumplimiento { get; set; }
+    // Impacto y Resultados
+    public int? ObjetivosCumplidos { get; set; }
+    public int? ObjetivosTotales { get; set; }
+    public int? FamiliasImpactadas { get; set; }
+    public int? ComunidadesAlcanzadas { get; set; }
+    
+    // Alianzas y Colaboraciones
+    public int? AlianzasActivas { get; set; }
+    public int? NuevasAlianzas { get; set; }
+    public decimal? AportesEnEspecie { get; set; }
+    
+    // Capacitaciones
+    public int? CapacitacionesRealizadas { get; set; }
+    public int? PersonasCapacitadas { get; set; }
+    public int? CertificadosEmitidos { get; set; }
+    
+    // Narrativa/Cualitativo
+    public string? LogrosPrincipales { get; set; }
+    public string? RetosEnfrentados { get; set; }
+    public string? LeccionesAprendidas { get; set; }
+    public string? ProximosPasos { get; set; }
 }

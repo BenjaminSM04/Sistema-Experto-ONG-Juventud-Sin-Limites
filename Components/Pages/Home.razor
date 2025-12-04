@@ -1,6 +1,9 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.Identity
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Security
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Motor
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Operacion
 @using Microsoft.EntityFrameworkCore
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services
@@ -87,11 +90,74 @@
         margin-bottom: 1rem;
         transition: all 0.3s ease;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        cursor: pointer;
     }
 
     .stat-card:hover {
         transform: translateX(5px);
         box-shadow: 0 4px 16px rgba(159, 217, 150, 0.2);
+    }
+
+    .stat-card.clickable:hover {
+        border-left-color: #F7C484;
+    }
+
+    .alerta-item {
+        background: #FEFEFD;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        border-left: 3px solid #F3C95A;
+        transition: all 0.2s ease;
+    }
+
+    .alerta-item:hover {
+        background: #F7F7F7;
+        transform: translateX(3px);
+    }
+
+    .alerta-item.critica {
+        border-left-color: #EF5350;
+        background: linear-gradient(135deg, #FEFEFD 0%, #FFEBEE 100%);
+    }
+
+    .alerta-item.alta {
+        border-left-color: #F7C484;
+    }
+
+    .alerta-item.info {
+        border-left-color: #9FD996;
+    }
+
+    .actividad-item {
+        background: #FEFEFD;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        border-left: 3px solid #9FD996;
+        transition: all 0.2s ease;
+    }
+
+    .actividad-item:hover {
+        background: #F7F7F7;
+        transform: translateX(3px);
+    }
+
+    .section-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        height: 100%;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #9FD996;
     }
 
     .action-card {
@@ -253,8 +319,8 @@
             @if (usuario != null)
             {
                 <MudGrid Class="mb-4">
-                    <MudItem xs="12" sm="6" md="3">
-                        <div class="stat-card">
+                    <MudItem xs="12" sm="6" md="4">
+                        <div class="stat-card clickable" @onclick="@(() => Navigation.NavigateTo("/programas"))">
                             <div class="d-flex align-center justify-space-between">
                                 <div>
                                     <MudText Typo="Typo.caption" Style="color: #6D534F; text-transform: uppercase; letter-spacing: 0.5px;">
@@ -268,49 +334,151 @@
                             </div>
                         </div>
                     </MudItem>
-                    <MudItem xs="12" sm="6" md="3">
+                    <MudItem xs="12" sm="6" md="4">
                         <div class="stat-card" style="border-left-color: #F7C484;">
                             <div class="d-flex align-center justify-space-between">
                                 <div>
                                     <MudText Typo="Typo.caption" Style="color: #6D534F; text-transform: uppercase; letter-spacing: 0.5px;">
-                                        Roles Activos
+                                        Alertas Pendientes
                                     </MudText>
-                                    <MudText Typo="Typo.h4" Style="color: #4D3935; font-weight: 700;">
-                                        @(roles?.Count ?? 0)
+                                    <MudText Typo="Typo.h4" Style="@GetAlertasTextStyle()">
+                                        @alertasPendientes
                                     </MudText>
                                 </div>
-                                <MudIcon Icon="@Icons.Material.Filled.Shield" Size="Size.Large" Style="color: #F7C484;" />
+                                <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Large" Style="@GetAlertasIconStyle()" />
                             </div>
                         </div>
                     </MudItem>
-                    <MudItem xs="12" sm="6" md="3">
+                    <MudItem xs="12" sm="6" md="4">
                         <div class="stat-card" style="border-left-color: #F3C95A;">
                             <div class="d-flex align-center justify-space-between">
                                 <div>
                                     <MudText Typo="Typo.caption" Style="color: #6D534F; text-transform: uppercase; letter-spacing: 0.5px;">
-                                        Estado de Cuenta
+                                        Actividades Este Mes
                                     </MudText>
-                                    <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 700;">
-                                        @usuario.Estado
+                                    <MudText Typo="Typo.h4" Style="color: #4D3935; font-weight: 700;">
+                                        @actividadesMes
                                     </MudText>
                                 </div>
-                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Large" Style="color: #9FD996;" />
+                                <MudIcon Icon="@Icons.Material.Filled.Event" Size="Size.Large" Style="color: #F3C95A;" />
                             </div>
                         </div>
                     </MudItem>
-                    <MudItem xs="12" sm="6" md="3">
-                        <div class="stat-card" style="border-left-color: #4D3935;">
-                            <div class="d-flex align-center justify-space-between">
-                                <div>
-                                    <MudText Typo="Typo.caption" Style="color: #6D534F; text-transform: uppercase; letter-spacing: 0.5px;">
-                                        Miembro Desde
-                                    </MudText>
-                                    <MudText Typo="Typo.body2" Style="color: #4D3935; font-weight: 600;">
-                                        @usuario.CreadoEn.ToString("MMM yyyy")
+                </MudGrid>
+
+                <!-- Sección de Alertas y Actividades Recientes -->
+                <MudGrid Class="mb-4">
+                    <!-- Alertas Pendientes -->
+                    <MudItem xs="12" md="6">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 700;">
+                                    <MudIcon Icon="@Icons.Material.Filled.NotificationsActive" Class="mr-2" Style="color: #F7C484;" />
+                                    Alertas Recientes
+                                </MudText>
+                                @if (alertasRecientes?.Any() == true)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Style="background-color: #EF5350; color: white;">
+                                        @alertasPendientes pendientes
+                                    </MudChip>
+                                }
+                            </div>
+                            
+                            @if (alertasRecientes?.Any() == true)
+                            {
+                                @foreach (var alerta in alertasRecientes.Take(5))
+                                {
+                                    var claseAlerta = alerta.Severidad == Severidad.Critica ? "critica" : 
+                                                      alerta.Severidad == Severidad.Alta ? "alta" : "info";
+                                    <div class="alerta-item @claseAlerta">
+                                        <div class="d-flex justify-space-between align-center">
+                                            <div>
+                                                <MudText Typo="Typo.body2" Style="color: #4D3935; font-weight: 500;">
+                                                    @TruncateText(alerta.Mensaje, 50)
+                                                </MudText>
+                                                <MudText Typo="Typo.caption" Style="color: #6D534F;">
+                                                    @alerta.GeneradaEn.ToLocalTime().ToString("dd/MM HH:mm") - @alerta.Programa?.Nombre
+                                                </MudText>
+                                            </div>
+                                            <MudChip T="string" Size="Size.Small" 
+                                                     Style="@($"background-color: {(alerta.Severidad == Severidad.Critica ? "#EF5350" : alerta.Severidad == Severidad.Alta ? "#F7C484" : "#9FD996")}; color: {(alerta.Severidad == Severidad.Critica ? "white" : "#4D3935")}; font-size: 0.7rem;")">
+                                                @alerta.Severidad
+                                            </MudChip>
+                                        </div>
+                                    </div>
+                                }
+                                @if (context != null && (context.User.IsInRole("Administrador") || context.User.IsInRole("Coordinador")))
+                                {
+                                    <MudButton Variant="Variant.Text" Color="Color.Primary" FullWidth="true" 
+                                               Href="/admin/motor" Class="mt-2">
+                                        Ver todas las alertas →
+                                    </MudButton>
+                                }
+                            }
+                            else
+                            {
+                                <div class="d-flex flex-column align-center justify-center pa-4">
+                                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Large" Style="color: #9FD996; margin-bottom: 0.5rem;" />
+                                    <MudText Typo="Typo.body2" Style="color: #6D534F;">
+                                        No hay alertas pendientes
                                     </MudText>
                                 </div>
-                                <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Large" Style="color: #4D3935;" />
+                            }
+                        </div>
+                    </MudItem>
+
+                    <!-- Actividades Recientes -->
+                    <MudItem xs="12" md="6">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 700;">
+                                    <MudIcon Icon="@Icons.Material.Filled.EventNote" Class="mr-2" Style="color: #9FD996;" />
+                                    Próximas Actividades
+                                </MudText>
+                                @if (proximasActividades?.Any() == true)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Style="background-color: #9FD996; color: #4D3935;">
+                                        @proximasActividades.Count próximas
+                                    </MudChip>
+                                }
                             </div>
+                            
+                            @if (proximasActividades?.Any() == true)
+                            {
+                                @foreach (var actividad in proximasActividades.Take(5))
+                                {
+                                    <div class="actividad-item">
+                                        <div class="d-flex justify-space-between align-center">
+                                            <div>
+                                                <MudText Typo="Typo.body2" Style="color: #4D3935; font-weight: 500;">
+                                                    @TruncateText(actividad.Titulo, 40)
+                                                </MudText>
+                                                <MudText Typo="Typo.caption" Style="color: #6D534F;">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Schedule" Size="Size.Small" Style="font-size: 0.8rem;" />
+                                                    @actividad.FechaInicio.ToString("dd/MM HH:mm") - @actividad.Programa?.Nombre
+                                                </MudText>
+                                            </div>
+                                            <MudChip T="string" Size="Size.Small" 
+                                                     Style="background-color: #F3C95A; color: #4D3935; font-size: 0.7rem;">
+                                                @ObtenerDiasRestantes(actividad.FechaInicio)
+                                            </MudChip>
+                                        </div>
+                                    </div>
+                                }
+                                <MudButton Variant="Variant.Text" Color="Color.Primary" FullWidth="true" 
+                                           Href="/programas" Class="mt-2">
+                                    Ver todos los programas →
+                                </MudButton>
+                            }
+                            else
+                            {
+                                <div class="d-flex flex-column align-center justify-center pa-4">
+                                    <MudIcon Icon="@Icons.Material.Filled.EventBusy" Size="Size.Large" Style="color: #6D534F; margin-bottom: 0.5rem;" />
+                                    <MudText Typo="Typo.body2" Style="color: #6D534F;">
+                                        No hay actividades próximas
+                                    </MudText>
+                                </div>
+                            }
                         </div>
                     </MudItem>
                 </MudGrid>
@@ -336,6 +504,10 @@
                                     <MudText Typo="Typo.caption" Style="color: #6D534F;">
                                         Gestionar alertas y reglas
                                     </MudText>
+                                    @if (alertasPendientes > 0)
+                                    {
+                                        <MudBadge Content="@alertasPendientes" Color="Color.Error" Overlap="false" Class="mt-2" />
+                                    }
                                 </div>
                             </a>
                         </MudItem>
@@ -370,9 +542,33 @@
                                 <MudText Typo="Typo.caption" Style="color: #6D534F;">
                                     Ver y gestionar programas
                                 </MudText>
+                                @if ((programas?.Count ?? 0) > 0)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Style="background-color: #9FD996; color: #4D3935; margin-top: 0.5rem;">
+                                        @programas!.Count asignado(s)
+                                    </MudChip>
+                                }
                             </div>
                         </a>
                     </MudItem>
+                    @if (context != null && (context.User.IsInRole("Administrador") || context.User.IsInRole("Coordinador")))
+                    {
+                        <MudItem xs="12" sm="6" md="3">
+                            <a href="/poas" style="text-decoration: none; color: inherit;">
+                                <div class="action-card">
+                                    <div class="action-card-icon">
+                                        <MudIcon Icon="@Icons.Material.Filled.Assessment" />
+                                    </div>
+                                    <MudText Typo="Typo.h6" Style="color: #4D3935; font-weight: 600;">
+                                        Plan Operativo (POA)
+                                    </MudText>
+                                    <MudText Typo="Typo.caption" Style="color: #6D534F;">
+                                        Seguimiento y planificación
+                                    </MudText>
+                                </div>
+                            </a>
+                        </MudItem>
+                    }
                     <MudItem xs="12" sm="6" md="3">
                         <a href="/Account/Manage" style="text-decoration: none; color: inherit;">
                             <div class="action-card">
@@ -428,6 +624,12 @@
     private string _horaActual = "";
     private string _fechaActual = "";
     private System.Threading.Timer? _timer;
+    
+    // Nuevas variables para KPIs mejorados
+    private int alertasPendientes = 0;
+    private int actividadesMes = 0;
+    private List<Alerta>? alertasRecientes;
+    private List<Actividad>? proximasActividades;
 
     protected override async Task OnInitializedAsync()
     {
@@ -458,6 +660,9 @@
                     .Include(up => up.Programa)
                     .Select(up => up.Programa)
                     .ToListAsync();
+
+                // Cargar datos para KPIs mejorados
+                await CargarDatosKPIsAsync();
             }
         }
 
@@ -471,6 +676,61 @@
             ActualizarHora();
             await InvokeAsync(StateHasChanged);
         }, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+    }
+
+    private async Task CargarDatosKPIsAsync()
+    {
+        try
+        {
+            var programaIds = programas?.Select(p => p.ProgramaId).ToList() ?? new List<int>();
+            var inicioMes = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            var ahora = DateTime.UtcNow;
+
+            // Alertas pendientes (solo de los programas asignados al usuario)
+            if (programaIds.Any())
+            {
+                alertasPendientes = await DbContext.Alertas
+                    .Where(a => !a.IsDeleted && 
+                               a.Estado == EstadoAlerta.Abierta && 
+                               a.ProgramaId.HasValue && 
+                               programaIds.Contains(a.ProgramaId.Value))
+                    .CountAsync();
+
+                // Alertas recientes
+                alertasRecientes = await DbContext.Alertas
+                    .Include(a => a.Programa)
+                    .Where(a => !a.IsDeleted && 
+                               a.Estado == EstadoAlerta.Abierta && 
+                               a.ProgramaId.HasValue && 
+                               programaIds.Contains(a.ProgramaId.Value))
+                    .OrderByDescending(a => a.Severidad)
+                    .ThenByDescending(a => a.GeneradaEn)
+                    .Take(5)
+                    .ToListAsync();
+
+                // Actividades este mes
+                actividadesMes = await DbContext.Actividades
+                    .Where(a => !a.IsDeleted && 
+                               programaIds.Contains(a.ProgramaId) && 
+                               a.FechaInicio >= inicioMes)
+                    .CountAsync();
+
+                // Próximas actividades
+                proximasActividades = await DbContext.Actividades
+                    .Include(a => a.Programa)
+                    .Where(a => !a.IsDeleted && 
+                               programaIds.Contains(a.ProgramaId) && 
+                               a.Estado == EstadoActividad.Planificada &&
+                               a.FechaInicio >= ahora)
+                    .OrderBy(a => a.FechaInicio)
+                    .Take(5)
+                    .ToListAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error al cargar datos de KPIs");
+        }
     }
 
     private async Task CargarClimaAsync()
@@ -514,6 +774,34 @@
             return (inicial1 + inicial2).ToUpper();
         }
         return "U";
+    }
+
+    private string TruncateText(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+            return text;
+        return text.Substring(0, maxLength) + "...";
+    }
+
+    private string ObtenerDiasRestantes(DateTime fecha)
+    {
+        var dias = (fecha.Date - DateTime.Today).Days;
+        if (dias == 0) return "Hoy";
+        if (dias == 1) return "Mañana";
+        if (dias < 7) return $"En {dias} días";
+        return fecha.ToString("dd/MM");
+    }
+
+    private string GetAlertasTextStyle()
+    {
+        var color = alertasPendientes > 0 ? "#EF5350" : "#4D3935";
+        return $"color: {color}; font-weight: 700;";
+    }
+
+    private string GetAlertasIconStyle()
+    {
+        var color = alertasPendientes > 0 ? "#EF5350" : "#F7C484";
+        return $"color: {color};";
     }
 
     public void Dispose()

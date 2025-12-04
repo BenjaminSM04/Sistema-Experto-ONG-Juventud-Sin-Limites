@@ -1,7 +1,9 @@
 ﻿@using Sistema_Experto_ONG_Juventud_Sin_Limites.Api.Models
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Pages.Admin.Motor
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Pages.Programa
 @inject ILogger<MotorAlertas> Logger
+@inject IDialogService DialogService
 
 <MudPaper Class="mythra-card" Elevation="3">
     <div style="background-color: #F7C484; border-radius: 8px 8px 0 0; padding: 1rem;">
@@ -92,7 +94,7 @@
                             Class="mythra-button-success"
                             StartIcon="@Icons.Material.Filled.CheckCircle" 
                             Size="Size.Small"
-                            OnClick="@(() => OnCambiarEstado.InvokeAsync(new CambioEstadoArgs(context.AlertaId, EstadoAlerta.Resuelta, context.RowVersion)))">
+                            OnClick="@(async () => await AbrirDialogoResolver(context.AlertaId))">
                             Resolver
                         </MudButton>
                         <MudButton 
@@ -126,14 +128,38 @@
 </MudPaper>
 
 @code {
-    [Parameter] public List<AlertaDto> Alertas { get; set; } = new();
-    [Parameter] public List<ProgramaInfo> ProgramasDisponibles { get; set; } = new();
-    [Parameter] public bool Cargando { get; set; }
-    [Parameter] public bool GenerandoPDF { get; set; }
-    [Parameter] public EventCallback OnExportarPDF { get; set; }
-    [Parameter] public EventCallback<CambioEstadoArgs> OnCambiarEstado { get; set; }
+[Parameter] public List<AlertaDto> Alertas { get; set; } = new();
+[Parameter] public List<ProgramaInfo> ProgramasDisponibles { get; set; } = new();
+[Parameter] public bool Cargando { get; set; }
+[Parameter] public bool GenerandoPDF { get; set; }
+[Parameter] public EventCallback OnExportarPDF { get; set; }
+[Parameter] public EventCallback<CambioEstadoArgs> OnCambiarEstado { get; set; }
+[Parameter] public EventCallback OnAlertaResuelta { get; set; }
 
-    private string ObtenerClaseSeveridad(byte severidad)
+private async Task AbrirDialogoResolver(int alertaId)
+{
+    var parametros = new DialogParameters<DialogoResolverAlerta>
+    {
+        { x => x.AlertaId, alertaId }
+    };
+
+    var opciones = new DialogOptions 
+    { 
+        CloseButton = true, 
+        MaxWidth = MaxWidth.Medium,
+        FullWidth = true 
+    };
+
+    var dialog = await DialogService.ShowAsync<DialogoResolverAlerta>("Resolver Alerta", parametros, opciones);
+    var resultado = await dialog.Result;
+
+    if (resultado != null && !resultado.Canceled)
+    {
+        await OnAlertaResuelta.InvokeAsync();
+    }
+}
+
+private string ObtenerClaseSeveridad(byte severidad)
     {
         return severidad switch
         {

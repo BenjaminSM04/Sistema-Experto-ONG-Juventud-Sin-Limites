@@ -1,5 +1,7 @@
-html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+﻿html, body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 a, .btn-link {
@@ -79,7 +81,7 @@ h1:focus {
     border-radius: 8px;
 }
 
-/* Tarjeta Bernab� (Amarillo claro) */
+/* Tarjeta Bernabé (Amarillo claro) */
 .card-bernabe {
     background-color: #fff !important;
     border-left: 15px solid #4D3935;

@@ -312,7 +312,7 @@ public class POAService
         // 5. Total Participantes
         var campoParticipantes = plantilla.Campos.FirstOrDefault(c => 
             c.Clave.ToUpper().Contains("TOTAL_PARTICIPANTES") ||
-            (c.Clave.ToUpper().Contains("PARTICIPANTES") && !c.Clave.ToUpper().Contains("ACTIVOS")) || 
+            (c.Clave.ToUpper().Contains("PARTICIPANTES") && !c.Clave.ToUpper().Contains("ACTIVOS") && !c.Clave.ToUpper().Contains("NUEVOS") && !c.Clave.ToUpper().Contains("RETIRADOS")) || 
             c.Clave.ToUpper().Contains("BENEFICIARIOS"));
         if (campoParticipantes != null)
         {
@@ -343,37 +343,81 @@ public class POAService
             });
         }
 
-        // 7. Porcentaje Asistencia
-        var campoAsistencia = plantilla.Campos.FirstOrDefault(c => 
-            c.Clave.ToUpper().Contains("ASISTENCIA") || 
-            c.Clave.ToUpper().Contains("PORCENTAJE_ASISTENCIA"));
-        if (campoAsistencia != null)
-        {
-            valores.Add(new POAValor
-            {
-                InstanciaId = instancia.InstanciaId,
-                CampoId = campoAsistencia.CampoId,
-                ProgramaId = model.ProgramaId,
-                ValorDecimal = model.PorcentajeAsistencia ?? 0,
-                CreadoEn = DateTime.UtcNow
-            });
-        }
+        // 7. Nuevos Participantes
+        GuardarValorSiExiste(plantilla, valores, instancia.InstanciaId, model.ProgramaId,
+            "NUEVOS_PARTICIPANTES", model.NuevosParticipantes);
 
-        // 8. Porcentaje Cumplimiento
-        var campoCumplimiento = plantilla.Campos.FirstOrDefault(c => 
-            c.Clave.ToUpper().Contains("CUMPLIMIENTO") || 
-            c.Clave.ToUpper().Contains("PORCENTAJE_CUMPLIMIENTO"));
-        if (campoCumplimiento != null)
-        {
-            valores.Add(new POAValor
-            {
-                InstanciaId = instancia.InstanciaId,
-                CampoId = campoCumplimiento.CampoId,
-                ProgramaId = model.ProgramaId,
-                ValorDecimal = model.PorcentajeCumplimiento ?? 0,
-                CreadoEn = DateTime.UtcNow
-            });
-        }
+        // 8. Participantes Retirados
+        GuardarValorSiExiste(plantilla, valores, instancia.InstanciaId, model.ProgramaId,
+            "PARTICIPANTES_RETIRADOS", model.ParticipantesRetirados);
+
+        // 9. Facilitadores
+        GuardarValorSiExiste(plantilla, valores, instancia.InstanciaId, model.ProgramaId,
+            "FACILITADORES", model.TotalFacilitadores);
+
+        // 10. Voluntarios
+        GuardarValorSiExiste(plantilla, valores, instancia.InstanciaId, model.ProgramaId,
+            "VOLUNTARIOS", model.TotalVoluntarios, excluir: "HORAS");
+
+        // 11. Horas Voluntariado
+        GuardarValorSiExiste(plantilla, valores, instancia.InstanciaId, model.ProgramaId,
+            "HORAS_VOLUNTARIADO", model.HorasVoluntariado);
+
+        // 12. Objetivos Cumplidos
+        GuardarValorSiExiste(plantilla, valores, instancia.InstanciaId, model.ProgramaId,
+            "OBJETIVOS_CUMPLIDOS", model.ObjetivosCumplidos);
+
+        // 13. Objetivos Totales
+        GuardarValorSiExiste(plantilla, valores, instancia.InstanciaId, model.ProgramaId,
+            "OBJETIVOS_TOTALES", model.ObjetivosTotales);
+
+        // 14. Familias Impactadas
+        GuardarValorSiExiste(plantilla, valores, instancia.InstanciaId, model.ProgramaId,
+            "FAMILIAS_IMPACTADAS", model.FamiliasImpactadas);
+
+        // 15. Comunidades Alcanzadas
+        GuardarValorSiExiste(plantilla, valores, instancia.InstanciaId, model.ProgramaId,
+            "COMUNIDADES_ALCANZADAS", model.ComunidadesAlcanzadas);
+
+        // 16. Alianzas Activas
+        GuardarValorSiExiste(plantilla, valores, instancia.InstanciaId, model.ProgramaId,
+            "ALIANZAS_ACTIVAS", model.AlianzasActivas);
+
+        // 17. Nuevas Alianzas
+        GuardarValorSiExiste(plantilla, valores, instancia.InstanciaId, model.ProgramaId,
+            "NUEVAS_ALIANZAS", model.NuevasAlianzas);
+
+        // 18. Aportes en Especie
+        GuardarValorDecimalSiExiste(plantilla, valores, instancia.InstanciaId, model.ProgramaId,
+            "APORTES_ESPECIE", model.AportesEnEspecie);
+
+        // 19. Capacitaciones Realizadas
+        GuardarValorSiExiste(plantilla, valores, instancia.InstanciaId, model.ProgramaId,
+            "CAPACITACIONES_REALIZADAS", model.CapacitacionesRealizadas);
+
+        // 20. Personas Capacitadas
+        GuardarValorSiExiste(plantilla, valores, instancia.InstanciaId, model.ProgramaId,
+            "PERSONAS_CAPACITADAS", model.PersonasCapacitadas);
+
+        // 21. Certificados Emitidos
+        GuardarValorSiExiste(plantilla, valores, instancia.InstanciaId, model.ProgramaId,
+            "CERTIFICADOS_EMITIDOS", model.CertificadosEmitidos);
+
+        // 22. Logros Principales
+        GuardarValorTextoSiExiste(plantilla, valores, instancia.InstanciaId, model.ProgramaId,
+            "LOGROS_PRINCIPALES", model.LogrosPrincipales);
+
+        // 23. Retos Enfrentados
+        GuardarValorTextoSiExiste(plantilla, valores, instancia.InstanciaId, model.ProgramaId,
+            "RETOS_ENFRENTADOS", model.RetosEnfrentados);
+
+        // 24. Lecciones Aprendidas
+        GuardarValorTextoSiExiste(plantilla, valores, instancia.InstanciaId, model.ProgramaId,
+            "LECCIONES_APRENDIDAS", model.LeccionesAprendidas);
+
+        // 25. Próximos Pasos
+        GuardarValorTextoSiExiste(plantilla, valores, instancia.InstanciaId, model.ProgramaId,
+            "PROXIMOS_PASOS", model.ProximosPasos);
 
         // Guardar todos los valores
         if (valores.Any())
@@ -382,11 +426,76 @@ public class POAService
             await _context.SaveChangesAsync();
         }
 
-        _logger.LogInformation("POA creado: InstanciaId={InstanciaId}, Programa={ProgramaId}, Periodo={Anio}-{Mes}, Valores={CantidadValores}, ActPlan={ActPlan}, ActEjec={ActEjec}, Presupuesto={Presupuesto}, Participantes={Participantes}",
-            instancia.InstanciaId, model.ProgramaId, model.PeriodoAnio, model.PeriodoMes, valores.Count, 
-            model.ActividadesPlanificadas, model.ActividadesEjecutadas, model.PresupuestoTotal, model.TotalParticipantes);
+        _logger.LogInformation("POA creado: InstanciaId={InstanciaId}, Programa={ProgramaId}, Periodo={Anio}-{Mes}, Valores={CantidadValores}",
+            instancia.InstanciaId, model.ProgramaId, model.PeriodoAnio, model.PeriodoMes, valores.Count);
 
         return instancia.InstanciaId;
+    }
+
+    private void GuardarValorSiExiste(POAPlantilla plantilla, List<POAValor> valores, int instanciaId, int programaId, 
+        string claveBusqueda, int? valor, string? excluir = null)
+    {
+        if (!valor.HasValue) return;
+        
+        var campo = plantilla.Campos.FirstOrDefault(c =>
+        {
+            var clave = c.Clave.ToUpper();
+            if (excluir != null && clave.Contains(excluir.ToUpper())) return false;
+            return clave.Contains(claveBusqueda.ToUpper());
+        });
+        
+        if (campo != null)
+        {
+            valores.Add(new POAValor
+            {
+                InstanciaId = instanciaId,
+                CampoId = campo.CampoId,
+                ProgramaId = programaId,
+                ValorNumero = valor,
+                ValorDecimal = valor,
+                CreadoEn = DateTime.UtcNow
+            });
+        }
+    }
+
+    private void GuardarValorDecimalSiExiste(POAPlantilla plantilla, List<POAValor> valores, int instanciaId, int programaId, 
+        string claveBusqueda, decimal? valor)
+    {
+        if (!valor.HasValue) return;
+        
+        var campo = plantilla.Campos.FirstOrDefault(c => c.Clave.ToUpper().Contains(claveBusqueda.ToUpper()));
+        
+        if (campo != null)
+        {
+            valores.Add(new POAValor
+            {
+                InstanciaId = instanciaId,
+                CampoId = campo.CampoId,
+                ProgramaId = programaId,
+                ValorDecimal = valor,
+                CreadoEn = DateTime.UtcNow
+            });
+        }
+    }
+
+    private void GuardarValorTextoSiExiste(POAPlantilla plantilla, List<POAValor> valores, int instanciaId, int programaId, 
+        string claveBusqueda, string? valor)
+    {
+        if (string.IsNullOrWhiteSpace(valor)) return;
+        
+        var campo = plantilla.Campos.FirstOrDefault(c => c.Clave.ToUpper().Contains(claveBusqueda.ToUpper()));
+        
+        if (campo != null)
+        {
+            valores.Add(new POAValor
+            {
+                InstanciaId = instanciaId,
+                CampoId = campo.CampoId,
+                ProgramaId = programaId,
+                ValorTexto = valor,
+                CreadoEn = DateTime.UtcNow
+            });
+        }
     }
 
     public async Task GuardarValoresAsync(int instanciaId, Dictionary<int, ValorCampoModel> valores)
@@ -445,50 +554,116 @@ public class POAService
 
         var metricas = new MetricasPOAViewModel();
 
-        // Buscar campos específicos por clave (case-insensitive)
-        var presupuestoTotal = valores.FirstOrDefault(v => 
-            v.Campo.Clave.ToUpper().Contains("PRESUPUESTO_TOTAL") || 
-            v.Campo.Clave.ToUpper().Contains("PRESUPUESTO") || 
-            v.Campo.Clave.ToUpper().Contains("BUDGET"));
-        if (presupuestoTotal != null)
+        foreach (var valor in valores)
         {
-            metricas.PresupuestoTotal = presupuestoTotal.ValorDecimal ?? presupuestoTotal.ValorNumero ?? 0;
-            metricas.TotalIngresos = metricas.PresupuestoTotal; // Asumimos que el presupuesto total son los ingresos
-        }
-
-        var presupuestoEjecutado = valores.FirstOrDefault(v => 
-            v.Campo.Clave.ToUpper().Contains("PRESUPUESTO_EJECUTADO") || 
-            v.Campo.Clave.ToUpper().Contains("EGRESO"));
-        if (presupuestoEjecutado != null)
-        {
-            metricas.TotalEgresos = presupuestoEjecutado.ValorDecimal ?? presupuestoEjecutado.ValorNumero ?? 0;
-        }
-
-        var participantesTotal = valores.FirstOrDefault(v => 
-            v.Campo.Clave.ToUpper().Contains("TOTAL_PARTICIPANTES") ||
-            v.Campo.Clave.ToUpper().Contains("PARTICIPANTES") || 
-            v.Campo.Clave.ToUpper().Contains("BENEFICIARIOS"));
-        if (participantesTotal != null)
-        {
-            metricas.TotalParticipantes = (int)(participantesTotal.ValorDecimal ?? participantesTotal.ValorNumero ?? 0);
-        }
-
-        var actividadesPlan = valores.FirstOrDefault(v => 
-            v.Campo.Clave.ToUpper().Contains("ACTIVIDADES_PLANIFICADAS") ||
-            v.Campo.Clave.ToUpper().Contains("TALLERES_PLAN") ||
-            v.Campo.Clave.ToUpper().Contains("SESIONES_PLAN"));
-        if (actividadesPlan != null)
-        {
-            metricas.ActividadesPlanificadas = (int)(actividadesPlan.ValorDecimal ?? actividadesPlan.ValorNumero ?? 0);
-        }
-
-        var actividadesEjec = valores.FirstOrDefault(v => 
-            v.Campo.Clave.ToUpper().Contains("ACTIVIDADES_EJECUTADAS") ||
-            v.Campo.Clave.ToUpper().Contains("TALLERES_EJEC") ||
-            v.Campo.Clave.ToUpper().Contains("SESIONES_EJEC"));
-        if (actividadesEjec != null)
-        {
-            metricas.ActividadesEjecutadas = (int)(actividadesEjec.ValorDecimal ?? actividadesEjec.ValorNumero ?? 0);
+            var clave = valor.Campo.Clave.ToUpper();
+            
+            // Presupuesto
+            if (clave.Contains("PRESUPUESTO_EJECUTADO"))
+            {
+                metricas.PresupuestoEjecutado = valor.ValorDecimal ?? valor.ValorNumero ?? 0;
+                metricas.TotalEgresos = metricas.PresupuestoEjecutado;
+            }
+            else if (clave.Contains("PRESUPUESTO_TOTAL") || clave.Contains("PRESUPUESTO") || clave.Contains("BUDGET"))
+            {
+                metricas.PresupuestoTotal = valor.ValorDecimal ?? valor.ValorNumero ?? 0;
+                metricas.TotalIngresos = metricas.PresupuestoTotal;
+            }
+            // Participantes
+            else if (clave.Contains("PARTICIPANTES_ACTIVOS"))
+            {
+                metricas.ParticipantesActivos = (int)(valor.ValorDecimal ?? valor.ValorNumero ?? 0);
+            }
+            else if (clave.Contains("NUEVOS_PARTICIPANTES"))
+            {
+                metricas.NuevosParticipantes = (int)(valor.ValorDecimal ?? valor.ValorNumero ?? 0);
+            }
+            else if (clave.Contains("PARTICIPANTES_RETIRADOS"))
+            {
+                metricas.ParticipantesRetirados = (int)(valor.ValorDecimal ?? valor.ValorNumero ?? 0);
+            }
+            else if (clave.Contains("TOTAL_PARTICIPANTES") || clave.Contains("PARTICIPANTES") || clave.Contains("BENEFICIARIOS"))
+            {
+                metricas.TotalParticipantes = (int)(valor.ValorDecimal ?? valor.ValorNumero ?? 0);
+            }
+            // Actividades
+            else if (clave.Contains("ACTIVIDADES_PLANIFICADAS") || clave.Contains("TALLERES_PLAN") || clave.Contains("SESIONES_PLAN"))
+            {
+                metricas.ActividadesPlanificadas = (int)(valor.ValorDecimal ?? valor.ValorNumero ?? 0);
+            }
+            else if (clave.Contains("ACTIVIDADES_EJECUTADAS") || clave.Contains("TALLERES_EJEC") || clave.Contains("SESIONES_EJEC"))
+            {
+                metricas.ActividadesEjecutadas = (int)(valor.ValorDecimal ?? valor.ValorNumero ?? 0);
+            }
+            // Recursos Humanos
+            else if (clave.Contains("FACILITADORES"))
+            {
+                metricas.TotalFacilitadores = (int)(valor.ValorDecimal ?? valor.ValorNumero ?? 0);
+            }
+            else if (clave.Contains("HORAS_VOLUNTARIADO"))
+            {
+                metricas.HorasVoluntariado = (int)(valor.ValorDecimal ?? valor.ValorNumero ?? 0);
+            }
+            else if (clave.Contains("VOLUNTARIOS"))
+            {
+                metricas.TotalVoluntarios = (int)(valor.ValorDecimal ?? valor.ValorNumero ?? 0);
+            }
+            // Impacto
+            else if (clave.Contains("OBJETIVOS_CUMPLIDOS"))
+            {
+                metricas.ObjetivosCumplidos = (int)(valor.ValorDecimal ?? valor.ValorNumero ?? 0);
+            }
+            else if (clave.Contains("OBJETIVOS_TOTALES") || clave.Contains("OBJETIVOS_PLANTEADOS"))
+            {
+                metricas.ObjetivosTotales = (int)(valor.ValorDecimal ?? valor.ValorNumero ?? 0);
+            }
+            else if (clave.Contains("FAMILIAS_IMPACTADAS"))
+            {
+                metricas.FamiliasImpactadas = (int)(valor.ValorDecimal ?? valor.ValorNumero ?? 0);
+            }
+            else if (clave.Contains("COMUNIDADES_ALCANZADAS"))
+            {
+                metricas.ComunidadesAlcanzadas = (int)(valor.ValorDecimal ?? valor.ValorNumero ?? 0);
+            }
+            // Alianzas
+            else if (clave.Contains("ALIANZAS_ACTIVAS") || clave.Contains("ALIANZAS"))
+            {
+                metricas.AlianzasActivas = (int)(valor.ValorDecimal ?? valor.ValorNumero ?? 0);
+            }
+            else if (clave.Contains("APORTES_ESPECIE"))
+            {
+                metricas.AportesEnEspecie = valor.ValorDecimal ?? 0;
+            }
+            // Capacitaciones
+            else if (clave.Contains("CAPACITACIONES_REALIZADAS"))
+            {
+                metricas.CapacitacionesRealizadas = (int)(valor.ValorDecimal ?? valor.ValorNumero ?? 0);
+            }
+            else if (clave.Contains("PERSONAS_CAPACITADAS"))
+            {
+                metricas.PersonasCapacitadas = (int)(valor.ValorDecimal ?? valor.ValorNumero ?? 0);
+            }
+            else if (clave.Contains("CERTIFICADOS_EMITIDOS"))
+            {
+                metricas.CertificadosEmitidos = (int)(valor.ValorDecimal ?? valor.ValorNumero ?? 0);
+            }
+            // Narrativa
+            else if (clave.Contains("LOGROS_PRINCIPALES"))
+            {
+                metricas.LogrosPrincipales = valor.ValorTexto;
+            }
+            else if (clave.Contains("RETOS_ENFRENTADOS"))
+            {
+                metricas.RetosEnfrentados = valor.ValorTexto;
+            }
+            else if (clave.Contains("LECCIONES_APRENDIDAS"))
+            {
+                metricas.LeccionesAprendidas = valor.ValorTexto;
+            }
+            else if (clave.Contains("PROXIMOS_PASOS"))
+            {
+                metricas.ProximosPasos = valor.ValorTexto;
+            }
         }
 
         // Generar métricas dinámicas para todos los campos numéricos
@@ -503,8 +678,8 @@ public class POAService
             })
             .ToList();
 
-        _logger.LogInformation("Métricas calculadas: InstanciaId={InstanciaId}, Presupuesto={Presupuesto}, Participantes={Participantes}, ActividadesPlan={ActPlan}, ActividadesEjec={ActEjec}",
-            instanciaId, metricas.PresupuestoTotal, metricas.TotalParticipantes, metricas.ActividadesPlanificadas, metricas.ActividadesEjecutadas);
+        _logger.LogInformation("Métricas calculadas: InstanciaId={InstanciaId}, Presupuesto={Presupuesto}, Participantes={Participantes}",
+            instanciaId, metricas.PresupuestoTotal, metricas.TotalParticipantes);
 
         return metricas;
     }
@@ -636,39 +811,125 @@ public class POAService
             _logger.LogWarning("Campo 'Participantes Activos' no encontrado en plantilla");
         }
 
-        // 7. Porcentaje Asistencia
-        var campoAsistencia = campos.FirstOrDefault(c => 
-            c.Clave.ToUpper().Contains("ASISTENCIA") || 
-            c.Clave.ToUpper().Contains("PORCENTAJE_ASISTENCIA"));
-        if (campoAsistencia != null)
+        // 7. Nuevos Participantes
+        await ActualizarCampoSiExisteAsync(instancia, campos, model.ProgramaId, 
+            "NUEVOS_PARTICIPANTES", model.NuevosParticipantes, "Nuevos Participantes");
+
+        // 8. Participantes Retirados
+        await ActualizarCampoSiExisteAsync(instancia, campos, model.ProgramaId, 
+            "PARTICIPANTES_RETIRADOS", model.ParticipantesRetirados, "Participantes Retirados");
+
+        // 9. Facilitadores
+        await ActualizarCampoSiExisteAsync(instancia, campos, model.ProgramaId, 
+            "FACILITADORES", model.TotalFacilitadores, "Facilitadores");
+
+        // 10. Voluntarios
+        var campoVoluntarios = campos.FirstOrDefault(c => 
+            c.Clave.ToUpper().Contains("VOLUNTARIOS") && !c.Clave.ToUpper().Contains("HORAS"));
+        if (campoVoluntarios != null && model.TotalVoluntarios.HasValue)
         {
-            await ActualizarOCrearValorAsync(instancia, campoAsistencia.CampoId, model.ProgramaId, 
-                decimalValor: model.PorcentajeAsistencia ?? 0, nombreCampo: "Porcentaje Asistencia");
-        }
-        else
-        {
-            _logger.LogWarning("Campo 'Porcentaje Asistencia' no encontrado en plantilla");
+            await ActualizarOCrearValorAsync(instancia, campoVoluntarios.CampoId, model.ProgramaId, 
+                numeroValor: model.TotalVoluntarios, nombreCampo: "Voluntarios");
         }
 
-        // 8. Porcentaje Cumplimiento
-        var campoCumplimiento = campos.FirstOrDefault(c => 
-            c.Clave.ToUpper().Contains("CUMPLIMIENTO") || 
-            c.Clave.ToUpper().Contains("PORCENTAJE_CUMPLIMIENTO"));
-        if (campoCumplimiento != null)
-        {
-            await ActualizarOCrearValorAsync(instancia, campoCumplimiento.CampoId, model.ProgramaId, 
-                decimalValor: model.PorcentajeCumplimiento ?? 0, nombreCampo: "Porcentaje Cumplimiento");
-        }
-        else
-        {
-            _logger.LogWarning("Campo 'Porcentaje Cumplimiento' no encontrado en plantilla");
-        }
+        // 11. Horas Voluntariado
+        await ActualizarCampoSiExisteAsync(instancia, campos, model.ProgramaId, 
+            "HORAS_VOLUNTARIADO", model.HorasVoluntariado, "Horas Voluntariado");
+
+        // 12. Objetivos Cumplidos
+        await ActualizarCampoSiExisteAsync(instancia, campos, model.ProgramaId, 
+            "OBJETIVOS_CUMPLIDOS", model.ObjetivosCumplidos, "Objetivos Cumplidos");
+
+        // 13. Objetivos Totales
+        await ActualizarCampoSiExisteAsync(instancia, campos, model.ProgramaId, 
+            "OBJETIVOS_TOTALES", model.ObjetivosTotales, "Objetivos Totales");
+
+        // 14. Familias Impactadas
+        await ActualizarCampoSiExisteAsync(instancia, campos, model.ProgramaId, 
+            "FAMILIAS_IMPACTADAS", model.FamiliasImpactadas, "Familias Impactadas");
+
+        // 15. Comunidades Alcanzadas
+        await ActualizarCampoSiExisteAsync(instancia, campos, model.ProgramaId, 
+            "COMUNIDADES_ALCANZADAS", model.ComunidadesAlcanzadas, "Comunidades Alcanzadas");
+
+        // 16. Alianzas Activas
+        await ActualizarCampoSiExisteAsync(instancia, campos, model.ProgramaId, 
+            "ALIANZAS_ACTIVAS", model.AlianzasActivas, "Alianzas Activas");
+
+        // 17. Nuevas Alianzas
+        await ActualizarCampoSiExisteAsync(instancia, campos, model.ProgramaId, 
+            "NUEVAS_ALIANZAS", model.NuevasAlianzas, "Nuevas Alianzas");
+
+        // 18. Aportes en Especie
+        await ActualizarCampoDecimalSiExisteAsync(instancia, campos, model.ProgramaId, 
+            "APORTES_ESPECIE", model.AportesEnEspecie, "Aportes en Especie");
+
+        // 19. Capacitaciones Realizadas
+        await ActualizarCampoSiExisteAsync(instancia, campos, model.ProgramaId, 
+            "CAPACITACIONES_REALIZADAS", model.CapacitacionesRealizadas, "Capacitaciones Realizadas");
+
+        // 20. Personas Capacitadas
+        await ActualizarCampoSiExisteAsync(instancia, campos, model.ProgramaId, 
+            "PERSONAS_CAPACITADAS", model.PersonasCapacitadas, "Personas Capacitadas");
+
+        // 21. Certificados Emitidos
+        await ActualizarCampoSiExisteAsync(instancia, campos, model.ProgramaId, 
+            "CERTIFICADOS_EMITIDOS", model.CertificadosEmitidos, "Certificados Emitidos");
+
+        // 22. Logros Principales
+        await ActualizarCampoTextoSiExisteAsync(instancia, campos, model.ProgramaId, 
+            "LOGROS_PRINCIPALES", model.LogrosPrincipales, "Logros Principales");
+
+        // 23. Retos Enfrentados
+        await ActualizarCampoTextoSiExisteAsync(instancia, campos, model.ProgramaId, 
+            "RETOS_ENFRENTADOS", model.RetosEnfrentados, "Retos Enfrentados");
+
+        // 24. Lecciones Aprendidas
+        await ActualizarCampoTextoSiExisteAsync(instancia, campos, model.ProgramaId, 
+            "LECCIONES_APRENDIDAS", model.LeccionesAprendidas, "Lecciones Aprendidas");
+
+        // 25. Próximos Pasos
+        await ActualizarCampoTextoSiExisteAsync(instancia, campos, model.ProgramaId, 
+            "PROXIMOS_PASOS", model.ProximosPasos, "Próximos Pasos");
 
         // GUARDAR CAMBIOS
         var cambios = await _context.SaveChangesAsync();
 
-        _logger.LogInformation("POA actualizado: InstanciaId={InstanciaId}, CambiosGuardados={Cambios}, ActPlan={ActPlan}, ActEjec={ActEjec}, Presupuesto={Presupuesto}, Participantes={Participantes}",
-            model.InstanciaId, cambios, model.ActividadesPlanificadas, model.ActividadesEjecutadas, model.PresupuestoTotal, model.TotalParticipantes);
+        _logger.LogInformation("POA actualizado: InstanciaId={InstanciaId}, CambiosGuardados={Cambios}",
+            model.InstanciaId, cambios);
+    }
+
+    private async Task ActualizarCampoSiExisteAsync(POAInstancia instancia, List<POACampo> campos, int programaId,
+        string claveBusqueda, int? valor, string nombreCampo)
+    {
+        var campo = campos.FirstOrDefault(c => c.Clave.ToUpper().Contains(claveBusqueda.ToUpper()));
+        if (campo != null && valor.HasValue)
+        {
+            await ActualizarOCrearValorAsync(instancia, campo.CampoId, programaId, 
+                numeroValor: valor, nombreCampo: nombreCampo);
+        }
+    }
+
+    private async Task ActualizarCampoDecimalSiExisteAsync(POAInstancia instancia, List<POACampo> campos, int programaId,
+        string claveBusqueda, decimal? valor, string nombreCampo)
+    {
+        var campo = campos.FirstOrDefault(c => c.Clave.ToUpper().Contains(claveBusqueda.ToUpper()));
+        if (campo != null && valor.HasValue)
+        {
+            await ActualizarOCrearValorAsync(instancia, campo.CampoId, programaId, 
+                decimalValor: valor, nombreCampo: nombreCampo);
+        }
+    }
+
+    private async Task ActualizarCampoTextoSiExisteAsync(POAInstancia instancia, List<POACampo> campos, int programaId,
+        string claveBusqueda, string? valor, string nombreCampo)
+    {
+        var campo = campos.FirstOrDefault(c => c.Clave.ToUpper().Contains(claveBusqueda.ToUpper()));
+        if (campo != null && !string.IsNullOrWhiteSpace(valor))
+        {
+            await ActualizarOCrearValorAsync(instancia, campo.CampoId, programaId, 
+                textoValor: valor, nombreCampo: nombreCampo);
+        }
     }
 
     private async Task ActualizarOCrearValorAsync(POAInstancia instancia, int campoId, int programaId, 

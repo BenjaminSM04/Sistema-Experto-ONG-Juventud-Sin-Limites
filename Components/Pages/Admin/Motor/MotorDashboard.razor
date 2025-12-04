@@ -1,62 +1,452 @@
 ﻿@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
 @using Sistema_Experto_ONG_Juventud_Sin_Limites.Components.Pages.Admin.Motor
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Api.Models
 @inject ILogger<MotorDashboard> Logger
 
+<style>
+    /* ========================================
+       ESTILOS DASHBOARD MOTOR MODERNO
+       ======================================== */
+    
+    /* Tarjetas KPI Principales */
+    .motor-kpi-card {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-radius: 16px;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 20px rgba(77, 57, 53, 0.08);
+    }
+    
+    .motor-kpi-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 30px rgba(77, 57, 53, 0.15);
+    }
+    
+    .motor-kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        border-radius: 16px 0 0 16px;
+    }
+    
+    .motor-kpi-success::before { background: linear-gradient(180deg, #9FD996 0%, #7BC96F 100%); }
+    .motor-kpi-warning::before { background: linear-gradient(180deg, #F7C484 0%, #E5A85C 100%); }
+    .motor-kpi-info::before { background: linear-gradient(180deg, #64B5F6 0%, #42A5F5 100%); }
+    .motor-kpi-danger::before { background: linear-gradient(180deg, #EF5350 0%, #E53935 100%); }
+    .motor-kpi-purple::before { background: linear-gradient(180deg, #AB47BC 0%, #8E24AA 100%); }
+    .motor-kpi-primary::before { background: linear-gradient(180deg, #4D3935 0%, #6D534F 100%); }
+    
+    .motor-icon-container {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+    
+    .motor-icon-success { background: linear-gradient(135deg, rgba(159, 217, 150, 0.2) 0%, rgba(123, 201, 111, 0.2) 100%); color: #5CB85C; }
+    .motor-icon-warning { background: linear-gradient(135deg, rgba(247, 196, 132, 0.2) 0%, rgba(229, 168, 92, 0.2) 100%); color: #F0AD4E; }
+    .motor-icon-info { background: linear-gradient(135deg, rgba(100, 181, 246, 0.2) 0%, rgba(66, 165, 245, 0.2) 100%); color: #5BC0DE; }
+    .motor-icon-danger { background: linear-gradient(135deg, rgba(239, 83, 80, 0.2) 0%, rgba(229, 57, 53, 0.2) 100%); color: #D9534F; }
+    .motor-icon-purple { background: linear-gradient(135deg, rgba(171, 71, 188, 0.2) 0%, rgba(142, 36, 170, 0.2) 100%); color: #9C27B0; }
+    .motor-icon-primary { background: linear-gradient(135deg, rgba(77, 57, 53, 0.15) 0%, rgba(109, 83, 79, 0.15) 100%); color: #4D3935; }
+    
+    .motor-kpi-value {
+        font-size: 2.25rem;
+        font-weight: 700;
+        color: #4D3935;
+        line-height: 1.2;
+        margin-bottom: 0.25rem;
+    }
+    
+    .motor-kpi-label {
+        font-size: 0.8rem;
+        color: #6D534F;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+    }
+    
+    /* Tarjeta de Gráficas */
+    .motor-chart-card {
+        background: #FEFEFD;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(77, 57, 53, 0.08);
+        height: 100%;
+    }
+    
+    .motor-chart-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #4D3935;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    /* Alertas Recientes */
+    .motor-alert-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+        transition: all 0.2s ease;
+    }
+    
+    .motor-alert-item:hover {
+        transform: translateX(4px);
+    }
+    
+    .motor-alert-item.critica { background: rgba(239, 83, 80, 0.1); border-left: 3px solid #EF5350; }
+    .motor-alert-item.alta { background: rgba(247, 196, 132, 0.15); border-left: 3px solid #F7C484; }
+    .motor-alert-item.info { background: rgba(159, 217, 150, 0.15); border-left: 3px solid #9FD996; }
+    
+    .motor-alert-icon {
+        margin-right: 0.75rem;
+        font-size: 1.25rem;
+    }
+    
+    .motor-alert-content {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .motor-alert-message {
+        font-size: 0.85rem;
+        color: #4D3935;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .motor-alert-time {
+        font-size: 0.7rem;
+        color: #6D534F;
+    }
+    
+    /* Sección de Resumen */
+    .motor-summary-section {
+        background: linear-gradient(135deg, #4D3935 0%, #6D534F 100%);
+        border-radius: 16px;
+        padding: 1.5rem;
+        color: #FEFEFD;
+    }
+    
+    .motor-summary-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .motor-summary-stat {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid rgba(254, 254, 253, 0.15);
+    }
+    
+    .motor-summary-stat:last-child {
+        border-bottom: none;
+    }
+    
+    .motor-summary-stat-label {
+        opacity: 0.85;
+        font-size: 0.875rem;
+    }
+    
+    .motor-summary-stat-value {
+        font-weight: 700;
+        font-size: 1rem;
+    }
+    
+    /* Programa Badge */
+    .programa-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: rgba(159, 217, 150, 0.2);
+        color: #4D3935;
+    }
+</style>
+
+<!-- Fila 1: KPIs Principales -->
 <MudGrid Class="mb-4">
-    <MudItem xs="12" sm="6" md="3">
-        <div class="mythra-kpi-card">
-            <div class="kpi-label mb-2">Total Alertas</div>
-            <div class="kpi-value">@Estadisticas.TotalAlertas</div>
-            <MudProgressLinear Value="100" Color="Color.Info" Class="mt-2" />
+    <!-- Total Alertas -->
+    <MudItem xs="12" sm="6" md="4" lg="2">
+        <div class="motor-kpi-card motor-kpi-info">
+            <div class="motor-icon-container motor-icon-info">
+                <MudIcon Icon="@Icons.Material.Filled.Notifications" Size="Size.Large" />
+            </div>
+            <div class="motor-kpi-value">@Estadisticas.TotalAlertas</div>
+            <div class="motor-kpi-label">Total Alertas</div>
+            <MudProgressLinear Value="100" Color="Color.Info" Class="mt-2" Rounded="true" Size="Size.Small" />
         </div>
     </MudItem>
-    <MudItem xs="12" sm="6" md="3">
-        <div class="mythra-kpi-card" style="border-left-color: #F3C95A;">
-            <div class="kpi-label mb-2">Alertas Abiertas</div>
-            <div class="kpi-value">@Estadisticas.AlertasAbiertas</div>
-            <MudProgressLinear Value="@GetPorcentaje(Estadisticas.AlertasAbiertas, Estadisticas.TotalAlertas)" 
-                              Color="Color.Warning" Class="mt-2" />
+    
+    <!-- Alertas Abiertas -->
+    <MudItem xs="12" sm="6" md="4" lg="2">
+        <div class="motor-kpi-card motor-kpi-warning">
+            <div class="motor-icon-container motor-icon-warning">
+                <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Large" />
+            </div>
+            <div class="motor-kpi-value">@Estadisticas.AlertasAbiertas</div>
+            <div class="motor-kpi-label">Abiertas</div>
+            <MudProgressLinear Value="@GetPorcentaje(Estadisticas.AlertasAbiertas, Estadisticas.TotalAlertas)" Color="Color.Warning" Class="mt-2" Rounded="true" Size="Size.Small" />
         </div>
     </MudItem>
-    <MudItem xs="12" sm="6" md="3">
-        <div class="mythra-kpi-card">
-            <div class="kpi-label mb-2">Alertas Resueltas</div>
-            <div class="kpi-value">@Estadisticas.AlertasResueltas</div>
-            <MudProgressLinear Value="@GetPorcentaje(Estadisticas.AlertasResueltas, Estadisticas.TotalAlertas)" 
-                              Color="Color.Success" Class="mt-2" />
+    
+    <!-- Alertas Resueltas -->
+    <MudItem xs="12" sm="6" md="4" lg="2">
+        <div class="motor-kpi-card motor-kpi-success">
+            <div class="motor-icon-container motor-icon-success">
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Large" />
+            </div>
+            <div class="motor-kpi-value">@Estadisticas.AlertasResueltas</div>
+            <div class="motor-kpi-label">Resueltas</div>
+            <MudProgressLinear Value="@GetPorcentaje(Estadisticas.AlertasResueltas, Estadisticas.TotalAlertas)" Color="Color.Success" Class="mt-2" Rounded="true" Size="Size.Small" />
         </div>
     </MudItem>
-    <MudItem xs="12" sm="6" md="3">
-        <div class="mythra-kpi-card" style="border-left-color: #F7C484;">
-            <div class="kpi-label mb-2">Alertas Críticas</div>
-            <div class="kpi-value">@Estadisticas.AlertasCriticas</div>
-            <MudProgressLinear Value="@GetPorcentaje(Estadisticas.AlertasCriticas, Estadisticas.TotalAlertas)" 
-                              Color="Color.Error" Class="mt-2" />
+    
+    <!-- Alertas Críticas -->
+    <MudItem xs="12" sm="6" md="4" lg="2">
+        <div class="motor-kpi-card motor-kpi-danger">
+            <div class="motor-icon-container motor-icon-danger">
+                <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Large" />
+            </div>
+            <div class="motor-kpi-value">@Estadisticas.AlertasCriticas</div>
+            <div class="motor-kpi-label">Críticas</div>
+            <MudProgressLinear Value="@GetPorcentaje(Estadisticas.AlertasCriticas, Estadisticas.TotalAlertas)" Color="Color.Error" Class="mt-2" Rounded="true" Size="Size.Small" />
+        </div>
+    </MudItem>
+    
+    <!-- Reglas Activas -->
+    <MudItem xs="12" sm="6" md="4" lg="2">
+        <div class="motor-kpi-card motor-kpi-purple">
+            <div class="motor-icon-container motor-icon-purple">
+                <MudIcon Icon="@Icons.Material.Filled.Rule" Size="Size.Large" />
+            </div>
+            <div class="motor-kpi-value">@Estadisticas.ReglasActivas</div>
+            <div class="motor-kpi-label">Reglas Activas</div>
+            <MudProgressLinear Value="100" Color="Color.Secondary" Class="mt-2" Rounded="true" Size="Size.Small" />
+        </div>
+    </MudItem>
+    
+    <!-- Tasa de Resolución -->
+    <MudItem xs="12" sm="6" md="4" lg="2">
+        <div class="motor-kpi-card motor-kpi-primary">
+            <div class="motor-icon-container motor-icon-primary">
+                <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Large" />
+            </div>
+            <div class="motor-kpi-value">@Estadisticas.TasaResolucion.ToString("F0")%</div>
+            <div class="motor-kpi-label">Tasa Resolución</div>
+            <MudProgressLinear Value="@Estadisticas.TasaResolucion" Color="Color.Dark" Class="mt-2" Rounded="true" Size="Size.Small" />
         </div>
     </MudItem>
 </MudGrid>
 
-<MudGrid>
-    <MudItem xs="12" md="6">
-        <MudPaper Class="mythra-card pa-4" Elevation="3">
-            <MudText Typo="Typo.h6" Class="mb-3" Style="color: #4D3935;">Distribución por Severidad</MudText>
-            <MudChart ChartType="ChartType.Donut" 
-                     InputData="@SeveridadData" 
-                     InputLabels="@SeveridadLabels"
-                     Width="100%" Height="300px"
-                     ChartOptions="@ChartOptions" />
-        </MudPaper>
+<!-- Fila 2: Gráficas y Alertas Recientes -->
+<MudGrid Class="mb-4">
+    <!-- Gráfica Distribución por Severidad -->
+    <MudItem xs="12" md="4">
+        <div class="motor-chart-card">
+            <div class="motor-chart-title">
+                <MudIcon Icon="@Icons.Material.Filled.PieChart" Color="Color.Warning" />
+                <span>Por Severidad</span>
+            </div>
+            @if (SeveridadData.Any(d => d > 0))
+            {
+                <MudChart ChartType="ChartType.Donut" 
+                         InputData="@SeveridadData" 
+                         InputLabels="@SeveridadLabels"
+                         Width="100%" Height="220px"
+                         ChartOptions="@ChartOptions" />
+            }
+            else
+            {
+                <div class="d-flex flex-column align-center justify-center" style="min-height: 200px; opacity: 0.6;">
+                    <MudIcon Icon="@Icons.Material.Filled.DonutLarge" Size="Size.Large" Color="Color.Default" />
+                    <MudText Typo="Typo.body2" Class="mt-2">Sin datos</MudText>
+                </div>
+            }
+        </div>
     </MudItem>
+    
+    <!-- Gráfica Distribución por Estado -->
+    <MudItem xs="12" md="4">
+        <div class="motor-chart-card">
+            <div class="motor-chart-title">
+                <MudIcon Icon="@Icons.Material.Filled.BarChart" Color="Color.Success" />
+                <span>Por Estado</span>
+            </div>
+            @if (EstadoData.Any(d => d > 0))
+            {
+                <MudChart ChartType="ChartType.Pie" 
+                         InputData="@EstadoData" 
+                         InputLabels="@EstadoLabels"
+                         Width="100%" Height="220px"
+                         ChartOptions="@ChartOptions" />
+            }
+            else
+            {
+                <div class="d-flex flex-column align-center justify-center" style="min-height: 200px; opacity: 0.6;">
+                    <MudIcon Icon="@Icons.Material.Filled.DonutLarge" Size="Size.Large" Color="Color.Default" />
+                    <MudText Typo="Typo.body2" Class="mt-2">Sin datos</MudText>
+                </div>
+            }
+        </div>
+    </MudItem>
+    
+    <!-- Alertas Recientes -->
+    <MudItem xs="12" md="4">
+        <div class="motor-chart-card">
+            <div class="motor-chart-title">
+                <MudIcon Icon="@Icons.Material.Filled.NotificationImportant" Color="Color.Error" />
+                <span>Alertas Recientes</span>
+            </div>
+            
+            @if (AlertasRecientes != null && AlertasRecientes.Any())
+            {
+                @foreach (var alerta in AlertasRecientes.Take(5))
+                {
+                    <div class="motor-alert-item @ObtenerClaseSeveridad(alerta.Severidad)">
+                        <div class="motor-alert-icon">
+                            @switch (alerta.Severidad)
+                            {
+                                case 3:
+                                    <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
+                                    break;
+                                case 2:
+                                    <MudIcon Icon="@Icons.Material.Filled.Warning" Style="color: #F7C484;" Size="Size.Small" />
+                                    break;
+                                default:
+                                    <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Success" Size="Size.Small" />
+                                    break;
+                            }
+                        </div>
+                        <div class="motor-alert-content">
+                            <div class="motor-alert-message" title="@alerta.Mensaje">@TruncateText(alerta.Mensaje, 35)</div>
+                            <div class="motor-alert-time">@ObtenerTiempoRelativo(alerta.GeneradaEn)</div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="d-flex flex-column align-center justify-center" style="min-height: 200px; opacity: 0.6;">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Large" Color="Color.Success" />
+                    <MudText Typo="Typo.body2" Class="mt-2">¡Sin alertas recientes!</MudText>
+                </div>
+            }
+        </div>
+    </MudItem>
+</MudGrid>
 
+<!-- Fila 3: Resumen y Estadísticas por Programa -->
+<MudGrid>
+    <!-- Resumen General -->
     <MudItem xs="12" md="6">
-        <MudPaper Class="mythra-card pa-4" Elevation="3">
-            <MudText Typo="Typo.h6" Class="mb-3" Style="color: #4D3935;">Distribución por Estado</MudText>
-            <MudChart ChartType="ChartType.Pie" 
-                     InputData="@EstadoData" 
-                     InputLabels="@EstadoLabels"
-                     Width="100%" Height="300px"
-                     ChartOptions="@ChartOptions" />
-        </MudPaper>
+        <div class="motor-summary-section">
+            <div class="motor-summary-title">
+                <MudIcon Icon="@Icons.Material.Filled.Summarize" />
+                Resumen del Motor de Inferencia
+            </div>
+            <MudGrid>
+                <MudItem xs="6">
+                    <div class="motor-summary-stat">
+                        <span class="motor-summary-stat-label">Última Ejecución</span>
+                        <span class="motor-summary-stat-value">@(Estadisticas.UltimaEjecucion?.ToString("dd/MM HH:mm") ?? "N/A")</span>
+                    </div>
+                </MudItem>
+                <MudItem xs="6">
+                    <div class="motor-summary-stat">
+                        <span class="motor-summary-stat-label">Programas Monitoreados</span>
+                        <span class="motor-summary-stat-value">@Estadisticas.ProgramasMonitoreados</span>
+                    </div>
+                </MudItem>
+                <MudItem xs="6">
+                    <div class="motor-summary-stat">
+                        <span class="motor-summary-stat-label">Alertas Hoy</span>
+                        <span class="motor-summary-stat-value">@Estadisticas.AlertasHoy</span>
+                    </div>
+                </MudItem>
+                <MudItem xs="6">
+                    <div class="motor-summary-stat">
+                        <span class="motor-summary-stat-label">Alertas Esta Semana</span>
+                        <span class="motor-summary-stat-value">@Estadisticas.AlertasSemana</span>
+                    </div>
+                </MudItem>
+                <MudItem xs="6">
+                    <div class="motor-summary-stat">
+                        <span class="motor-summary-stat-label">Tiempo Prom. Resolución</span>
+                        <span class="motor-summary-stat-value">@Estadisticas.TiempoPromedioResolucion.ToString("F1")h</span>
+                    </div>
+                </MudItem>
+                <MudItem xs="6">
+                    <div class="motor-summary-stat">
+                        <span class="motor-summary-stat-label">Descartadas</span>
+                        <span class="motor-summary-stat-value">@Estadisticas.AlertasDescartadas</span>
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </div>
+    </MudItem>
+    
+    <!-- Alertas por Programa -->
+    <MudItem xs="12" md="6">
+        <div class="motor-chart-card">
+            <div class="motor-chart-title">
+                <MudIcon Icon="@Icons.Material.Filled.Folder" Color="Color.Primary" />
+                <span>Alertas por Programa</span>
+            </div>
+            
+            @if (AlertasPorPrograma != null && AlertasPorPrograma.Any())
+            {
+                @foreach (var programa in AlertasPorPrograma.Take(5))
+                {
+                    <div class="d-flex align-center justify-space-between py-2" style="border-bottom: 1px solid #E0E0E0;">
+                        <div class="d-flex align-center gap-2">
+                            <MudIcon Icon="@Icons.Material.Filled.FolderOpen" Size="Size.Small" Color="Color.Primary" />
+                            <MudText Typo="Typo.body2" Style="font-weight: 500; color: #4D3935;">@TruncateText(programa.NombrePrograma, 20)</MudText>
+                        </div>
+                        <div class="d-flex align-center gap-2">
+                            @if (programa.Criticas > 0)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Error" Style="font-size: 0.7rem;">@programa.Criticas</MudChip>
+                            }
+                            @if (programa.Altas > 0)
+                            {
+                                <MudChip T="string" Size="Size.Small" Style="background-color: #F7C484; color: #4D3935; font-size: 0.7rem;">@programa.Altas</MudChip>
+                            }
+                            <MudChip T="string" Size="Size.Small" Color="Color.Info" Style="font-size: 0.7rem;">@programa.Total</MudChip>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="d-flex flex-column align-center justify-center" style="min-height: 150px; opacity: 0.6;">
+                    <MudIcon Icon="@Icons.Material.Filled.FolderOff" Size="Size.Large" Color="Color.Default" />
+                    <MudText Typo="Typo.body2" Class="mt-2">Sin alertas por programa</MudText>
+                </div>
+            }
+        </div>
     </MudItem>
 </MudGrid>
 
@@ -67,9 +457,39 @@
     [Parameter] public double[] EstadoData { get; set; } = Array.Empty<double>();
     [Parameter] public string[] EstadoLabels { get; set; } = Array.Empty<string>();
     [Parameter] public ChartOptions? ChartOptions { get; set; }
+    [Parameter] public List<AlertaDto>? AlertasRecientes { get; set; }
+    [Parameter] public List<AlertaPorProgramaDto>? AlertasPorPrograma { get; set; }
 
     private double GetPorcentaje(int valor, int total)
     {
         return total > 0 ? (valor * 100.0 / total) : 0;
+    }
+
+    private string ObtenerClaseSeveridad(byte severidad) => severidad switch
+    {
+        3 => "critica",
+        2 => "alta",
+        _ => "info"
+    };
+
+    private string ObtenerTiempoRelativo(DateTime fecha)
+    {
+        var diferencia = DateTime.Now - fecha.ToLocalTime();
+        
+        if (diferencia.TotalMinutes < 60)
+            return $"Hace {(int)diferencia.TotalMinutes} min";
+        if (diferencia.TotalHours < 24)
+            return $"Hace {(int)diferencia.TotalHours} horas";
+        if (diferencia.TotalDays < 7)
+            return $"Hace {(int)diferencia.TotalDays} días";
+        
+        return fecha.ToLocalTime().ToString("dd/MM");
+    }
+
+    private string TruncateText(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+            return text;
+        return text.Substring(0, maxLength) + "...";
     }
 }

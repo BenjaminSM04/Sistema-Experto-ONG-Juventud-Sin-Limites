@@ -1,0 +1,439 @@
+﻿@using Microsoft.EntityFrameworkCore
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Motor
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Operacion
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
+@using MudBlazor
+
+@inject ApplicationDbContext DbContext
+@inject ISnackbar Snackbar
+@inject ILogger<DialogoResolverAlerta> Logger
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center gap-2">
+            <MudIcon Icon="@Icons.Material.Filled.BugReport" Color="Color.Warning" />
+            <MudText Typo="Typo.h6">Resolver Alerta #@AlertaId</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        @if (_cargando)
+        {
+            <div class="d-flex justify-center align-center pa-8">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+            </div>
+        }
+        else if (_alerta == null)
+        {
+            <MudAlert Severity="Severity.Error">No se pudo cargar la alerta</MudAlert>
+        }
+        else
+        {
+            <div style="min-width: 600px; max-width: 800px;">
+                <!-- Información de la Alerta -->
+                <MudPaper Class="pa-4 mb-4" Elevation="0" Style="background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%); border-left: 4px solid #F7C484;">
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <div class="d-flex align-center gap-2 mb-2">
+                                <MudChip T="string" Size="Size.Small" Color="@ObtenerColorSeveridad(_alerta.Severidad)">
+                                    @_alerta.Severidad.ToString()
+                                </MudChip>
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">
+                                    @_alerta.Regla?.Nombre
+                                </MudChip>
+                            </div>
+                            <MudText Typo="Typo.body1" Style="font-weight: 600; color: #4D3935;">
+                                @_alerta.Mensaje
+                            </MudText>
+                            <MudText Typo="Typo.caption" Class="mt-2" Style="color: #6D534F;">
+                                <MudIcon Icon="@Icons.Material.Filled.Schedule" Size="Size.Small" Class="mr-1" />
+                                Generada: @_alerta.GeneradaEn.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                            </MudText>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+
+                <!-- Detalles según tipo de alerta -->
+                @if (_alerta.ActividadId.HasValue && _actividad != null)
+                {
+                    <!-- Alerta relacionada con Actividad -->
+                    <MudExpansionPanels MultiExpansion="true">
+                        <MudExpansionPanel Text="📅 Detalles de la Actividad" IsInitiallyExpanded="true">
+                            <MudGrid Class="pa-2">
+                                <MudItem xs="12" md="6">
+                                    <MudTextField @bind-Value="_actividad.Titulo" 
+                                                  Label="Título" 
+                                                  Variant="Variant.Outlined" 
+                                                  ReadOnly="@(!_editandoActividad)" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudSelect @bind-Value="_actividad.Estado" 
+                                               Label="Estado" 
+                                               Variant="Variant.Outlined"
+                                               Disabled="@(!_editandoActividad)">
+                                        <MudSelectItem Value="EstadoActividad.Planificada">Planificada</MudSelectItem>
+                                        <MudSelectItem Value="EstadoActividad.Realizada">Realizada</MudSelectItem>
+                                        <MudSelectItem Value="EstadoActividad.Cancelada">Cancelada</MudSelectItem>
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudDatePicker @bind-Date="_fechaActividad" 
+                                                   Label="Fecha" 
+                                                   Variant="Variant.Outlined"
+                                                   ReadOnly="@(!_editandoActividad)"
+                                                   DateFormat="dd/MM/yyyy" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudTextField @bind-Value="_actividad.Lugar" 
+                                                  Label="Lugar" 
+                                                  Variant="Variant.Outlined"
+                                                  ReadOnly="@(!_editandoActividad)" />
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudTextField @bind-Value="_actividad.Descripcion" 
+                                                  Label="Descripción" 
+                                                  Variant="Variant.Outlined"
+                                                  Lines="2"
+                                                  ReadOnly="@(!_editandoActividad)" />
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudSwitch @bind-Value="_editandoActividad" 
+                                               Label="Editar actividad" 
+                                               Color="Color.Primary" />
+                                </MudItem>
+                            </MudGrid>
+                        </MudExpansionPanel>
+                    </MudExpansionPanels>
+                }
+
+                @if (_alerta.ParticipanteId.HasValue && _participante != null)
+                {
+                    <!-- Alerta relacionada con Participante -->
+                    <MudExpansionPanels MultiExpansion="true" Class="@(_alerta.ActividadId.HasValue ? "mt-4" : "")">
+                        <MudExpansionPanel Text="👤 Detalles del Participante" IsInitiallyExpanded="true">
+                            <MudGrid Class="pa-2">
+                                <MudItem xs="12" md="6">
+                                    <MudTextField Value="@($"{_participante.Persona?.Nombres} {_participante.Persona?.Apellidos}")" 
+                                                  Label="Nombre Completo" 
+                                                  Variant="Variant.Outlined" 
+                                                  ReadOnly="true" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudSelect @bind-Value="_participante.Estado" 
+                                               Label="Estado del Participante" 
+                                               Variant="Variant.Outlined"
+                                               Disabled="@(!_editandoParticipante)">
+                                        <MudSelectItem Value="EstadoGeneral.Activo">Activo</MudSelectItem>
+                                        <MudSelectItem Value="EstadoGeneral.Inactivo">Inactivo</MudSelectItem>
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudTextField Value="@_participante.Persona?.Telefono" 
+                                                  Label="Teléfono" 
+                                                  Variant="Variant.Outlined" 
+                                                  ReadOnly="true" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudTextField Value="@_participante.FechaAlta.ToString("dd/MM/yyyy")" 
+                                                  Label="Fecha de Alta" 
+                                                  Variant="Variant.Outlined" 
+                                                  ReadOnly="true" />
+                                </MudItem>
+                                
+                                <!-- Estadísticas de Asistencia -->
+                                @if (_estadisticasParticipante != null)
+                                {
+                                    <MudItem xs="12">
+                                        <MudDivider Class="my-2" />
+                                        <MudText Typo="Typo.subtitle2" Class="mb-2">📊 Estadísticas de Asistencia</MudText>
+                                        <MudGrid>
+                                            <MudItem xs="4">
+                                                <MudPaper Class="pa-2 text-center" Elevation="0" Style="background-color: #E8F5E9;">
+                                                    <MudText Typo="Typo.h6" Color="Color.Success">@_estadisticasParticipante.Presentes</MudText>
+                                                    <MudText Typo="Typo.caption">Presentes</MudText>
+                                                </MudPaper>
+                                            </MudItem>
+                                            <MudItem xs="4">
+                                                <MudPaper Class="pa-2 text-center" Elevation="0" Style="background-color: #FFEBEE;">
+                                                    <MudText Typo="Typo.h6" Color="Color.Error">@_estadisticasParticipante.Ausentes</MudText>
+                                                    <MudText Typo="Typo.caption">Ausentes</MudText>
+                                                </MudPaper>
+                                            </MudItem>
+                                            <MudItem xs="4">
+                                                <MudPaper Class="pa-2 text-center" Elevation="0" Style="background-color: #E3F2FD;">
+                                                    <MudText Typo="Typo.h6" Color="Color.Info">@_estadisticasParticipante.PorcentajeAsistencia.ToString("F0")%</MudText>
+                                                    <MudText Typo="Typo.caption">Asistencia</MudText>
+                                                </MudPaper>
+                                            </MudItem>
+                                        </MudGrid>
+                                    </MudItem>
+                                }
+                                
+                                <MudItem xs="12">
+                                    <MudSwitch @bind-Value="_editandoParticipante" 
+                                               Label="Editar participante" 
+                                               Color="Color.Primary" />
+                                </MudItem>
+                            </MudGrid>
+                        </MudExpansionPanel>
+                    </MudExpansionPanels>
+                }
+
+                <!-- Acción de Resolución -->
+                <MudPaper Class="pa-4 mt-4" Elevation="0" Style="background-color: #F5F5F5; border-radius: 8px;">
+                    <MudText Typo="Typo.subtitle2" Class="mb-3">
+                        <MudIcon Icon="@Icons.Material.Filled.Task" Class="mr-1" />
+                        Acción de Resolución
+                    </MudText>
+                    
+                    <MudRadioGroup @bind-Value="_accionSeleccionada">
+                        @if (_alerta.ActividadId.HasValue)
+                        {
+                            <MudRadio Value="@("marcar_realizada")" Color="Color.Success">
+                                Marcar actividad como realizada
+                            </MudRadio>
+                            <MudRadio Value="@("reprogramar")" Color="Color.Warning">
+                                Reprogramar actividad (cambiar fecha)
+                            </MudRadio>
+                        }
+                        @if (_alerta.ParticipanteId.HasValue)
+                        {
+                            <MudRadio Value="@("contactar")" Color="Color.Info">
+                                Participante contactado/seguimiento realizado
+                            </MudRadio>
+                            <MudRadio Value="@("actualizar_estado")" Color="Color.Primary">
+                                Actualizar estado del participante
+                            </MudRadio>
+                        }
+                        <MudRadio Value="@("otro")" Color="Color.Default">
+                            Otra acción (especificar en comentarios)
+                        </MudRadio>
+                    </MudRadioGroup>
+
+                    <MudTextField @bind-Value="_comentarioResolucion" 
+                                  Label="Comentarios de la resolución" 
+                                  Variant="Variant.Outlined"
+                                  Lines="3"
+                                  Class="mt-3"
+                                  Placeholder="Describe la acción tomada para resolver esta alerta..."
+                                  Required="true"
+                                  RequiredError="Debe ingresar un comentario sobre la resolución" />
+
+                    @if (string.IsNullOrWhiteSpace(_accionSeleccionada))
+                    {
+                        <MudAlert Severity="Severity.Warning" Class="mt-3" Dense="true">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-1" Size="Size.Small" />
+                            Debe seleccionar una acción y agregar comentarios para poder resolver la alerta.
+                        </MudAlert>
+                    }
+                </MudPaper>
+            </div>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancelar" Variant="Variant.Text">Cancelar</MudButton>
+        <MudButton OnClick="ResolverAlerta" 
+                   Variant="Variant.Filled" 
+                   Color="Color.Success"
+                   StartIcon="@Icons.Material.Filled.CheckCircle"
+                   Disabled="@(!PuedeResolver())">
+            Resolver Alerta
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+[CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+[Parameter] public int AlertaId { get; set; }
+
+    private Alerta? _alerta;
+    private Actividad? _actividad;
+    private Participante? _participante;
+    private EstadisticasParticipante? _estadisticasParticipante;
+    
+    private bool _cargando = true;
+    private bool _editandoActividad = false;
+    private bool _editandoParticipante = false;
+    private DateTime? _fechaActividad;
+    
+    private string _accionSeleccionada = "";
+    private string _comentarioResolucion = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatosAsync();
+    }
+
+    private async Task CargarDatosAsync()
+    {
+        try
+        {
+            _cargando = true;
+
+            _alerta = await DbContext.Alertas
+                .Include(a => a.Regla)
+                .Include(a => a.Programa)
+                .FirstOrDefaultAsync(a => a.AlertaId == AlertaId && !a.IsDeleted);
+
+            if (_alerta == null) return;
+
+            // Cargar actividad si existe
+            if (_alerta.ActividadId.HasValue)
+            {
+                _actividad = await DbContext.Actividades
+                    .FirstOrDefaultAsync(a => a.ActividadId == _alerta.ActividadId.Value && !a.IsDeleted);
+                
+                if (_actividad != null)
+                {
+                    _fechaActividad = _actividad.FechaInicio;
+                }
+            }
+
+            // Cargar participante si existe
+            if (_alerta.ParticipanteId.HasValue)
+            {
+                _participante = await DbContext.Participantes
+                    .Include(p => p.Persona)
+                    .FirstOrDefaultAsync(p => p.ParticipanteId == _alerta.ParticipanteId.Value && !p.IsDeleted);
+
+                if (_participante != null)
+                {
+                    await CargarEstadisticasParticipanteAsync();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error al cargar datos de la alerta {AlertaId}", AlertaId);
+            Snackbar.Add("Error al cargar datos de la alerta", Severity.Error);
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task CargarEstadisticasParticipanteAsync()
+    {
+        if (_participante == null) return;
+
+        var asistencias = await DbContext.Asistencias
+            .Where(a => a.ParticipanteId == _participante.ParticipanteId && !a.IsDeleted)
+            .ToListAsync();
+
+        var total = asistencias.Count;
+        var presentes = asistencias.Count(a => a.Estado == EstadoAsistencia.Presente || a.Estado == EstadoAsistencia.Tarde);
+        var ausentes = asistencias.Count(a => a.Estado == EstadoAsistencia.Ausente);
+
+        _estadisticasParticipante = new EstadisticasParticipante
+        {
+            Total = total,
+            Presentes = presentes,
+            Ausentes = ausentes,
+            PorcentajeAsistencia = total > 0 ? (presentes * 100.0 / total) : 0
+        };
+    }
+
+    private bool PuedeResolver()
+    {
+        return !string.IsNullOrWhiteSpace(_accionSeleccionada) && 
+               !string.IsNullOrWhiteSpace(_comentarioResolucion) &&
+               _comentarioResolucion.Length >= 10;
+    }
+
+    private async Task ResolverAlerta()
+    {
+        if (!PuedeResolver())
+        {
+            Snackbar.Add("Debe seleccionar una acción y agregar comentarios (mínimo 10 caracteres)", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            // Aplicar cambios según la acción seleccionada
+            switch (_accionSeleccionada)
+            {
+                case "marcar_realizada":
+                    if (_actividad != null)
+                    {
+                        _actividad.Estado = EstadoActividad.Realizada;
+                        _actividad.ActualizadoEn = DateTime.UtcNow;
+                    }
+                    break;
+                    
+                case "reprogramar":
+                    if (_actividad != null && _fechaActividad.HasValue)
+                    {
+                        _actividad.FechaInicio = _fechaActividad.Value;
+                        _actividad.ActualizadoEn = DateTime.UtcNow;
+                    }
+                    break;
+                    
+                case "actualizar_estado":
+                    if (_participante != null && _editandoParticipante)
+                    {
+                        _participante.ActualizadoEn = DateTime.UtcNow;
+                    }
+                    break;
+            }
+
+            // Guardar cambios de actividad si fue editada
+            if (_editandoActividad && _actividad != null)
+            {
+                if (_fechaActividad.HasValue)
+                {
+                    _actividad.FechaInicio = _fechaActividad.Value;
+                }
+                _actividad.ActualizadoEn = DateTime.UtcNow;
+            }
+
+            // Guardar cambios de participante si fue editado
+            if (_editandoParticipante && _participante != null)
+            {
+                _participante.ActualizadoEn = DateTime.UtcNow;
+            }
+
+            // Actualizar la alerta
+            if (_alerta != null)
+            {
+                _alerta.Estado = EstadoAlerta.Resuelta;
+                _alerta.ResueltaEn = DateTime.UtcNow;
+                _alerta.ActualizadoEn = DateTime.UtcNow;
+                _alerta.Notas = $"[{_accionSeleccionada.ToUpper()}] {_comentarioResolucion}";
+            }
+
+            await DbContext.SaveChangesAsync();
+            
+            Snackbar.Add("Alerta resuelta exitosamente", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            Snackbar.Add("Los datos fueron modificados por otro usuario. Intente nuevamente.", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error al resolver alerta {AlertaId}", AlertaId);
+            Snackbar.Add("Error al resolver la alerta", Severity.Error);
+        }
+    }
+
+    private void Cancelar() => MudDialog.Cancel();
+
+    private Color ObtenerColorSeveridad(Severidad severidad) => severidad switch
+    {
+        Severidad.Info => Color.Info,
+        Severidad.Alta => Color.Warning,
+        Severidad.Critica => Color.Error,
+        _ => Color.Default
+    };
+
+    private class EstadisticasParticipante
+    {
+        public int Total { get; set; }
+        public int Presentes { get; set; }
+        public int Ausentes { get; set; }
+        public double PorcentajeAsistencia { get; set; }
+    }
+}

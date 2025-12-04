@@ -9,6 +9,7 @@
 @inject ApplicationDbContext DbContext
 @inject ILogger<AlertasTab> Logger
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 
 <style>
     .mythra-card {
@@ -180,20 +181,20 @@ else
      </MudText>
 }
 @if (alerta.Estado == EstadoAlerta.Abierta)
- {
-     <MudButtonGroup Class="mt-3" Size="Size.Small" Variant="Variant.Filled" FullWidth="true">
-     <MudButton Class="mythra-button-success"
-        StartIcon="@Icons.Material.Filled.CheckCircle"
-    OnClick="@(async () => await CambiarEstadoAlerta(alerta.AlertaId, EstadoAlerta.Resuelta, alerta.RowVersion))">
-   Resolver
-        </MudButton>
-      <MudButton Class="mythra-button-warning"
-  StartIcon="@Icons.Material.Filled.Cancel"
-  OnClick="@(async () => await CambiarEstadoAlerta(alerta.AlertaId, EstadoAlerta.Descartada, alerta.RowVersion))">
-      Descartar
-      </MudButton>
-         </MudButtonGroup>
-    }
+{
+    <MudButtonGroup Class="mt-3" Size="Size.Small" Variant="Variant.Filled" FullWidth="true">
+    <MudButton Class="mythra-button-success"
+       StartIcon="@Icons.Material.Filled.CheckCircle"
+   OnClick="@(async () => await AbrirDialogoResolver(alerta.AlertaId))">
+  Resolver
+       </MudButton>
+     <MudButton Class="mythra-button-warning"
+ StartIcon="@Icons.Material.Filled.Cancel"
+ OnClick="@(async () => await CambiarEstadoAlerta(alerta.AlertaId, EstadoAlerta.Descartada, alerta.RowVersion))">
+     Descartar
+     </MudButton>
+        </MudButtonGroup>
+   }
   </div>
    </MudItem>
     }
@@ -228,20 +229,20 @@ else
     </MudTd>
        <MudTd DataLabel="Acciones">
    @if (context.Estado == EstadoAlerta.Abierta)
-    {
-     <MudButtonGroup Size="Size.Small" Variant="Variant.Filled">
- <MudButton Class="mythra-button-success"
-    StartIcon="@Icons.Material.Filled.CheckCircle"
-  OnClick="@(async () => await CambiarEstadoAlerta(context.AlertaId, EstadoAlerta.Resuelta, context.RowVersion))">
-  Resolver
-  </MudButton>
-   <MudButton Class="mythra-button-warning"
-      StartIcon="@Icons.Material.Filled.Cancel"
-   OnClick="@(async () => await CambiarEstadoAlerta(context.AlertaId, EstadoAlerta.Descartada, context.RowVersion))">
-       Descartar
-   </MudButton>
- </MudButtonGroup>
-}
+       {
+        <MudButtonGroup Size="Size.Small" Variant="Variant.Filled">
+    <MudButton Class="mythra-button-success"
+       StartIcon="@Icons.Material.Filled.CheckCircle"
+     OnClick="@(async () => await AbrirDialogoResolver(context.AlertaId))">
+     Resolver
+     </MudButton>
+      <MudButton Class="mythra-button-warning"
+         StartIcon="@Icons.Material.Filled.Cancel"
+      OnClick="@(async () => await CambiarEstadoAlerta(context.AlertaId, EstadoAlerta.Descartada, context.RowVersion))">
+          Descartar
+      </MudButton>
+    </MudButtonGroup>
+   }
          </MudTd>
    </RowTemplate>
      <NoRecordsContent>
@@ -337,57 +338,80 @@ else
     }
 
     private async Task CambiarEstadoAlerta(int alertaId, EstadoAlerta nuevoEstado, byte[] rowVersion)
-    {
-        try
-  {
-         var alerta = await DbContext.Alertas
-     .FirstOrDefaultAsync(a => a.AlertaId == alertaId && !a.IsDeleted);
+        {
+            try
+      {
+             var alerta = await DbContext.Alertas
+         .FirstOrDefaultAsync(a => a.AlertaId == alertaId && !a.IsDeleted);
 
-       if (alerta == null)
-    {
-       Snackbar.Add("Alerta no encontrada", Severity.Error);
-        return;
-   }
+           if (alerta == null)
+        {
+           Snackbar.Add("Alerta no encontrada", Severity.Error);
+            return;
+       }
 
-   // Manejo de concurrencia optimista
-if (rowVersion != null && rowVersion.Length > 0)
-       {
-       DbContext.Entry(alerta).Property(a => a.RowVersion).OriginalValue = rowVersion;
-   }
+       // Manejo de concurrencia optimista
+    if (rowVersion != null && rowVersion.Length > 0)
+           {
+           DbContext.Entry(alerta).Property(a => a.RowVersion).OriginalValue = rowVersion;
+       }
 
-      alerta.Estado = nuevoEstado;
-  alerta.ActualizadoEn = DateTime.UtcNow;
+          alerta.Estado = nuevoEstado;
+      alerta.ActualizadoEn = DateTime.UtcNow;
 
-     if (nuevoEstado == EstadoAlerta.Resuelta)
-  {
-     alerta.ResueltaEn = DateTime.UtcNow;
-       alerta.Notas = "Resuelta desde el panel del programa";
-  }
-            else if (nuevoEstado == EstadoAlerta.Descartada)
-    {
-      alerta.Notas = "Descartada desde el panel del programa";
-}
-
-   try
-   {
-    await DbContext.SaveChangesAsync();
-     Snackbar.Add(nuevoEstado == EstadoAlerta.Resuelta ? "Alerta resuelta" : "Alerta descartada", Severity.Success);
-      await CargarAlertasAsync();
- }
-  catch (DbUpdateConcurrencyException)
-     {
-       Snackbar.Add("La alerta fue modificada por otro usuario. Recargando...", Severity.Warning);
-     await CargarAlertasAsync();
-            }
-        }
-  catch (Exception ex)
- {
-Logger.LogError(ex, "Error al cambiar estado de alerta");
-     Snackbar.Add("Error al cambiar estado de alerta", Severity.Error);
-   }
+         if (nuevoEstado == EstadoAlerta.Resuelta)
+      {
+         alerta.ResueltaEn = DateTime.UtcNow;
+           alerta.Notas = "Resuelta desde el panel del programa";
+      }
+                else if (nuevoEstado == EstadoAlerta.Descartada)
+        {
+          alerta.Notas = "Descartada desde el panel del programa";
     }
 
-    private string ObtenerClaseSeveridad(Severidad severidad)
+       try
+       {
+        await DbContext.SaveChangesAsync();
+         Snackbar.Add(nuevoEstado == EstadoAlerta.Resuelta ? "Alerta resuelta" : "Alerta descartada", Severity.Success);
+          await CargarAlertasAsync();
+     }
+      catch (DbUpdateConcurrencyException)
+         {
+           Snackbar.Add("La alerta fue modificada por otro usuario. Recargando...", Severity.Warning);
+         await CargarAlertasAsync();
+                }
+            }
+      catch (Exception ex)
+     {
+    Logger.LogError(ex, "Error al cambiar estado de alerta");
+         Snackbar.Add("Error al cambiar estado de alerta", Severity.Error);
+       }
+        }
+
+        private async Task AbrirDialogoResolver(int alertaId)
+        {
+            var parametros = new DialogParameters<DialogoResolverAlerta>
+            {
+                { x => x.AlertaId, alertaId }
+            };
+
+            var opciones = new DialogOptions 
+            { 
+                CloseButton = true, 
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true 
+            };
+
+            var dialog = await DialogService.ShowAsync<DialogoResolverAlerta>("Resolver Alerta", parametros, opciones);
+            var resultado = await dialog.Result;
+
+            if (!resultado.Canceled)
+            {
+                await CargarAlertasAsync();
+            }
+        }
+
+        private string ObtenerClaseSeveridad(Severidad severidad)
     {
         return severidad switch
   {

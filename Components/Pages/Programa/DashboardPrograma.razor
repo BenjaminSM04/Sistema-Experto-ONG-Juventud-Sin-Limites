@@ -1,0 +1,994 @@
+﻿@using Microsoft.EntityFrameworkCore
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Data
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Common
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Operacion
+@using Sistema_Experto_ONG_Juventud_Sin_Limites.Domain.Motor
+@using MudBlazor
+
+@inject ApplicationDbContext DbContext
+@inject ILogger<DashboardPrograma> Logger
+
+<style>
+    /* ========================================
+       ESTILOS DASHBOARD MODERNO
+       ======================================== */
+    
+    /* Tarjetas KPI Principales */
+    .kpi-card-modern {
+        background: linear-gradient(135deg, #FEFEFD 0%, #F7F7F7 100%);
+        border-radius: 16px;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 20px rgba(77, 57, 53, 0.08);
+    }
+    
+    .kpi-card-modern:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 30px rgba(77, 57, 53, 0.15);
+    }
+    
+    .kpi-card-modern::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        border-radius: 16px 0 0 16px;
+    }
+    
+    .kpi-card-success::before { background: linear-gradient(180deg, #9FD996 0%, #7BC96F 100%); }
+    .kpi-card-warning::before { background: linear-gradient(180deg, #F7C484 0%, #E5A85C 100%); }
+    .kpi-card-info::before { background: linear-gradient(180deg, #64B5F6 0%, #42A5F5 100%); }
+    .kpi-card-primary::before { background: linear-gradient(180deg, #4D3935 0%, #6D534F 100%); }
+    .kpi-card-danger::before { background: linear-gradient(180deg, #EF5350 0%, #E53935 100%); }
+    .kpi-card-purple::before { background: linear-gradient(180deg, #AB47BC 0%, #8E24AA 100%); }
+    
+    .kpi-icon-container {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+    
+    .kpi-icon-success { background: linear-gradient(135deg, rgba(159, 217, 150, 0.2) 0%, rgba(123, 201, 111, 0.2) 100%); color: #5CB85C; }
+    .kpi-icon-warning { background: linear-gradient(135deg, rgba(247, 196, 132, 0.2) 0%, rgba(229, 168, 92, 0.2) 100%); color: #F0AD4E; }
+    .kpi-icon-info { background: linear-gradient(135deg, rgba(100, 181, 246, 0.2) 0%, rgba(66, 165, 245, 0.2) 100%); color: #5BC0DE; }
+    .kpi-icon-primary { background: linear-gradient(135deg, rgba(77, 57, 53, 0.15) 0%, rgba(109, 83, 79, 0.15) 100%); color: #4D3935; }
+    .kpi-icon-danger { background: linear-gradient(135deg, rgba(239, 83, 80, 0.2) 0%, rgba(229, 57, 53, 0.2) 100%); color: #D9534F; }
+    .kpi-icon-purple { background: linear-gradient(135deg, rgba(171, 71, 188, 0.2) 0%, rgba(142, 36, 170, 0.2) 100%); color: #9C27B0; }
+    
+    .kpi-value-large {
+        font-size: 2.25rem;
+        font-weight: 700;
+        color: #4D3935;
+        line-height: 1.2;
+        margin-bottom: 0.25rem;
+    }
+    
+    .kpi-label {
+        font-size: 0.8rem;
+        color: #6D534F;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+    }
+    
+    .kpi-change {
+        display: inline-flex;
+        align-items: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.5rem;
+        border-radius: 20px;
+        margin-top: 0.5rem;
+    }
+    
+    .kpi-change-up { background-color: rgba(159, 217, 150, 0.2); color: #5CB85C; }
+    .kpi-change-down { background-color: rgba(239, 83, 80, 0.2); color: #D9534F; }
+    .kpi-change-neutral { background-color: rgba(77, 57, 53, 0.1); color: #6D534F; }
+    
+    /* Tarjeta de Gráficas */
+    .chart-card {
+        background: #FEFEFD;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(77, 57, 53, 0.08);
+        height: 100%;
+    }
+    
+    .chart-card-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #4D3935;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    /* Tarjeta de Resumen Rápido */
+    .quick-stat {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: #FEFEFD;
+        border-radius: 12px;
+        margin-bottom: 0.75rem;
+        transition: all 0.2s ease;
+    }
+    
+    .quick-stat:hover {
+        background: #F7F7F7;
+    }
+    
+    .quick-stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        font-size: 1.25rem;
+    }
+    
+    .quick-stat-content {
+        flex: 1;
+    }
+    
+    .quick-stat-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #4D3935;
+    }
+    
+    .quick-stat-label {
+        font-size: 0.75rem;
+        color: #6D534F;
+    }
+    
+    /* Próximas Actividades */
+    .activity-item {
+        display: flex;
+        align-items: flex-start;
+        padding: 1rem;
+        border-left: 3px solid #9FD996;
+        background: #FEFEFD;
+        border-radius: 0 12px 12px 0;
+        margin-bottom: 0.75rem;
+        transition: all 0.2s ease;
+    }
+    
+    .activity-item:hover {
+        background: #F7F7F7;
+        border-left-color: #7BC96F;
+    }
+    
+    .activity-item.planificada { border-left-color: #F7C484; }
+    .activity-item.realizada { border-left-color: #9FD996; }
+    .activity-item.cancelada { border-left-color: #EF5350; }
+    
+    .activity-date {
+        min-width: 50px;
+        text-align: center;
+        margin-right: 1rem;
+    }
+    
+    .activity-day {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #4D3935;
+        line-height: 1;
+    }
+    
+    .activity-month {
+        font-size: 0.7rem;
+        color: #6D534F;
+        text-transform: uppercase;
+    }
+    
+    .activity-content {
+        flex: 1;
+    }
+    
+    .activity-title {
+        font-weight: 600;
+        color: #4D3935;
+        margin-bottom: 0.25rem;
+    }
+    
+    .activity-meta {
+        font-size: 0.75rem;
+        color: #6D534F;
+    }
+    
+    /* Alertas Recientes */
+    .alert-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+        transition: all 0.2s ease;
+    }
+    
+    .alert-item:hover {
+        transform: translateX(4px);
+    }
+    
+    .alert-item.critica { background: rgba(239, 83, 80, 0.1); border-left: 3px solid #EF5350; }
+    .alert-item.alta { background: rgba(247, 196, 132, 0.15); border-left: 3px solid #F7C484; }
+    .alert-item.media { background: rgba(243, 201, 90, 0.15); border-left: 3px solid #F3C95A; }
+    .alert-item.info { background: rgba(100, 181, 246, 0.1); border-left: 3px solid #64B5F6; }
+    
+    .alert-icon {
+        margin-right: 0.75rem;
+        font-size: 1.25rem;
+    }
+    
+    .alert-content {
+        flex: 1;
+    }
+    
+    .alert-message {
+        font-size: 0.85rem;
+        color: #4D3935;
+        font-weight: 500;
+    }
+    
+    .alert-time {
+        font-size: 0.7rem;
+        color: #6D534F;
+    }
+    
+    /* Sección de Resumen */
+    .summary-section {
+        background: linear-gradient(135deg, #4D3935 0%, #6D534F 100%);
+        border-radius: 16px;
+        padding: 1.5rem;
+        color: #FEFEFD;
+    }
+    
+    .summary-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .summary-stat {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid rgba(254, 254, 253, 0.15);
+    }
+    
+    .summary-stat:last-child {
+        border-bottom: none;
+    }
+    
+    .summary-stat-label {
+        opacity: 0.85;
+        font-size: 0.875rem;
+    }
+    
+    .summary-stat-value {
+        font-weight: 700;
+        font-size: 1rem;
+    }
+    
+    /* Progress Ring */
+    .progress-ring-container {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin: 0 auto;
+    }
+    
+    .progress-ring-value {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+    
+    .progress-ring-number {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #4D3935;
+    }
+    
+    .progress-ring-label {
+        font-size: 0.65rem;
+        color: #6D534F;
+        text-transform: uppercase;
+    }
+</style>
+
+@if (_cargando)
+{
+    <div class="d-flex justify-center align-center" style="min-height: 400px;">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+    </div>
+}
+else
+{
+    <!-- Fila 1: KPIs Principales -->
+    <MudGrid Class="mb-4">
+        <!-- Actividades Ejecutadas -->
+        <MudItem xs="12" sm="6" md="4" lg="2">
+            <div class="kpi-card-modern kpi-card-success">
+                <div class="kpi-icon-container kpi-icon-success">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Large" />
+                </div>
+                <div class="kpi-value-large">@_metricas.ActividadesEjecutadas</div>
+                <div class="kpi-label">Ejecutadas</div>
+                <div class="kpi-change @(_metricas.CambioEjecutadas >= 0 ? "kpi-change-up" : "kpi-change-down")">
+                    <MudIcon Icon="@(_metricas.CambioEjecutadas >= 0 ? Icons.Material.Filled.TrendingUp : Icons.Material.Filled.TrendingDown)" Size="Size.Small" Class="mr-1" />
+                    @Math.Abs(_metricas.CambioEjecutadas)% vs mes ant.
+                </div>
+            </div>
+        </MudItem>
+        
+        <!-- Actividades Planificadas -->
+        <MudItem xs="12" sm="6" md="4" lg="2">
+            <div class="kpi-card-modern kpi-card-warning">
+                <div class="kpi-icon-container kpi-icon-warning">
+                    <MudIcon Icon="@Icons.Material.Filled.EventNote" Size="Size.Large" />
+                </div>
+                <div class="kpi-value-large">@_metricas.ActividadesPlanificadas</div>
+                <div class="kpi-label">Planificadas</div>
+                <div class="kpi-change kpi-change-neutral">
+                    <MudIcon Icon="@Icons.Material.Filled.Schedule" Size="Size.Small" Class="mr-1" />
+                    @_metricas.ActividadesPendientes pendientes
+                </div>
+            </div>
+        </MudItem>
+        
+        <!-- Participantes Activos -->
+        <MudItem xs="12" sm="6" md="4" lg="2">
+            <div class="kpi-card-modern kpi-card-info">
+                <div class="kpi-icon-container kpi-icon-info">
+                    <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" />
+                </div>
+                <div class="kpi-value-large">@_metricas.ParticipantesActivos</div>
+                <div class="kpi-label">Participantes</div>
+                <div class="kpi-change @(_metricas.CambioParticipantes >= 0 ? "kpi-change-up" : "kpi-change-down")">
+                    <MudIcon Icon="@(_metricas.CambioParticipantes >= 0 ? Icons.Material.Filled.PersonAdd : Icons.Material.Filled.PersonRemove)" Size="Size.Small" Class="mr-1" />
+                    @Math.Abs(_metricas.CambioParticipantes) este mes
+                </div>
+            </div>
+        </MudItem>
+        
+        <!-- Asistencia Promedio -->
+        <MudItem xs="12" sm="6" md="4" lg="2">
+            <div class="kpi-card-modern kpi-card-primary">
+                <div class="kpi-icon-container kpi-icon-primary">
+                    <MudIcon Icon="@Icons.Material.Filled.HowToReg" Size="Size.Large" />
+                </div>
+                <div class="kpi-value-large">@_metricas.AsistenciaPromedio.ToString("F0")%</div>
+                <div class="kpi-label">Asistencia</div>
+                <MudProgressLinear Value="@_metricas.AsistenciaPromedio" Color="Color.Dark" Class="mt-2" Rounded="true" Size="Size.Small" />
+            </div>
+        </MudItem>
+        
+        <!-- Cumplimiento -->
+        <MudItem xs="12" sm="6" md="4" lg="2">
+            <div class="kpi-card-modern kpi-card-purple">
+                <div class="kpi-icon-container kpi-icon-purple">
+                    <MudIcon Icon="@Icons.Material.Filled.Assessment" Size="Size.Large" />
+                </div>
+                <div class="kpi-value-large">@_metricas.PorcentajeCumplimiento.ToString("F0")%</div>
+                <div class="kpi-label">Cumplimiento</div>
+                <MudProgressLinear Value="@_metricas.PorcentajeCumplimiento" Color="Color.Secondary" Class="mt-2" Rounded="true" Size="Size.Small" />
+            </div>
+        </MudItem>
+        
+        <!-- Alertas Activas -->
+        <MudItem xs="12" sm="6" md="4" lg="2">
+            <div class="kpi-card-modern kpi-card-danger">
+                <div class="kpi-icon-container kpi-icon-danger">
+                    <MudIcon Icon="@Icons.Material.Filled.NotificationsActive" Size="Size.Large" />
+                </div>
+                <div class="kpi-value-large">@_metricas.AlertasActivas</div>
+                <div class="kpi-label">Alertas</div>
+                <div class="kpi-change @(_metricas.AlertasCriticas > 0 ? "kpi-change-down" : "kpi-change-up")">
+                    <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="mr-1" />
+                    @_metricas.AlertasCriticas críticas
+                </div>
+            </div>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Fila 2: Gráficas y Actividades -->
+    <MudGrid Class="mb-4">
+        <!-- Gráfica Serie Temporal -->
+        <MudItem xs="12" md="8">
+            <div class="chart-card">
+                <div class="chart-card-title">
+                    <MudIcon Icon="@Icons.Material.Filled.ShowChart" Color="Color.Primary" />
+                    <span>Evolución Mensual @FiltroAnio</span>
+                </div>
+                <MudChart ChartType="ChartType.Line" 
+                         ChartSeries="@_series12Meses" 
+                         XAxisLabels="@_xAxisLabels12Meses"
+                         Width="100%" Height="280px"
+                         ChartOptions="@_chartOptions" />
+            </div>
+        </MudItem>
+        
+        <!-- Próximas Actividades -->
+        <MudItem xs="12" md="4">
+            <div class="chart-card">
+                <div class="chart-card-title">
+                    <MudIcon Icon="@Icons.Material.Filled.Upcoming" Color="Color.Warning" />
+                    <span>Próximas Actividades</span>
+                </div>
+                
+                @if (_proximasActividades.Any())
+                {
+                    @foreach (var actividad in _proximasActividades.Take(4))
+                    {
+                        <div class="activity-item @actividad.Estado.ToString().ToLower()">
+                            <div class="activity-date">
+                                <div class="activity-day">@actividad.FechaInicio.Day</div>
+                                <div class="activity-month">@ObtenerNombreMesCorto(actividad.FechaInicio.Month)</div>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">@TruncateText(actividad.Titulo, 30)</div>
+                                <div class="activity-meta">
+                                    <MudIcon Icon="@Icons.Material.Filled.AccessTime" Size="Size.Small" Style="font-size: 0.75rem;" />
+                                    @actividad.FechaInicio.ToString("HH:mm") -
+                                    <MudChip T="string" Size="Size.Small" Style="font-size: 0.65rem; height: 18px;">@actividad.Tipo</MudChip>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="d-flex flex-column align-center justify-center" style="min-height: 200px; opacity: 0.6;">
+                        <MudIcon Icon="@Icons.Material.Filled.EventBusy" Size="Size.Large" Color="Color.Default" />
+                        <MudText Typo="Typo.body2" Class="mt-2">No hay actividades próximas</MudText>
+                    </div>
+                }
+            </div>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Fila 3: Distribución y Alertas -->
+    <MudGrid Class="mb-4">
+        <!-- Distribución por Tipo -->
+        <MudItem xs="12" md="4">
+            <div class="chart-card">
+                <div class="chart-card-title">
+                    <MudIcon Icon="@Icons.Material.Filled.PieChart" Color="Color.Success" />
+                    <span>Distribución por Tipo</span>
+                </div>
+                @if (_datosDonut.Any())
+                {
+                    <MudChart ChartType="ChartType.Donut"
+                             InputData="@_datosDonut"
+                             InputLabels="@_etiquetasDonut"
+                             Width="100%" Height="250px"
+                             ChartOptions="@_donutOptions" />
+                }
+                else
+                {
+                    <div class="d-flex flex-column align-center justify-center" style="min-height: 200px; opacity: 0.6;">
+                        <MudIcon Icon="@Icons.Material.Filled.DonutLarge" Size="Size.Large" Color="Color.Default" />
+                        <MudText Typo="Typo.body2" Class="mt-2">Sin datos disponibles</MudText>
+                    </div>
+                }
+            </div>
+        </MudItem>
+        
+        <!-- Estadísticas Rápidas -->
+        <MudItem xs="12" md="4">
+            <div class="chart-card">
+                <div class="chart-card-title">
+                    <MudIcon Icon="@Icons.Material.Filled.Speed" Color="Color.Info" />
+                    <span>Estadísticas Rápidas</span>
+                </div>
+                
+                <div class="quick-stat">
+                    <div class="quick-stat-icon" style="background: rgba(159, 217, 150, 0.2); color: #5CB85C;">
+                        <MudIcon Icon="@Icons.Material.Filled.Event" />
+                    </div>
+                    <div class="quick-stat-content">
+                        <div class="quick-stat-value">@_metricas.TotalActividades</div>
+                        <div class="quick-stat-label">Total Actividades @FiltroAnio</div>
+                    </div>
+                </div>
+                
+                <div class="quick-stat">
+                    <div class="quick-stat-icon" style="background: rgba(100, 181, 246, 0.2); color: #5BC0DE;">
+                        <MudIcon Icon="@Icons.Material.Filled.Groups" />
+                    </div>
+                    <div class="quick-stat-content">
+                        <div class="quick-stat-value">@_metricas.TotalInscritos</div>
+                        <div class="quick-stat-label">Total Inscritos</div>
+                    </div>
+                </div>
+                
+                <div class="quick-stat">
+                    <div class="quick-stat-icon" style="background: rgba(247, 196, 132, 0.2); color: #F0AD4E;">
+                        <MudIcon Icon="@Icons.Material.Filled.Folder" />
+                    </div>
+                    <div class="quick-stat-content">
+                        <div class="quick-stat-value">@_metricas.TotalEvidencias</div>
+                        <div class="quick-stat-label">Evidencias Cargadas</div>
+                    </div>
+                </div>
+                
+                <div class="quick-stat">
+                    <div class="quick-stat-icon" style="background: rgba(77, 57, 53, 0.15); color: #4D3935;">
+                        <MudIcon Icon="@Icons.Material.Filled.Timer" />
+                    </div>
+                    <div class="quick-stat-content">
+                        <div class="quick-stat-value">@_metricas.HorasActividad.ToString("F0")h</div>
+                        <div class="quick-stat-label">Horas de Actividad</div>
+                    </div>
+                </div>
+            </div>
+        </MudItem>
+        
+        <!-- Alertas Recientes -->
+        <MudItem xs="12" md="4">
+            <div class="chart-card">
+                <div class="chart-card-title">
+                    <MudIcon Icon="@Icons.Material.Filled.NotificationImportant" Color="Color.Error" />
+                    <span>Alertas Recientes</span>
+                </div>
+                
+                @if (_alertasRecientes.Any())
+                {
+                    @foreach (var alerta in _alertasRecientes.Take(4))
+                    {
+                        <div class="alert-item @ObtenerClaseSeveridad(alerta.Severidad)">
+                            <div class="alert-icon">
+                                @switch (alerta.Severidad)
+                                {
+                                    case Severidad.Critica:
+                                        <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" />
+                                        break;
+                                    case Severidad.Alta:
+                                        <MudIcon Icon="@Icons.Material.Filled.Warning" Style="color: #F7C484;" />
+                                        break;
+                                    case Severidad.Info:
+                                        <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Info" />
+                                        break;
+                                    default:
+                                        <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Info" />
+                                        break;
+                                }
+                            </div>
+                            <div class="alert-content">
+                                <div class="alert-message">@TruncateText(alerta.Mensaje, 40)</div>
+                                <div class="alert-time">@ObtenerTiempoRelativo(alerta.GeneradaEn)</div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="d-flex flex-column align-center justify-center" style="min-height: 200px; opacity: 0.6;">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Large" Color="Color.Success" />
+                        <MudText Typo="Typo.body2" Class="mt-2">¡Sin alertas pendientes!</MudText>
+                    </div>
+                }
+            </div>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Fila 4: Resumen del Período -->
+    <MudGrid>
+        <MudItem xs="12">
+            <div class="summary-section">
+                <div class="summary-title">
+                    <MudIcon Icon="@Icons.Material.Filled.Summarize" />
+                    Resumen del Período - @(FiltroMes.HasValue ? ObtenerNombreMes(FiltroMes.Value) : "Año") @FiltroAnio
+                </div>
+                <MudGrid>
+                    <MudItem xs="6" sm="4" md="2">
+                        <div class="summary-stat">
+                            <span class="summary-stat-label">Tasa de Éxito</span>
+                            <span class="summary-stat-value">@_metricas.TasaExito.ToString("F0")%</span>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="6" sm="4" md="2">
+                        <div class="summary-stat">
+                            <span class="summary-stat-label">Promedio/Actividad</span>
+                            <span class="summary-stat-value">@_metricas.PromedioParticipantes.ToString("F0")</span>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="6" sm="4" md="2">
+                        <div class="summary-stat">
+                            <span class="summary-stat-label">Días Activos</span>
+                            <span class="summary-stat-value">@_metricas.DiasActivos</span>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="6" sm="4" md="2">
+                        <div class="summary-stat">
+                            <span class="summary-stat-label">Retraso Prom.</span>
+                            <span class="summary-stat-value">@_metricas.RetrasoPromedio.ToString("F1")d</span>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="6" sm="4" md="2">
+                        <div class="summary-stat">
+                            <span class="summary-stat-label">Nuevos Inscritos</span>
+                            <span class="summary-stat-value">@_metricas.NuevosInscritos</span>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="6" sm="4" md="2">
+                        <div class="summary-stat">
+                            <span class="summary-stat-label">Retención</span>
+                            <span class="summary-stat-value">@_metricas.TasaRetencion.ToString("F0")%</span>
+                        </div>
+                    </MudItem>
+                </MudGrid>
+            </div>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    [Parameter] public int ProgramaId { get; set; }
+    [Parameter] public int FiltroAnio { get; set; } = DateTime.Now.Year;
+    [Parameter] public int? FiltroMes { get; set; } = DateTime.Now.Month;
+    [Parameter] public EventCallback OnDatosActualizados { get; set; }
+    
+    private bool _cargando = true;
+    private DashboardMetricas _metricas = new();
+    
+    // Datos para gráficas
+    private List<ChartSeries> _series12Meses = new();
+    private string[] _xAxisLabels12Meses = Array.Empty<string>();
+    private double[] _datosDonut = Array.Empty<double>();
+    private string[] _etiquetasDonut = Array.Empty<string>();
+    
+    private ChartOptions _chartOptions = new();
+    private ChartOptions _donutOptions = new();
+    
+    // Listas
+    private List<Actividad> _proximasActividades = new();
+    private List<Alerta> _alertasRecientes = new();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        ConfigurarOpciones();
+        await CargarDatosAsync();
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        await CargarDatosAsync();
+    }
+    
+    public async Task RefrescarDatosAsync()
+    {
+        await CargarDatosAsync();
+    }
+    
+    private void ConfigurarOpciones()
+    {
+        _chartOptions = new ChartOptions
+        {
+            YAxisTicks = 5,
+            MaxNumYAxisTicks = 8,
+            YAxisLines = true,
+            XAxisLines = false,
+            LineStrokeWidth = 3,
+            ChartPalette = new[] { "#9FD996", "#F7C484", "#64B5F6", "#AB47BC" }
+        };
+        
+        _donutOptions = new ChartOptions
+        {
+            ChartPalette = new[] { "#9FD996", "#F7C484", "#64B5F6", "#F3C95A", "#AB47BC" }
+        };
+    }
+    
+    private async Task CargarDatosAsync()
+    {
+        try
+        {
+            _cargando = true;
+            StateHasChanged();
+            
+            await CargarMetricasAsync();
+            await CargarDatosGraficasAsync();
+            await CargarProximasActividadesAsync();
+            await CargarAlertasRecientesAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error al cargar datos del dashboard");
+        }
+        finally
+        {
+            _cargando = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task CargarMetricasAsync()
+    {
+        // Actividades del período
+        var queryActividades = DbContext.Actividades
+            .Where(a => a.ProgramaId == ProgramaId && !a.IsDeleted && a.FechaInicio.Year == FiltroAnio);
+        
+        if (FiltroMes.HasValue)
+            queryActividades = queryActividades.Where(a => a.FechaInicio.Month == FiltroMes.Value);
+        
+        var actividades = await queryActividades.ToListAsync();
+        
+        _metricas.TotalActividades = actividades.Count;
+        _metricas.ActividadesPlanificadas = actividades.Count(a => a.Estado == EstadoActividad.Planificada);
+        _metricas.ActividadesEjecutadas = actividades.Count(a => a.Estado == EstadoActividad.Realizada);
+        _metricas.ActividadesPendientes = actividades.Count(a => a.Estado == EstadoActividad.Planificada && a.FechaInicio > DateTime.Now);
+        
+        // Cumplimiento
+        _metricas.PorcentajeCumplimiento = _metricas.TotalActividades > 0 
+            ? (_metricas.ActividadesEjecutadas * 100.0 / _metricas.TotalActividades) 
+            : 0;
+        
+        // Tasa de éxito
+        var actividadesPasadas = actividades.Count(a => a.FechaInicio <= DateTime.Now);
+        _metricas.TasaExito = actividadesPasadas > 0 
+            ? (_metricas.ActividadesEjecutadas * 100.0 / actividadesPasadas) 
+            : 0;
+        
+        // Participantes activos
+        _metricas.ParticipantesActivos = await DbContext.ActividadParticipantes
+            .Where(ap => ap.Actividad.ProgramaId == ProgramaId && 
+                        !ap.IsDeleted && 
+                        ap.Estado == EstadoInscripcion.Inscrito)
+            .Select(ap => ap.ParticipanteId)
+            .Distinct()
+            .CountAsync();
+        
+        // Total inscritos
+        _metricas.TotalInscritos = await DbContext.ActividadParticipantes
+            .Where(ap => ap.Actividad.ProgramaId == ProgramaId && !ap.IsDeleted)
+            .CountAsync();
+        
+        // Asistencia promedio
+        var asistenciasQuery = DbContext.Asistencias
+            .Where(a => a.Actividad.ProgramaId == ProgramaId && !a.IsDeleted && a.Fecha.Year == FiltroAnio);
+        
+        if (FiltroMes.HasValue)
+            asistenciasQuery = asistenciasQuery.Where(a => a.Fecha.Month == FiltroMes.Value);
+        
+        var asistencias = await asistenciasQuery.ToListAsync();
+        var totalAsistencias = asistencias.Count;
+        var presentes = asistencias.Count(a => a.Estado == EstadoAsistencia.Presente || a.Estado == EstadoAsistencia.Tarde);
+        _metricas.AsistenciaPromedio = totalAsistencias > 0 ? (presentes * 100.0 / totalAsistencias) : 0;
+        
+        // Promedio participantes por actividad
+        _metricas.PromedioParticipantes = _metricas.ActividadesEjecutadas > 0 
+            ? (double)presentes / _metricas.ActividadesEjecutadas 
+            : 0;
+        
+        // Evidencias
+        _metricas.TotalEvidencias = await DbContext.EvidenciaActividades
+            .Where(e => e.Actividad.ProgramaId == ProgramaId && !e.IsDeleted)
+            .CountAsync();
+        
+        // Alertas
+        _metricas.AlertasActivas = await DbContext.Alertas
+            .Where(a => a.ProgramaId == ProgramaId && !a.IsDeleted && a.Estado == EstadoAlerta.Abierta)
+            .CountAsync();
+        
+        _metricas.AlertasCriticas = await DbContext.Alertas
+            .Where(a => a.ProgramaId == ProgramaId && !a.IsDeleted && 
+                       a.Estado == EstadoAlerta.Abierta && a.Severidad == Severidad.Critica)
+            .CountAsync();
+        
+        // Horas de actividad
+        _metricas.HorasActividad = actividades
+            .Where(a => a.Estado == EstadoActividad.Realizada && a.FechaFin.HasValue)
+            .Sum(a => (a.FechaFin!.Value - a.FechaInicio).TotalHours);
+        
+        // Días activos
+        _metricas.DiasActivos = actividades
+            .Where(a => a.Estado == EstadoActividad.Realizada)
+            .Select(a => a.FechaInicio.Date)
+            .Distinct()
+            .Count();
+        
+        // Retraso promedio
+        var retrasadas = actividades.Where(a => a.Estado == EstadoActividad.Planificada && a.FechaInicio < DateTime.Now);
+        _metricas.RetrasoPromedio = retrasadas.Any() 
+            ? retrasadas.Average(a => (DateTime.Now - a.FechaInicio).TotalDays) 
+            : 0;
+        
+        // Cambios respecto al mes anterior
+        await CalcularCambiosMesAnteriorAsync();
+    }
+    
+    private async Task CalcularCambiosMesAnteriorAsync()
+    {
+        var mesAnterior = FiltroMes.HasValue ? FiltroMes.Value - 1 : DateTime.Now.Month - 1;
+        var anioMesAnterior = mesAnterior <= 0 ? FiltroAnio - 1 : FiltroAnio;
+        mesAnterior = mesAnterior <= 0 ? 12 : mesAnterior;
+        
+        var ejecutadasAnterior = await DbContext.Actividades
+            .Where(a => a.ProgramaId == ProgramaId && !a.IsDeleted && 
+                       a.FechaInicio.Year == anioMesAnterior && 
+                       a.FechaInicio.Month == mesAnterior &&
+                       a.Estado == EstadoActividad.Realizada)
+            .CountAsync();
+        
+        _metricas.CambioEjecutadas = ejecutadasAnterior > 0 
+            ? (int)((_metricas.ActividadesEjecutadas - ejecutadasAnterior) * 100.0 / ejecutadasAnterior) 
+            : (_metricas.ActividadesEjecutadas > 0 ? 100 : 0);
+        
+        // Nuevos participantes este mes
+        var fechaInicioMes = FiltroMes.HasValue 
+            ? new DateTime(FiltroAnio, FiltroMes.Value, 1) 
+            : new DateTime(FiltroAnio, 1, 1);
+        
+        _metricas.NuevosInscritos = await DbContext.ActividadParticipantes
+            .Where(ap => ap.Actividad.ProgramaId == ProgramaId && 
+                        !ap.IsDeleted && 
+                        ap.CreadoEn >= fechaInicioMes)
+            .Select(ap => ap.ParticipanteId)
+            .Distinct()
+            .CountAsync();
+        
+        _metricas.CambioParticipantes = _metricas.NuevosInscritos;
+        
+        // Tasa de retención
+        var participantesActivos = _metricas.ParticipantesActivos;
+        var participantesTotales = await DbContext.ActividadParticipantes
+            .Where(ap => ap.Actividad.ProgramaId == ProgramaId && !ap.IsDeleted)
+            .Select(ap => ap.ParticipanteId)
+            .Distinct()
+            .CountAsync();
+        
+        _metricas.TasaRetencion = participantesTotales > 0 
+            ? (participantesActivos * 100.0 / participantesTotales) 
+            : 100;
+    }
+    
+    private async Task CargarDatosGraficasAsync()
+    {
+        // Serie temporal 12 meses
+        var mesesData = new List<(string Nombre, double Planificadas, double Ejecutadas)>();
+        
+        for (int mes = 1; mes <= 12; mes++)
+        {
+            var actividades = await DbContext.Actividades
+                .Where(a => a.ProgramaId == ProgramaId && !a.IsDeleted &&
+                           a.FechaInicio.Year == FiltroAnio && a.FechaInicio.Month == mes)
+                .ToListAsync();
+            
+            mesesData.Add((
+                ObtenerNombreMesCorto(mes),
+                actividades.Count,
+                actividades.Count(a => a.Estado == EstadoActividad.Realizada)
+            ));
+        }
+        
+        _xAxisLabels12Meses = mesesData.Select(m => m.Nombre).ToArray();
+        _series12Meses = new List<ChartSeries>
+        {
+            new() { Name = "Planificadas", Data = mesesData.Select(m => m.Planificadas).ToArray() },
+            new() { Name = "Ejecutadas", Data = mesesData.Select(m => m.Ejecutadas).ToArray() }
+        };
+        
+        // Donut por tipo
+        var queryTipos = DbContext.Actividades
+            .Where(a => a.ProgramaId == ProgramaId && !a.IsDeleted && a.FechaInicio.Year == FiltroAnio);
+        
+        if (FiltroMes.HasValue)
+            queryTipos = queryTipos.Where(a => a.FechaInicio.Month == FiltroMes.Value);
+        
+        var tiposData = await queryTipos
+            .GroupBy(a => a.Tipo)
+            .Select(g => new { Tipo = g.Key, Cantidad = g.Count() })
+            .ToListAsync();
+        
+        if (tiposData.Any())
+        {
+            _etiquetasDonut = tiposData.Select(t => t.Tipo.ToString()).ToArray();
+            _datosDonut = tiposData.Select(t => (double)t.Cantidad).ToArray();
+        }
+    }
+    
+    private async Task CargarProximasActividadesAsync()
+    {
+        _proximasActividades = await DbContext.Actividades
+            .Where(a => a.ProgramaId == ProgramaId && !a.IsDeleted &&
+                       a.Estado == EstadoActividad.Planificada &&
+                       a.FechaInicio >= DateTime.Now)
+            .OrderBy(a => a.FechaInicio)
+            .Take(5)
+            .ToListAsync();
+    }
+    
+    private async Task CargarAlertasRecientesAsync()
+    {
+        _alertasRecientes = await DbContext.Alertas
+            .Where(a => a.ProgramaId == ProgramaId && !a.IsDeleted)
+            .OrderByDescending(a => a.GeneradaEn)
+            .Take(5)
+            .ToListAsync();
+    }
+    
+    private string ObtenerNombreMesCorto(int mes) => mes switch
+    {
+        1 => "Ene", 2 => "Feb", 3 => "Mar", 4 => "Abr", 5 => "May", 6 => "Jun",
+        7 => "Jul", 8 => "Ago", 9 => "Sep", 10 => "Oct", 11 => "Nov", 12 => "Dic",
+        _ => ""
+    };
+    
+    private string ObtenerNombreMes(int mes) => mes switch
+    {
+        1 => "Enero", 2 => "Febrero", 3 => "Marzo", 4 => "Abril", 5 => "Mayo", 6 => "Junio",
+        7 => "Julio", 8 => "Agosto", 9 => "Septiembre", 10 => "Octubre", 11 => "Noviembre", 12 => "Diciembre",
+        _ => ""
+    };
+    
+    private string ObtenerClaseSeveridad(Severidad severidad) => severidad switch
+    {
+        Severidad.Critica => "critica",
+        Severidad.Alta => "alta",
+        Severidad.Info => "info",
+        _ => "info"
+    };
+    
+    private string ObtenerTiempoRelativo(DateTime fecha)
+    {
+        var diferencia = DateTime.Now - fecha;
+        
+        if (diferencia.TotalMinutes < 60)
+            return $"Hace {(int)diferencia.TotalMinutes} min";
+        if (diferencia.TotalHours < 24)
+            return $"Hace {(int)diferencia.TotalHours} horas";
+        if (diferencia.TotalDays < 7)
+            return $"Hace {(int)diferencia.TotalDays} días";
+        
+        return fecha.ToString("dd/MM");
+    }
+    
+    private string TruncateText(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+            return text;
+        return text.Substring(0, maxLength) + "...";
+    }
+    
+    private class DashboardMetricas
+    {
+        public int TotalActividades { get; set; }
+        public int ActividadesPlanificadas { get; set; }
+        public int ActividadesEjecutadas { get; set; }
+        public int ActividadesPendientes { get; set; }
+        public double PorcentajeCumplimiento { get; set; }
+        public double TasaExito { get; set; }
+        public int ParticipantesActivos { get; set; }
+        public int TotalInscritos { get; set; }
+        public double AsistenciaPromedio { get; set; }
+        public double PromedioParticipantes { get; set; }
+        public int TotalEvidencias { get; set; }
+        public int AlertasActivas { get; set; }
+        public int AlertasCriticas { get; set; }
+        public double HorasActividad { get; set; }
+        public int DiasActivos { get; set; }
+        public double RetrasoPromedio { get; set; }
+        public int CambioEjecutadas { get; set; }
+        public int CambioParticipantes { get; set; }
+        public int NuevosInscritos { get; set; }
+        public double TasaRetencion { get; set; }
+    }
+}

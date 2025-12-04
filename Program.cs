@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components.Authorization;
+﻿using AspNetCoreRateLimit;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,8 +16,6 @@ using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Inference
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.Security;
 using Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Validation;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
-using AspNetCoreRateLimit;
 
 namespace Sistema_Experto_ONG_Juventud_Sin_Limites
 {
@@ -60,27 +59,27 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
 
             // Servicio del Clima
             builder.Services.AddScoped<Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.WeatherService>();
-            
+
             // Servicio de POA
             builder.Services.AddScoped<Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.POAService>();
-            
+
             // Servicio de Exportación POA a PDF
             builder.Services.AddScoped<Sistema_Experto_ONG_Juventud_Sin_Limites.Infrastructure.Services.POAPdfExportService>();
 
-         // MudBlazor
+            // MudBlazor
             builder.Services.AddMudServices();
 
             // Configurar HttpClient para llamadas a la API desde Blazor
             builder.Services.AddHttpClient();
             builder.Services.AddHttpContextAccessor();
-            
+
             // Configurar HttpClient con BaseAddress para componentes Blazor
             builder.Services.AddScoped(sp =>
             {
                 var accessor = sp.GetRequiredService<IHttpContextAccessor>();
                 var request = accessor.HttpContext?.Request;
-                var baseUrl = request != null 
-                    ? $"{request.Scheme}://{request.Host}" 
+                var baseUrl = request != null
+                    ? $"{request.Scheme}://{request.Host}"
                     : "https://localhost:7001"; // Fallback para desarrollo
                 return new HttpClient { BaseAddress = new Uri(baseUrl) };
             });
@@ -510,9 +509,6 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
 
             app.MapControllers();
 
-            // ========================================
-            // ENDPOINT PERSONALIZADO DE LOGIN CON 2FA
-            // ========================================
             app.MapPost("/Account/PerformLogin", async (
                 HttpContext context,
                 [FromForm] string email,
@@ -527,11 +523,25 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
             {
                 logger.LogInformation("Intento de login para {Email}", email);
 
+                // Validar inputs
+                if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+                {
+                    logger.LogWarning("Email o contraseña vacíos");
+                    return Results.Redirect($"/Account/Login?Message={Uri.EscapeDataString("Email y contraseña son requeridos")}");
+                }
+
                 var user = await userManager.FindByEmailAsync(email);
                 if (user == null)
                 {
                     logger.LogWarning("Usuario no encontrado: {Email}", email);
                     return Results.Redirect($"/Account/Login?Message={Uri.EscapeDataString("Email o contraseña incorrectos")}");
+                }
+
+                // Verificar que el email esté confirmado
+                if (!user.EmailConfirmed)
+                {
+                    logger.LogWarning("Email no confirmado para: {Email}", email);
+                    return Results.Redirect($"/Account/Login?Message={Uri.EscapeDataString("Debes confirmar tu email antes de iniciar sesión")}");
                 }
 
                 // Verificar contraseña
@@ -549,31 +559,46 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
                     return Results.Redirect($"/Account/Login?Message={Uri.EscapeDataString("Email o contraseña incorrectos")}");
                 }
 
+                // Sanitizar returnUrl para evitar redirecciones abiertas
+                var safeReturnUrl = "/";
+                if (!string.IsNullOrWhiteSpace(returnUrl) && returnUrl.StartsWith("/") && !returnUrl.StartsWith("//"))
+                {
+                    safeReturnUrl = returnUrl;
+                }
+
                 // Si 2FA está habilitado, generar y enviar código
                 if (user.TwoFactorEnabled)
                 {
                     // Generar código de 6 caracteres
                     var code = twoFactorService.GenerateCode();
-                    
+
                     // Almacenar código y sesión temporal
                     twoFactorService.StoreCode(email, code, user.Id, rememberMe ?? false);
-                    
+
                     // Enviar código por email
                     await emailSender.SendPasswordResetCodeAsync(user, email, code);
-                    
+
                     logger.LogInformation("Código 2FA enviado a {Email}", email);
 
-                    return Results.Redirect($"/Account/VerifyTwoFactor?email={Uri.EscapeDataString(email)}&returnUrl={Uri.EscapeDataString(returnUrl ?? "/")}");
+                    return Results.Redirect($"/Account/VerifyTwoFactor?email={Uri.EscapeDataString(email)}&returnUrl={Uri.EscapeDataString(safeReturnUrl)}");
                 }
 
-                await signInManager.SignInAsync(user, isPersistent: rememberMe ?? false);
-                logger.LogInformation("Login exitoso para {Email}", email);
-                
-                return Results.Redirect(returnUrl ?? "/");
+                // 2FA no está habilitado, iniciar sesión directamente
+                try
+                {
+                    await signInManager.SignInAsync(user, isPersistent: rememberMe ?? false);
+                    logger.LogInformation("Login exitoso para {Email} (sin 2FA)", email);
+                    return Results.Redirect(safeReturnUrl);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Error al iniciar sesión para {Email}", email);
+                    return Results.Redirect($"/Account/Login?Message={Uri.EscapeDataString("Error al iniciar sesión. Por favor, intenta nuevamente.")}");
+                }
             })
-            .DisableAntiforgery(); 
+            .DisableAntiforgery();
 
-            
+
             app.MapPost("/Account/Complete2FA", async (
                 HttpContext context,
                 [FromForm] string email,
@@ -616,7 +641,7 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
 
                 // Iniciar sesión real
                 await signInManager.SignInAsync(user, isPersistent: session.RememberMe);
-                
+
                 logger.LogInformation("Usuario {Email} completó 2FA exitosamente", email);
 
                 // Redirigir al destino (asegurar que nunca sea null o vacío)
@@ -650,7 +675,7 @@ namespace Sistema_Experto_ONG_Juventud_Sin_Limites
 
                 // Guardar la ruta original
                 context.Items["OriginalPath"] = context.Request.Path.Value;
-                
+
                 // Redirigir a la página NotFound
                 context.Response.Redirect("/NotFound");
             });
