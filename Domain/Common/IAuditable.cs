@@ -4,6 +4,6 @@ public interface IAuditable
 {
     DateTime CreadoEn { get; set; }
     int? CreadoPorUsuarioId { get; set; }
-DateTime? ActualizadoEn { get; set; }
+    DateTime? ActualizadoEn { get; set; }
     int? ActualizadoPorUsuarioId { get; set; }
 }
